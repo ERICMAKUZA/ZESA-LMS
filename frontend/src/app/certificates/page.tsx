@@ -1,0 +1,89 @@
+'use client'
+
+import Link from 'next/link'
+import { Award, ExternalLink } from 'lucide-react'
+import { useQuery } from '@tanstack/react-query'
+import { format } from 'date-fns'
+import StudentLayout from '@/components/layout/StudentLayout'
+import PageHeader from '@/components/ui/PageHeader'
+import Card from '@/components/ui/Card'
+import Spinner from '@/components/ui/Spinner'
+import api from '@/lib/api'
+import type { Certificate, PaginatedResponse } from '@/types'
+
+function useMyCertificates() {
+  return useQuery<PaginatedResponse<Certificate>>({
+    queryKey: ['my-certificates'],
+    queryFn: async () => {
+      const { data } = await api.get('/certs/')
+      return data
+    },
+  })
+}
+
+export default function CertificatesPage() {
+  const { data, isLoading } = useMyCertificates()
+  const certificates = data?.results ?? []
+
+  return (
+    <StudentLayout>
+      <PageHeader
+        title="My Certificates"
+        subtitle="Certificates earned from completed courses."
+      />
+
+      <Card>
+        {isLoading && (
+          <div className="flex justify-center py-10">
+            <Spinner className="text-primary" />
+          </div>
+        )}
+
+        {!isLoading && certificates.length === 0 && (
+          <div className="flex flex-col items-center py-12 text-center">
+            <Award className="h-12 w-12 text-gray-300 mb-3" />
+            <p className="text-sm text-gray-500">No certificates yet.</p>
+            <p className="mt-1 text-xs text-gray-400">
+              Complete an enrolled course to earn your first certificate.
+            </p>
+            <Link href="/courses" className="mt-4 text-sm text-primary hover:underline">
+              Browse courses
+            </Link>
+          </div>
+        )}
+
+        {!isLoading && certificates.length > 0 && (
+          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+            {certificates.map((cert) => (
+              <div
+                key={cert.id}
+                className="rounded-lg border border-gray-200 p-4 flex flex-col gap-3"
+              >
+                <div className="flex items-start gap-3">
+                  <Award className="h-8 w-8 text-accent shrink-0 mt-0.5" />
+                  <div className="flex-1 min-w-0">
+                    <p className="font-semibold text-gray-900 text-sm leading-snug">
+                      {cert.course_detail.fullname}
+                    </p>
+                    <p className="text-xs text-gray-500 mt-0.5">
+                      Issued {format(new Date(cert.issued_at), 'dd MMM yyyy')}
+                    </p>
+                  </div>
+                </div>
+                <div className="flex items-center justify-between">
+                  <span className="font-mono text-xs text-gray-400">{cert.certificate_number}</span>
+                  <Link
+                    href={`/verify/${cert.id}`}
+                    className="inline-flex items-center gap-1 text-xs text-primary hover:underline"
+                  >
+                    Verify <ExternalLink className="h-3 w-3" />
+                  </Link>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </Card>
+    </StudentLayout>
+  )
+}

@@ -1,0 +1,17 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  body {
+    @apply bg-gray-50 text-gray-900 antialiased;
+  }
+
+  h1, h2, h3, h4 {
+    @apply font-semibold text-gray-900;
+  }
+
+  a {
+    @apply transition-colors;
+  }
+}
