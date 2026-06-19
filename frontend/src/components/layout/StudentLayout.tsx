@@ -17,7 +17,7 @@ const nav = [
   { href: '/certificates',   label: 'Certificates',    icon: Award },
 ]
 
-export default function StudentLayout({ children }: { children: ReactNode }) {
+function StudentLayoutInner({ children }: { children: ReactNode }) {
   const pathname = usePathname()
   const { user, logout } = useAuth()
   const [open, setOpen] = useState(false)
@@ -78,10 +78,16 @@ export default function StudentLayout({ children }: { children: ReactNode }) {
             </button>
           </div>
         </header>
-        <main className="flex-1 overflow-y-auto p-6">
-          <AuthGuard>{children}</AuthGuard>
-        </main>
+        <main className="flex-1 overflow-y-auto p-6">{children}</main>
       </div>
     </div>
+  )
+}
+
+export default function StudentLayout({ children }: { children: ReactNode }) {
+  return (
+    <AuthGuard>
+      <StudentLayoutInner>{children}</StudentLayoutInner>
+    </AuthGuard>
   )
 }

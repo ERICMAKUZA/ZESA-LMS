@@ -1,12 +1,9 @@
 'use client'
 
-import { useState, useEffect, useCallback } from 'react'
-import { useRouter } from 'next/navigation'
-import api from '@/lib/api'
-import { getUser, setTokens, clearTokens } from '@/lib/auth'
+import { createContext, useContext } from 'react'
 import type { AuthUser } from '@/types'
 
-interface RegisterData {
+export interface RegisterData {
   first_name: string
   last_name: string
   email: string
@@ -15,37 +12,18 @@ interface RegisterData {
   password: string
 }
 
-export function useAuth() {
-  const router = useRouter()
-  const [user, setUser] = useState<AuthUser | null>(null)
-  const [isLoading, setIsLoading] = useState(true)
+export interface AuthContextValue {
+  user: AuthUser | null
+  isLoading: boolean
+  login: (email: string, password: string) => Promise<AuthUser | null>
+  logout: () => void
+  register: (data: RegisterData) => Promise<unknown>
+}
 
-  useEffect(() => {
-    setUser(getUser())
-    setIsLoading(false)
-  }, [])
+export const AuthContext = createContext<AuthContextValue | null>(null)
 
-  const login = useCallback(async (email: string, password: string) => {
-    const { data } = await api.post<{ access: string; refresh: string }>(
-      '/auth/login/',
-      { email, password },
-    )
-    setTokens(data.access, data.refresh)
-    const decoded = getUser()
-    setUser(decoded)
-    return decoded
-  }, [])
-
-  const logout = useCallback(() => {
-    clearTokens()
-    setUser(null)
-    router.push('/login')
-  }, [router])
-
-  const register = useCallback(async (formData: RegisterData) => {
-    const { data } = await api.post('/auth/register/', formData)
-    return data
-  }, [])
-
-  return { user, isLoading, login, logout, register }
+export function useAuth(): AuthContextValue {
+  const ctx = useContext(AuthContext)
+  if (!ctx) throw new Error('useAuth must be used within AuthProvider')
+  return ctx
 }

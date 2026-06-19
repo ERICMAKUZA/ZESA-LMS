@@ -12,19 +12,25 @@ export default function AuthGuard({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     if (!isLoading && !user) {
-      router.push(`/login?next=${encodeURIComponent(pathname)}`)
+      router.replace(`/login?next=${encodeURIComponent(pathname)}`)
     }
   }, [isLoading, user, router, pathname])
 
   if (isLoading) {
     return (
-      <div className="flex h-screen items-center justify-center bg-gray-50">
+      <div className="flex min-h-screen items-center justify-center bg-gray-50">
         <Spinner size="lg" className="text-primary" />
       </div>
     )
   }
 
-  if (!user) return null
+  if (!user) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-gray-50">
+        <Spinner size="lg" className="text-primary" />
+      </div>
+    )
+  }
 
   return <>{children}</>
 }
