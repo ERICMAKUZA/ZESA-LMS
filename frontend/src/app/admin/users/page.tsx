@@ -88,8 +88,8 @@ export default function AdminUsersPage() {
                       {format(new Date(user.date_joined), 'dd MMM yyyy')}
                     </td>
                     <td className="py-3">
-                      <span className={`inline-flex rounded-full px-2 py-0.5 text-xs font-medium ${user.is_active ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}>
-                        {user.is_active ? 'Yes' : 'No'}
+                      <span className={`inline-flex rounded-full px-2 py-0.5 text-xs font-medium ${user.is_active ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-500'}`}>
+                        {user.is_active ? 'Active' : 'Inactive'}
                       </span>
                     </td>
                   </tr>

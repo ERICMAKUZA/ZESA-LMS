@@ -4,6 +4,7 @@ import { ArrowLeft, CheckCircle, Clock, ExternalLink } from 'lucide-react'
 import Link from 'next/link'
 import { format } from 'date-fns'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
+import { useRouter } from 'next/navigation'
 import StudentLayout from '@/components/layout/StudentLayout'
 import Card from '@/components/ui/Card'
 import Badge from '@/components/ui/Badge'
@@ -23,6 +24,7 @@ export default function ApplicationDetailPage({ params }: { params: { id: string
   const submitMutation = useSubmitForReview(params.id)
   const { toast } = useToast()
   const queryClient = useQueryClient()
+  const router = useRouter()
 
   const payNowMutation = useMutation({
     mutationFn: async () => {
@@ -31,10 +33,8 @@ export default function ApplicationDetailPage({ params }: { params: { id: string
     },
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ['application', params.id] })
-      if (data.redirect_url && !data.redirect_url.startsWith('/')) {
-        window.location.href = data.redirect_url
-      } else {
-        toast({ variant: 'success', title: 'Payment initiated', description: 'Your payment is being processed.' })
+      if (data.redirect_url) {
+        router.push(data.redirect_url)
       }
     },
     onError: () => {

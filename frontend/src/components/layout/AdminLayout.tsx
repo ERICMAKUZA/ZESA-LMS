@@ -1,13 +1,15 @@
 'use client'
 
-import { useState, type ReactNode } from 'react'
+import { useState, useEffect, type ReactNode } from 'react'
 import Link from 'next/link'
-import { usePathname } from 'next/navigation'
+import { usePathname, useRouter } from 'next/navigation'
 import {
   LayoutDashboard, FileText, BookOpen, Users, BarChart2, Menu, X, LogOut, User,
 } from 'lucide-react'
 import { clsx } from 'clsx'
 import { useAuth } from '@/hooks/useAuth'
+import AuthGuard from '@/components/AuthGuard'
+import { useToast } from '@/components/ui/Toast'
 
 const nav = [
   { href: '/admin',              label: 'Dashboard',     icon: LayoutDashboard },
@@ -24,10 +26,21 @@ const roleColor: Record<string, string> = {
   FINANCE:   'bg-teal-100 text-teal-700',
 }
 
-export default function AdminLayout({ children }: { children: ReactNode }) {
+function AdminContent({ children }: { children: ReactNode }) {
   const pathname = usePathname()
   const { user, logout } = useAuth()
+  const { toast } = useToast()
+  const router = useRouter()
   const [open, setOpen] = useState(false)
+
+  useEffect(() => {
+    if (user && user.role === 'STUDENT') {
+      toast({ variant: 'error', title: "You don't have access to that area." })
+      router.push('/dashboard')
+    }
+  }, [user, router, toast])
+
+  if (user?.role === 'STUDENT') return null
 
   return (
     <div className="flex h-screen overflow-hidden bg-gray-50">
@@ -90,5 +103,13 @@ export default function AdminLayout({ children }: { children: ReactNode }) {
         <main className="flex-1 overflow-y-auto p-6">{children}</main>
       </div>
     </div>
+  )
+}
+
+export default function AdminLayout({ children }: { children: ReactNode }) {
+  return (
+    <AuthGuard>
+      <AdminContent>{children}</AdminContent>
+    </AuthGuard>
   )
 }

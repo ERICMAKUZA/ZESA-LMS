@@ -8,6 +8,7 @@ import {
 } from 'lucide-react'
 import { clsx } from 'clsx'
 import { useAuth } from '@/hooks/useAuth'
+import AuthGuard from '@/components/AuthGuard'
 
 const nav = [
   { href: '/dashboard',      label: 'Dashboard',      icon: LayoutDashboard },
@@ -77,7 +78,9 @@ export default function StudentLayout({ children }: { children: ReactNode }) {
             </button>
           </div>
         </header>
-        <main className="flex-1 overflow-y-auto p-6">{children}</main>
+        <main className="flex-1 overflow-y-auto p-6">
+          <AuthGuard>{children}</AuthGuard>
+        </main>
       </div>
     </div>
   )

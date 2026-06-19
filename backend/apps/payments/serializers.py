@@ -4,6 +4,8 @@ from .models import Payment
 
 
 class PaymentSerializer(serializers.ModelSerializer):
+    course_name = serializers.SerializerMethodField()
+
     class Meta:
         model = Payment
         fields = (
@@ -21,8 +23,15 @@ class PaymentSerializer(serializers.ModelSerializer):
             "initiated_at",
             "confirmed_at",
             "failed_reason",
+            "course_name",
         )
         read_only_fields = fields
+
+    def get_course_name(self, obj):
+        try:
+            return obj.application.course.fullname
+        except Exception:
+            return None
 
 
 class InitiatePaymentSerializer(serializers.Serializer):

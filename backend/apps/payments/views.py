@@ -95,7 +95,7 @@ class PaymentStatusView(APIView):
 
     def get(self, request, payment_id):
         try:
-            payment = Payment.objects.select_related("application").get(id=payment_id)
+            payment = Payment.objects.select_related("application__course").get(id=payment_id)
         except Payment.DoesNotExist:
             return Response({"detail": "Not found."}, status=status.HTTP_404_NOT_FOUND)
 

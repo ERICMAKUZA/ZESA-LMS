@@ -28,11 +28,15 @@ export function getUser(): AuthUser | null {
   if (!token) return null
   try {
     const payload = JSON.parse(atob(token.split('.')[1]))
+    if (!payload.email || !payload.role) {
+      console.warn('[auth] JWT is missing expected claims (email/role). Token may be stale — re-login recommended.', payload)
+    }
     return {
       id: payload.user_id,
       email: payload.email ?? '',
       full_name: payload.full_name ?? '',
       role: payload.role ?? 'STUDENT',
+      employee_id: payload.employee_id ?? '',
     }
   } catch {
     return null

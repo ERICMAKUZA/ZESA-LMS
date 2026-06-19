@@ -1,15 +1,19 @@
 'use client'
 
 import Link from 'next/link'
+import { useRouter } from 'next/navigation'
 import { BookOpen, DollarSign, ArrowLeft } from 'lucide-react'
 import StudentLayout from '@/components/layout/StudentLayout'
 import Card from '@/components/ui/Card'
 import Button from '@/components/ui/Button'
 import Spinner from '@/components/ui/Spinner'
 import { useCourse } from '@/hooks/useCourses'
+import { useAuth } from '@/hooks/useAuth'
 
 export default function CourseDetailPage({ params }: { params: { id: string } }) {
   const { data: course, isLoading, isError } = useCourse(params.id)
+  const { user } = useAuth()
+  const router = useRouter()
 
   return (
     <StudentLayout>
@@ -57,9 +61,18 @@ export default function CourseDetailPage({ params }: { params: { id: string } })
                 )}
               </div>
               {course.requires_approval && course.is_active && (
-                <Link href={`/applications/new?courseId=${course.id}`} className="mt-6 block">
-                  <Button className="w-full">Apply for this course</Button>
-                </Link>
+                <Button
+                  className="mt-6 w-full"
+                  onClick={() => {
+                    if (!user) {
+                      router.push(`/login?next=/courses/${course.id}`)
+                    } else {
+                      router.push(`/applications/new?courseId=${course.id}`)
+                    }
+                  }}
+                >
+                  Apply for this course
+                </Button>
               )}
               {!course.is_active && (
                 <p className="mt-4 text-xs text-gray-400 text-center">This course is currently inactive.</p>

@@ -34,10 +34,9 @@ class PaynowService:
 
         if settings.DEMO_MODE:
             logger.info("[DEMO MODE] Skipping real Paynow call for payment %s", payment.id)
-            reference = str(payment.id)
             return {
                 "success": True,
-                "redirect_url": f"/applications/{payment.application_id}",
+                "redirect_url": f"/payment/demo/{payment.id}",
                 "poll_url": f"demo-poll-{payment.id}",
                 "error": None,
             }

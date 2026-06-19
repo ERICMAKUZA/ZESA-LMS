@@ -160,6 +160,7 @@ export interface AuthUser {
   email: string
   full_name: string
   role: User['role']
+  employee_id: string
 }
 
 export interface PaginatedResponse<T> {
