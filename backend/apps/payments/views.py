@@ -1,5 +1,6 @@
 import logging
 
+from django.conf import settings
 from django.http import HttpResponse
 from rest_framework import permissions, status
 from rest_framework.response import Response
@@ -105,6 +106,59 @@ class PaymentStatusView(APIView):
             return Response({"detail": "Forbidden."}, status=status.HTTP_403_FORBIDDEN)
 
         return Response(PaymentSerializer(payment).data)
+
+
+class DemoConfirmPaymentView(APIView):
+    permission_classes = [permissions.IsAuthenticated]
+
+    def post(self, request, payment_id):
+        if not settings.DEMO_MODE:
+            return Response({"detail": "Demo mode is disabled."}, status=status.HTTP_403_FORBIDDEN)
+
+        try:
+            payment = Payment.objects.select_related(
+                "application__applicant", "application__course"
+            ).get(id=payment_id)
+        except Payment.DoesNotExist:
+            return Response({"detail": "Not found."}, status=status.HTTP_404_NOT_FOUND)
+
+        if payment.application.applicant != request.user:
+            return Response({"detail": "Forbidden."}, status=status.HTTP_403_FORBIDDEN)
+
+        if payment.status not in (PaymentStatus.PENDING, PaymentStatus.PROCESSING):
+            return Response(
+                {"detail": "Payment already processed."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        payment.confirm()
+
+        try:
+            from apps.enrollments.tasks import enroll_student_in_moodle
+            enroll_student_in_moodle.apply(args=[str(payment.application_id)])
+        except Exception as exc:
+            logger.warning(
+                "DemoConfirmPayment: enrollment failed for application %s: %s",
+                payment.application_id, exc,
+            )
+
+        payment.refresh_from_db()
+        payment.application.refresh_from_db()
+
+        response_data = {
+            "application_status": payment.application.status,
+            "payment_status": payment.status,
+            "enrollment_status": None,
+            "moodle_course_url": None,
+        }
+        try:
+            enrollment = payment.application.enrollment
+            response_data["enrollment_status"] = enrollment.status
+            response_data["moodle_course_url"] = enrollment.moodle_course_url
+        except Exception:
+            pass
+
+        return Response(response_data)
 
 
 class SAPSyncView(APIView):

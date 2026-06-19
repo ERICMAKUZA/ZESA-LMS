@@ -1,8 +1,9 @@
 'use client'
 
-import { ArrowLeft, CheckCircle, Clock } from 'lucide-react'
+import { ArrowLeft, CheckCircle, Clock, ExternalLink } from 'lucide-react'
 import Link from 'next/link'
 import { format } from 'date-fns'
+import { useMutation, useQueryClient } from '@tanstack/react-query'
 import StudentLayout from '@/components/layout/StudentLayout'
 import Card from '@/components/ui/Card'
 import Badge from '@/components/ui/Badge'
@@ -10,6 +11,7 @@ import Button from '@/components/ui/Button'
 import Spinner from '@/components/ui/Spinner'
 import { useApplication, useSubmitForReview } from '@/hooks/useApplications'
 import { useToast } from '@/components/ui/Toast'
+import api from '@/lib/api'
 import type { ApplicationStatus } from '@/types'
 
 const timelineStatuses: ApplicationStatus[] = [
@@ -20,6 +22,39 @@ export default function ApplicationDetailPage({ params }: { params: { id: string
   const { data: app, isLoading } = useApplication(params.id)
   const submitMutation = useSubmitForReview(params.id)
   const { toast } = useToast()
+  const queryClient = useQueryClient()
+
+  const payNowMutation = useMutation({
+    mutationFn: async () => {
+      const res = await api.post(`/payments/initiate/${params.id}/`)
+      return res.data as { redirect_url: string; payment_id: string }
+    },
+    onSuccess: (data) => {
+      queryClient.invalidateQueries({ queryKey: ['application', params.id] })
+      if (data.redirect_url && !data.redirect_url.startsWith('/')) {
+        window.location.href = data.redirect_url
+      } else {
+        toast({ variant: 'success', title: 'Payment initiated', description: 'Your payment is being processed.' })
+      }
+    },
+    onError: () => {
+      toast({ variant: 'error', title: 'Payment failed', description: 'Could not initiate payment. Please try again.' })
+    },
+  })
+
+  const demoConfirmMutation = useMutation({
+    mutationFn: async () => {
+      const res = await api.post(`/payments/${app?.payment?.id}/demo-confirm/`)
+      return res.data
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['application', params.id] })
+      toast({ variant: 'success', title: 'Payment confirmed', description: 'You are now enrolled in the course.' })
+    },
+    onError: () => {
+      toast({ variant: 'error', title: 'Demo confirm failed', description: 'Please try again.' })
+    },
+  })
 
   const handleSubmit = async () => {
     try {
@@ -67,6 +102,7 @@ export default function ApplicationDetailPage({ params }: { params: { id: string
               </div>
               <Badge status={app.status} />
             </div>
+
             {app.rejection_reason && (
               <div className="mt-4 rounded-md bg-red-50 border border-red-200 p-3">
                 <p className="text-sm font-medium text-red-700">Rejection reason</p>
@@ -85,6 +121,7 @@ export default function ApplicationDetailPage({ params }: { params: { id: string
                 <p className="text-sm text-blue-600 mt-1">{app.reviewer_notes}</p>
               </div>
             )}
+
             {(app.status === 'DRAFT' || app.status === 'MORE_INFO_REQUESTED') && (
               <div className="mt-4">
                 <Button onClick={handleSubmit} loading={submitMutation.isPending}>
@@ -92,7 +129,56 @@ export default function ApplicationDetailPage({ params }: { params: { id: string
                 </Button>
               </div>
             )}
+
+            {app.status === 'APPROVED' && (
+              <div className="mt-4 rounded-md bg-green-50 border border-green-200 p-4">
+                <p className="text-sm font-semibold text-green-800">Your application has been approved!</p>
+                <p className="text-sm text-green-700 mt-1 mb-3">Complete your payment to secure your place on the course.</p>
+                <Button onClick={() => payNowMutation.mutate()} loading={payNowMutation.isPending}>
+                  Pay Now
+                </Button>
+              </div>
+            )}
+
+            {app.status === 'PAYMENT_PENDING' && app.payment && (
+              <div className="mt-4 rounded-md bg-yellow-50 border border-yellow-200 p-4">
+                <p className="text-sm font-semibold text-yellow-800">Payment pending</p>
+                <p className="text-sm text-yellow-700 mt-1 mb-3">
+                  Amount: <strong>{app.payment.currency} {app.payment.amount}</strong>. Click below to confirm your payment.
+                </p>
+                <Button
+                  variant="secondary"
+                  onClick={() => demoConfirmMutation.mutate()}
+                  loading={demoConfirmMutation.isPending}
+                >
+                  Confirm Payment (Demo)
+                </Button>
+              </div>
+            )}
           </Card>
+
+          {/* Enrolled course card */}
+          {app.status === 'ENROLLED' && app.enrollment && (
+            <Card>
+              <div className="flex items-center gap-3">
+                <CheckCircle className="h-8 w-8 text-green-500 shrink-0" />
+                <div>
+                  <p className="font-semibold text-gray-900">You&apos;re enrolled!</p>
+                  <p className="text-sm text-gray-500">Access your course on Moodle using the link below.</p>
+                </div>
+              </div>
+              <div className="mt-4">
+                <a
+                  href={app.enrollment.moodle_course_url}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="inline-flex items-center gap-2 rounded-md bg-primary px-4 py-2 text-sm font-medium text-white hover:bg-primary/90"
+                >
+                  Go to your course <ExternalLink className="h-4 w-4" />
+                </a>
+              </div>
+            </Card>
+          )}
 
           {/* Status timeline */}
           <Card header={<h2 className="font-semibold text-gray-900">Progress</h2>}>
@@ -133,6 +219,19 @@ export default function ApplicationDetailPage({ params }: { params: { id: string
               <div><dt className="text-xs text-gray-500">Motivation</dt><dd className="text-gray-800 whitespace-pre-line">{app.motivation}</dd></div>
             </dl>
           </Card>
+
+          {app.payment && (
+            <Card header={<h2 className="font-semibold text-gray-900">Payment</h2>}>
+              <dl className="flex flex-col gap-3 text-sm">
+                <div><dt className="text-xs text-gray-500">Amount</dt><dd className="text-gray-800">{app.payment.currency} {app.payment.amount}</dd></div>
+                <div><dt className="text-xs text-gray-500">Method</dt><dd className="text-gray-800">{app.payment.method}</dd></div>
+                <div><dt className="text-xs text-gray-500">Status</dt><dd><Badge status={app.payment.status as ApplicationStatus} /></dd></div>
+                {app.payment.confirmed_at && (
+                  <div><dt className="text-xs text-gray-500">Confirmed</dt><dd className="text-gray-800">{format(new Date(app.payment.confirmed_at), 'dd MMM yyyy HH:mm')}</dd></div>
+                )}
+              </dl>
+            </Card>
+          )}
 
           {app.documents.length > 0 && (
             <Card header={<h2 className="font-semibold text-gray-900">Documents</h2>}>

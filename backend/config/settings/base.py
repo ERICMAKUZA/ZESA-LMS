@@ -9,6 +9,7 @@ BASE_DIR = Path(__file__).resolve().parent.parent.parent
 SECRET_KEY = config("DJANGO_SECRET_KEY")
 DEBUG = False
 ALLOWED_HOSTS = config("DJANGO_ALLOWED_HOSTS", cast=Csv(), default="localhost")
+DEMO_MODE = config("DEMO_MODE", cast=bool, default=True)
 
 DJANGO_APPS = [
     "django.contrib.admin",

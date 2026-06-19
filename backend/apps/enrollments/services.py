@@ -45,6 +45,11 @@ class MoodleEnrollmentService:
         return data
 
     def get_or_create_user(self, user) -> int:
+        if settings.DEMO_MODE:
+            fake_id = 9000 + (hash(user.email) % 1000)
+            logger.info("[DEMO MODE] get_or_create_user returning fake moodle_user_id=%s for %s", fake_id, user.email)
+            return fake_id
+
         result = self._call(
             "core_user_get_users",
             {
@@ -73,6 +78,13 @@ class MoodleEnrollmentService:
         return create_result[0]["id"]
 
     def enroll_user(self, moodle_user_id: int, moodle_course_id: int) -> bool:
+        if settings.DEMO_MODE:
+            logger.info(
+                "[DEMO MODE] enroll_user skipping real Moodle call (user=%s, course=%s)",
+                moodle_user_id, moodle_course_id,
+            )
+            return True
+
         self._call(
             "enrol_manual_enrol_users",
             {

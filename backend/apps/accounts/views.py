@@ -1,4 +1,7 @@
-from rest_framework import generics, permissions
+from django.conf import settings
+from rest_framework import generics, permissions, status
+from rest_framework.response import Response
+from rest_framework.views import APIView
 from rest_framework_simplejwt.views import TokenObtainPairView
 
 from apps.accounts.permissions import IsAdmin
@@ -36,3 +39,39 @@ class AdminUserListView(generics.ListAPIView):
     filterset_fields = ["role", "is_active"]
     search_fields = ["email", "first_name", "last_name", "employee_id", "department"]
     ordering_fields = ["last_name", "date_joined", "role"]
+
+
+class DemoAccountsView(APIView):
+    permission_classes = [permissions.AllowAny]
+
+    def get(self, request):
+        if not settings.DEMO_MODE:
+            return Response({"detail": "Not found."}, status=status.HTTP_404_NOT_FOUND)
+
+        primary = [
+            {
+                "label": "Student (fresh applicant)",
+                "email": "student.demo@zesa.co.zw",
+                "role": "STUDENT",
+            },
+            {
+                "label": "Reviewer / Approver",
+                "email": "approver.demo@zesa.co.zw",
+                "role": "REVIEWER",
+            },
+        ]
+
+        all_accounts = [
+            {"label": "Student — submitted",        "email": "student.demo@zesa.co.zw",        "role": "STUDENT"},
+            {"label": "Student — under review",     "email": "farai.chikomba@zesa.co.zw",      "role": "STUDENT"},
+            {"label": "Student — needs more info",  "email": "nyasha.mupambi@zesa.co.zw",      "role": "STUDENT"},
+            {"label": "Student — approved",         "email": "blessing.zulu@zesa.co.zw",       "role": "STUDENT"},
+            {"label": "Student — payment pending",  "email": "simbarashe.dube@zesa.co.zw",     "role": "STUDENT"},
+            {"label": "Student — payment confirmed","email": "tendai.moyo@zesa.co.zw",         "role": "STUDENT"},
+            {"label": "Student — enrolled",         "email": "rumbidzai.chikomo@zesa.co.zw",   "role": "STUDENT"},
+            {"label": "Student — rejected",         "email": "tinashe.mhuru@zesa.co.zw",       "role": "STUDENT"},
+            {"label": "Reviewer / Approver",        "email": "approver.demo@zesa.co.zw",       "role": "REVIEWER"},
+            {"label": "Admin",                      "email": "admin@zesa.co.zw",               "role": "ADMIN"},
+        ]
+
+        return Response({"primary": primary, "all": all_accounts})

@@ -32,6 +32,16 @@ class PaynowService:
     def initiate_payment(self, payment, email: str) -> dict:
         from .models import Payment  # noqa: avoid circular import at module level
 
+        if settings.DEMO_MODE:
+            logger.info("[DEMO MODE] Skipping real Paynow call for payment %s", payment.id)
+            reference = str(payment.id)
+            return {
+                "success": True,
+                "redirect_url": f"/applications/{payment.application_id}",
+                "poll_url": f"demo-poll-{payment.id}",
+                "error": None,
+            }
+
         fields = {
             "id": self.integration_id,
             "reference": str(payment.id),

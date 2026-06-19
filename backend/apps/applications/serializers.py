@@ -84,6 +84,8 @@ class ApplicationDetailSerializer(serializers.ModelSerializer):
     reviewer_name = serializers.SerializerMethodField()
     documents = ApplicationDocumentSerializer(many=True, read_only=True)
     recent_history = serializers.SerializerMethodField()
+    payment = serializers.SerializerMethodField()
+    enrollment = serializers.SerializerMethodField()
 
     class Meta:
         model = Application
@@ -96,6 +98,7 @@ class ApplicationDetailSerializer(serializers.ModelSerializer):
             "submitted_at", "reviewed_at", "approved_at", "enrolled_at",
             "created_at", "updated_at",
             "documents", "recent_history",
+            "payment", "enrollment",
         )
         read_only_fields = (
             "id", "applicant", "status", "reviewer",
@@ -111,6 +114,32 @@ class ApplicationDetailSerializer(serializers.ModelSerializer):
     def get_recent_history(self, obj):
         entries = obj.history.order_by("-changed_at")[:5]
         return ApplicationStatusHistorySerializer(entries, many=True).data
+
+    def get_payment(self, obj):
+        try:
+            p = obj.payment
+            return {
+                "id": str(p.id),
+                "amount": str(p.amount),
+                "currency": p.currency,
+                "status": p.status,
+                "method": p.method,
+                "confirmed_at": p.confirmed_at,
+            }
+        except Exception:
+            return None
+
+    def get_enrollment(self, obj):
+        try:
+            e = obj.enrollment
+            return {
+                "id": str(e.id),
+                "status": e.status,
+                "enrolled_at": e.enrolled_at,
+                "moodle_course_url": e.moodle_course_url,
+            }
+        except Exception:
+            return None
 
 
 class ReviewActionSerializer(serializers.Serializer):

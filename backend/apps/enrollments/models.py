@@ -1,5 +1,6 @@
 import uuid
 
+from django.conf import settings
 from django.db import models
 from django.utils import timezone
 
@@ -37,6 +38,11 @@ class Enrollment(models.Model):
         verbose_name = "Enrollment"
         verbose_name_plural = "Enrollments"
         ordering = ["-created_at"]
+
+    @property
+    def moodle_course_url(self) -> str:
+        base = settings.MOODLE_BASE_URL.rstrip("/")
+        return f"{base}/course/view.php?id={self.moodle_course_id}"
 
     def __str__(self):
         return (

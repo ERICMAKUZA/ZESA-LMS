@@ -164,9 +164,20 @@ class Command(BaseCommand):
             "reviewer@zesa.co.zw", "Tsitsi", "Mapfumo", User.Role.REVIEWER,
             dept="Human Resources",
         )
+        # Primary demo approver account (used in /api/demo-accounts/ primary list)
+        approver_demo = make_user(
+            "approver.demo@zesa.co.zw", "Demo", "Reviewer", User.Role.REVIEWER,
+            dept="Human Resources",
+        )
         make_user(
             "finance@zesa.co.zw", "Prosper", "Ncube", User.Role.FINANCE,
             dept="Finance",
+        )
+
+        # Primary demo student account — fresh SUBMITTED state for guided demo flow
+        student_demo = make_user(
+            "student.demo@zesa.co.zw", "Demo", "Student", User.Role.STUDENT,
+            dept="ICT", emp_id="ZESA-DEMO-001",
         )
 
         student_specs = [
@@ -217,6 +228,17 @@ class Command(BaseCommand):
         # ── DRAFT ─────────────────────────────────────────────────────────────
         get_or_create_app(s0, course_bi, status=ST.DRAFT)
 
+        # ── SUBMITTED (primary demo student) ──────────────────────────────────
+        app_demo_submitted, _ = get_or_create_app(
+            student_demo, course_bi,
+            status=ST.SUBMITTED,
+            submitted_at=now - timedelta(days=1),
+        )
+        if not ApplicationStatusHistory.objects.filter(
+            application=app_demo_submitted, to_status=ST.SUBMITTED
+        ).exists():
+            _make_history(app_demo_submitted, ST.DRAFT, ST.SUBMITTED, student_demo, now - timedelta(days=1))
+
         # ── SUBMITTED ─────────────────────────────────────────────────────────
         app_submitted, _ = get_or_create_app(
             s1, course_bi,
@@ -226,7 +248,7 @@ class Command(BaseCommand):
         if not ApplicationStatusHistory.objects.filter(
             application=app_submitted, to_status=ST.SUBMITTED
         ).exists():
-            h = _make_history(app_submitted, ST.DRAFT, ST.SUBMITTED, s1, now - timedelta(days=2))
+            _make_history(app_submitted, ST.DRAFT, ST.SUBMITTED, s1, now - timedelta(days=2))
 
         # ── UNDER_REVIEW ──────────────────────────────────────────────────────
         app_review, _ = get_or_create_app(
@@ -298,6 +320,17 @@ class Command(BaseCommand):
             _make_history(app_paypend, ST.SUBMITTED, ST.UNDER_REVIEW, reviewer, now - timedelta(hours=132))
             _make_history(app_paypend, ST.UNDER_REVIEW, ST.APPROVED, reviewer, now - timedelta(days=2))
             _make_history(app_paypend, ST.APPROVED, ST.PAYMENT_PENDING, None, now - timedelta(hours=36))
+
+        # Payment record needed so the demo-confirm endpoint has something to confirm
+        Payment.objects.get_or_create(
+            application=app_paypend,
+            defaults=dict(
+                amount=course_safety.price if course_safety.price else 0.00,
+                method=PaymentMethod.PAYNOW,
+                status=PaymentStatus.PENDING,
+                paynow_reference=f"demo-ref-{app_paypend.id}",
+            ),
+        )
 
         # ── PAYMENT_CONFIRMED (Tendai Moyo) ───────────────────────────────────
         app_payconf, _ = get_or_create_app(
@@ -425,23 +458,27 @@ class Command(BaseCommand):
         self.stdout.write("")
         self.stdout.write(f"  {'Courses:':<20} {Course.objects.count()} (4 expected)")
         self.stdout.write(f"  {'Users:':<20} {User.objects.count()}")
-        self.stdout.write(f"  {'Applications:':<20} {total_apps} (9 expected)")
-        self.stdout.write(f"  {'Payments:':<20} {Payment.objects.count()} (2 expected)")
+        self.stdout.write(f"  {'Applications:':<20} {total_apps} (10 expected)")
+        self.stdout.write(f"  {'Payments:':<20} {Payment.objects.count()} (3 expected)")
         self.stdout.write(f"  {'Enrollments:':<20} {Enrollment.objects.count()} (1 expected)")
         self.stdout.write("")
         self.stdout.write(self.style.WARNING("  ── Login cheat-sheet ──────────────────────────────"))
         self.stdout.write("")
         self.stdout.write(f"  {'admin@zesa.co.zw':<35} Demo1234!  (Admin dashboard)")
+        self.stdout.write(f"  {'approver.demo@zesa.co.zw':<35} Demo1234!  (Reviewer queue — PRIMARY)")
         self.stdout.write(f"  {'reviewer@zesa.co.zw':<35} Demo1234!  (Reviewer queue)")
         self.stdout.write(f"  {'finance@zesa.co.zw':<35} Demo1234!  (Finance view)")
         self.stdout.write("")
         self.stdout.write(self.style.HTTP_INFO("  ── Student demo flows ─────────────────────────────"))
         self.stdout.write("")
         self.stdout.write(
-            f"  {s1.email:<35} SUBMITTED   — apply→submit flow"
+            f"  {'student.demo@zesa.co.zw':<35} SUBMITTED   — PRIMARY demo account"
         )
         self.stdout.write(
             f"  {s3.email:<35} MORE_INFO   — resubmit flow"
+        )
+        self.stdout.write(
+            f"  {s5.email:<35} PAY_PENDING — demo-confirm payment flow"
         )
         self.stdout.write(
             f"  {tendai.email:<35} PAY_CONFIRM — payment success screen"
@@ -453,7 +490,7 @@ class Command(BaseCommand):
             f"  {tinashe.email:<35} REJECTED    — rejection screen"
         )
         self.stdout.write("")
-        self.stdout.write("  All student passwords: Demo1234!")
+        self.stdout.write("  All passwords: Demo1234!")
         self.stdout.write("")
         self.stdout.write(self.style.SUCCESS("=" * 60))
         self.stdout.write("")

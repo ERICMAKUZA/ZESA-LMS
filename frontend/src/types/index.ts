@@ -87,6 +87,22 @@ export interface ApplicationStatusHistory {
   changed_at: string
 }
 
+export interface ApplicationPayment {
+  id: string
+  amount: string
+  currency: string
+  status: string
+  method: string
+  confirmed_at: string | null
+}
+
+export interface ApplicationEnrollment {
+  id: string
+  status: string
+  enrolled_at: string | null
+  moodle_course_url: string
+}
+
 export interface Application {
   id: string
   applicant: number
@@ -112,6 +128,8 @@ export interface Application {
   updated_at: string
   documents: ApplicationDocument[]
   recent_history: ApplicationStatusHistory[]
+  payment: ApplicationPayment | null
+  enrollment: ApplicationEnrollment | null
 }
 
 export interface ApplicationListItem {
