@@ -10,10 +10,46 @@ import Spinner from '@/components/ui/Spinner'
 import { useCourse } from '@/hooks/useCourses'
 import { useAuth } from '@/hooks/useAuth'
 
+function CapacityBadge({ max, enrolled }: { max: number | null; enrolled: number }) {
+  if (!max) return null
+  const remaining = max - enrolled
+  const pct = enrolled / max
+  if (remaining <= 0)
+    return (
+      <span className="inline-block text-xs font-semibold bg-red-100 text-red-700 rounded-full px-2 py-0.5">
+        Full
+      </span>
+    )
+  if (pct >= 0.85)
+    return (
+      <span className="inline-block text-xs font-semibold bg-amber-100 text-amber-700 rounded-full px-2 py-0.5">
+        {remaining} place{remaining !== 1 ? 's' : ''} left
+      </span>
+    )
+  return (
+    <span className="inline-block text-xs font-semibold bg-green-100 text-green-700 rounded-full px-2 py-0.5">
+      Open
+    </span>
+  )
+}
+
 export default function CourseDetailPage({ params }: { params: { id: string } }) {
   const { data: course, isLoading, isError } = useCourse(params.id)
   const { user } = useAuth()
   const router = useRouter()
+
+  const isFull = course
+    ? course.max_capacity !== null && course.enrolled_count >= course.max_capacity
+    : false
+
+  const handleApply = () => {
+    const dest = `/applications/new?course=${course!.id}`
+    if (!user) {
+      router.push(`/login?next=${encodeURIComponent(dest)}`)
+    } else {
+      router.push(dest)
+    }
+  }
 
   return (
     <StudentLayout>
@@ -46,7 +82,6 @@ export default function CourseDetailPage({ params }: { params: { id: string } })
               <h1 className="mt-1 text-2xl font-bold text-gray-900">{course.fullname}</h1>
               <p className="mt-3 text-sm text-gray-700 leading-relaxed whitespace-pre-line">{course.summary}</p>
             </Card>
-
           </div>
 
           <div className="flex flex-col gap-4">
@@ -59,19 +94,40 @@ export default function CourseDetailPage({ params }: { params: { id: string } })
                     <span>USD {course.price}</span>
                   </div>
                 )}
+                {course.duration_days && (
+                  <div className="flex items-center justify-between text-sm">
+                    <span className="text-gray-500">Duration</span>
+                    <span className="text-gray-800">{course.duration_days} days</span>
+                  </div>
+                )}
+                {course.level && (
+                  <div className="flex items-center justify-between text-sm">
+                    <span className="text-gray-500">Level</span>
+                    <span className="text-gray-800">{course.level}</span>
+                  </div>
+                )}
+
+                {/* Capacity row */}
+                {course.max_capacity && (
+                  <div className="flex items-center justify-between py-3 border-t border-gray-100">
+                    <span className="text-sm text-gray-500">Availability</span>
+                    <div className="flex items-center gap-2">
+                      <CapacityBadge max={course.max_capacity} enrolled={course.enrolled_count} />
+                      <span className="text-xs text-gray-400">
+                        ({course.enrolled_count} / {course.max_capacity} enrolled)
+                      </span>
+                    </div>
+                  </div>
+                )}
               </div>
+
               {course.requires_approval && course.is_active && (
                 <Button
-                  className="mt-6 w-full"
-                  onClick={() => {
-                    if (!user) {
-                      router.push(`/login?next=/courses/${course.id}`)
-                    } else {
-                      router.push(`/applications/new?courseId=${course.id}`)
-                    }
-                  }}
+                  className="mt-4 w-full"
+                  disabled={isFull}
+                  onClick={handleApply}
                 >
-                  Apply for this course
+                  {isFull ? 'Course Full' : 'Apply for This Course'}
                 </Button>
               )}
               {!course.is_active && (
