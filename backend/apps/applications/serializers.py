@@ -25,15 +25,24 @@ class ApplicationStatusHistorySerializer(serializers.ModelSerializer):
 
 class ApplicationCreateSerializer(serializers.ModelSerializer):
     applicant = serializers.HiddenField(default=serializers.CurrentUserDefault())
+    preferred_centre = serializers.PrimaryKeyRelatedField(
+        queryset=Centre.objects.all(), allow_null=True, required=False,
+    )
+    line_manager_email = serializers.EmailField(required=False, allow_blank=True, default='')
 
     class Meta:
         model = Application
         fields = (
-            "applicant", "course", "motivation",
+            "id", "applicant", "course", "motivation",
             "line_manager_email", "department", "employee_id",
-            "hexco_level",
+            "hexco_level", "student_category",
+            "preferred_centre",
+            "is_resident", "hostel_name", "room_number",
+            "guardian_name", "guardian_contact", "guardian_email",
+            "responsible_party",
             "national_id_doc", "academic_certs_doc", "student_photo",
         )
+        read_only_fields = ("id",)
 
     def validate_course(self, course):
         if not course.is_active:
@@ -43,12 +52,17 @@ class ApplicationCreateSerializer(serializers.ModelSerializer):
         return course
 
     def validate(self, attrs):
+        # course may be absent on partial updates
+        course = attrs.get("course")
+        if course is None:
+            return attrs
         applicant = attrs["applicant"]
-        course = attrs["course"]
         conflict = (
             Application.objects.filter(applicant=applicant, course=course)
             .exclude(status=ApplicationStatus.REJECTED)
         )
+        if self.instance:
+            conflict = conflict.exclude(pk=self.instance.pk)
         if conflict.exists():
             raise serializers.ValidationError(
                 "You already have an active application for this course."

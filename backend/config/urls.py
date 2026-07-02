@@ -20,6 +20,7 @@ urlpatterns = [
     path("api/admin/users/", AdminUserListView.as_view(), name="admin-user-list"),
     path("api/demo-accounts/", DemoAccountsView.as_view(), name="demo-accounts"),
 
+    path("api/centres/", include("centres.urls")),
     path("api/courses/", include("apps.courses.urls")),
     path("api/", include("apps.applications.urls")),
     path("api/", include("apps.workflows.urls")),

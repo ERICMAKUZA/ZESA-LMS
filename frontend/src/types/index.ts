@@ -1,3 +1,10 @@
+export interface Centre {
+  id: string
+  name: string
+  is_primary: boolean
+  location: string
+}
+
 export interface User {
   id: number
   email: string
@@ -70,6 +77,7 @@ export type ApplicationStatus =
   | 'PAYMENT_PENDING'
   | 'PAYMENT_CONFIRMED'
   | 'ENROLLED'
+  | 'DE_ENROLLED'
   | 'CERTIFIED'
 
 export interface ApplicationDocument {
@@ -118,6 +126,16 @@ export interface Application {
   line_manager_email: string
   department: string
   employee_id: string
+  hexco_level: 'NC' | 'ND' | ''
+  student_category: 'DIRECT' | 'APPRENTICE' | 'INTERNAL' | ''
+  preferred_centre: string | null
+  is_resident: boolean
+  hostel_name: string
+  room_number: string
+  guardian_name: string
+  guardian_contact: string
+  guardian_email: string
+  responsible_party: string
   reviewer: number | null
   reviewer_name: string | null
   reviewer_notes: string | null

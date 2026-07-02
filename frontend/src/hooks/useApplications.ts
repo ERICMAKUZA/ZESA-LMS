@@ -13,13 +13,7 @@ interface ApplicationFilters {
   reviewer?: string | number
 }
 
-interface CreateApplicationData {
-  course: number
-  motivation: string
-  line_manager_email: string
-  department: string
-  employee_id?: string
-}
+type CreateApplicationPayload = FormData | Record<string, unknown>
 
 interface ReviewActionData {
   action: 'approve' | 'reject' | 'request_more_info'
@@ -50,7 +44,7 @@ export function useApplication(id: string) {
 
 export function useSubmitApplication() {
   const queryClient = useQueryClient()
-  return useMutation<Application, Error, CreateApplicationData>({
+  return useMutation<Application, Error, CreateApplicationPayload>({
     mutationFn: async (payload) => {
       const { data } = await api.post('/my-applications/', payload)
       return data

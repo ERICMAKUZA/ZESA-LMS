@@ -11,6 +11,7 @@ const statusConfig: Record<ApplicationStatus, { label: string; className: string
   PAYMENT_PENDING:     { label: 'Payment Pending',     className: 'bg-orange-100 text-orange-800' },
   PAYMENT_CONFIRMED:   { label: 'Payment Confirmed',   className: 'bg-teal-100 text-teal-700' },
   ENROLLED:            { label: 'Enrolled',            className: 'bg-green-200 text-green-900' },
+  DE_ENROLLED:         { label: 'De-enrolled',         className: 'bg-red-100 text-red-700' },
   CERTIFIED:           { label: 'Certified',           className: 'bg-purple-100 text-purple-700' },
 }
 

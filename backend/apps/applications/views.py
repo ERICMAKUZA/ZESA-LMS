@@ -43,7 +43,7 @@ class StudentApplicationViewSet(viewsets.ModelViewSet):
         )
 
     def get_serializer_class(self):
-        if self.action == "create":
+        if self.action in ("create", "update", "partial_update"):
             return ApplicationCreateSerializer
         if self.action == "retrieve":
             return ApplicationDetailSerializer
