@@ -6,6 +6,13 @@ from django.db import models
 from django.utils import timezone
 
 
+def application_upload_path(instance, filename):
+    import datetime, os
+    today = datetime.date.today()
+    ext = os.path.splitext(filename)[1].lower()
+    return f"application_docs/{today.year}/{today.month:02d}/{instance.ref or 'draft'}{ext}"
+
+
 class ApplicationStatus(models.TextChoices):
     DRAFT = "DRAFT", "Draft"
     SUBMITTED = "SUBMITTED", "Submitted"
@@ -40,6 +47,14 @@ class Application(models.Model):
     line_manager_email = models.EmailField()
     department = models.CharField(max_length=150)
     employee_id = models.CharField(max_length=50, blank=True)
+    preferred_centre = models.ForeignKey(
+        'centres.Centre', null=True, blank=True,
+        on_delete=models.SET_NULL, related_name='preferred_applications'
+    )
+    assigned_centre = models.ForeignKey(
+        'centres.Centre', null=True, blank=True,
+        on_delete=models.SET_NULL, related_name='assigned_applications'
+    )
     reviewer = models.ForeignKey(
         settings.AUTH_USER_MODEL,
         on_delete=models.SET_NULL,
@@ -56,6 +71,59 @@ class Application(models.Model):
     enrolled_at = models.DateTimeField(null=True, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
+
+    HEXCO_LEVEL_CHOICES = [
+        ('NC', 'National Certificate (NC)'),
+        ('ND', 'National Diploma (ND)'),
+    ]
+    DEPARTMENT_CHOICES = [
+        ('ELECTRICAL', 'Electrical Engineering'),
+        ('TELECOMS', 'Telecommunications'),
+        ('MECHANICAL', 'Mechanical Engineering'),
+    ]
+
+    hexco_level = models.CharField(
+        max_length=2, choices=HEXCO_LEVEL_CHOICES, blank=True, default=''
+    )
+
+    STUDENT_CATEGORY_CHOICES = [
+        ('DIRECT', 'Direct Applicant'),
+        ('APPRENTICE', 'Apprentice (Company-Sponsored)'),
+        ('INTERNAL', 'Internal ZESA Staff'),
+    ]
+
+    student_category = models.CharField(
+        max_length=12, choices=STUDENT_CATEGORY_CHOICES, blank=True, default=''
+    )
+    is_resident = models.BooleanField(
+        default=False,
+        help_text="True if student will stay in ZNTC hostel"
+    )
+    hostel_name = models.CharField(max_length=100, blank=True, default='')
+    room_number = models.CharField(max_length=20, blank=True, default='')
+
+    # Guardian / next of kin
+    guardian_name = models.CharField(max_length=200, blank=True, default='')
+    guardian_contact = models.CharField(max_length=20, blank=True, default='')
+    guardian_email = models.EmailField(blank=True, default='')
+
+    # Financial responsible party (person or company name)
+    responsible_party = models.CharField(max_length=200, blank=True, default='')
+
+    ref = models.CharField(max_length=20, unique=True, blank=True, db_index=True)
+
+    national_id_doc = models.FileField(
+        upload_to=application_upload_path, null=True, blank=True,
+        help_text="National ID card or passport scan (PDF, JPG, PNG)"
+    )
+    academic_certs_doc = models.FileField(
+        upload_to=application_upload_path, null=True, blank=True,
+        help_text="Academic certificates (PDF)"
+    )
+    student_photo = models.ImageField(
+        upload_to=application_upload_path, null=True, blank=True,
+        help_text="Passport-size photo (JPG, PNG)"
+    )
 
     class Meta:
         verbose_name = "Application"
@@ -78,6 +146,31 @@ class Application(models.Model):
                 raise ValidationError(
                     "An active application already exists for this course."
                 )
+
+    # ── Ref generation ────────────────────────────────────────────────────────
+
+    @classmethod
+    def _generate_ref(cls):
+        import datetime
+        year = datetime.date.today().year
+        prefix = f"ZNTC-{year}-"
+        last = (
+            cls.objects
+            .filter(ref__startswith=prefix)
+            .order_by('ref')
+            .values_list('ref', flat=True)
+            .last()
+        )
+        if last:
+            last_seq = int(last.split('-')[-1])
+        else:
+            last_seq = 0
+        return f"{prefix}{str(last_seq + 1).zfill(4)}"
+
+    def save(self, *args, **kwargs):
+        if not self.ref:
+            self.ref = self.__class__._generate_ref()
+        super().save(*args, **kwargs)
 
     # ── Internal helpers ──────────────────────────────────────────────────────
 

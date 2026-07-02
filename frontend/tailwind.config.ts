@@ -1,5 +1,6 @@
 import type { Config } from 'tailwindcss'
 import forms from '@tailwindcss/forms'
+import type { PluginAPI } from 'tailwindcss/types/config'
 
 const config: Config = {
   content: [
@@ -25,7 +26,18 @@ const config: Config = {
       },
     },
   },
-  plugins: [forms],
+  plugins: [
+    forms,
+    function scrollbarHide({ addUtilities }: PluginAPI) {
+      addUtilities({
+        '.scrollbar-hide': {
+          '-ms-overflow-style': 'none',
+          'scrollbar-width': 'none',
+          '&::-webkit-scrollbar': { display: 'none' },
+        },
+      })
+    },
+  ],
 }
 
 export default config

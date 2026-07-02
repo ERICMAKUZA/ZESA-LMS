@@ -1,0 +1,38 @@
+[
+  {
+    "model": "centres.centre",
+    "pk": "11111111-1111-1111-1111-111111111111",
+    "fields": {
+      "name": "Harare NTC",
+      "location": "Ganges Road, Workington, Harare",
+      "is_primary": true,
+      "contact_email": "harare@zntc.ac.zw",
+      "contact_phone": "+263242000000",
+      "created_at": "2026-01-01T00:00:00Z"
+    }
+  },
+  {
+    "model": "centres.centre",
+    "pk": "22222222-2222-2222-2222-222222222222",
+    "fields": {
+      "name": "Bulawayo Centre",
+      "location": "Bulawayo, Zimbabwe",
+      "is_primary": false,
+      "contact_email": "bulawayo@zntc.ac.zw",
+      "contact_phone": "+263292000000",
+      "created_at": "2026-01-01T00:00:00Z"
+    }
+  },
+  {
+    "model": "centres.centre",
+    "pk": "33333333-3333-3333-3333-333333333333",
+    "fields": {
+      "name": "Kariba Centre",
+      "location": "Kariba, Zimbabwe",
+      "is_primary": false,
+      "contact_email": "kariba@zntc.ac.zw",
+      "contact_phone": "+263261000000",
+      "created_at": "2026-01-01T00:00:00Z"
+    }
+  }
+]

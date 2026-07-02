@@ -52,7 +52,7 @@ function AdminContent({ children }: { children: ReactNode }) {
         )}
       >
         <div className="flex items-center gap-2 px-6 py-5 border-b border-white/10">
-          <span className="text-lg font-bold tracking-tight">ILMP Admin</span>
+          <span className="text-lg font-bold tracking-tight">NTC Admin</span>
           <button className="ml-auto lg:hidden" onClick={() => setOpen(false)}>
             <X className="h-5 w-5" />
           </button>

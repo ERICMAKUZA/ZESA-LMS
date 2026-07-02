@@ -15,10 +15,25 @@ class CourseCategory(models.Model):
 
 
 class Course(models.Model):
+    LEVEL_BEGINNER = 'BEGINNER'
+    LEVEL_INTERMEDIATE = 'INTERMEDIATE'
+    LEVEL_ADVANCED = 'ADVANCED'
+    LEVEL_ALL = 'ALL_LEVELS'
+    LEVEL_CHOICES = [
+        (LEVEL_BEGINNER, 'Beginner'),
+        (LEVEL_INTERMEDIATE, 'Intermediate'),
+        (LEVEL_ADVANCED, 'Advanced'),
+        (LEVEL_ALL, 'All Levels'),
+    ]
+
     moodle_course_id = models.IntegerField(unique=True)
     shortname = models.CharField(max_length=255)
     fullname = models.CharField(max_length=255)
     summary = models.TextField(blank=True)
+    duration_days = models.PositiveIntegerField(null=True, blank=True)
+    level = models.CharField(
+        max_length=20, choices=LEVEL_CHOICES, null=True, blank=True
+    )
     category = models.ForeignKey(
         CourseCategory,
         null=True,

@@ -30,6 +30,8 @@ class ApplicationCreateSerializer(serializers.ModelSerializer):
         fields = (
             "applicant", "course", "motivation",
             "line_manager_email", "department", "employee_id",
+            "hexco_level",
+            "national_id_doc", "academic_certs_doc", "student_photo",
         )
 
     def validate_course(self, course):
@@ -93,6 +95,8 @@ class ApplicationDetailSerializer(serializers.ModelSerializer):
             "id", "applicant", "applicant_name", "applicant_email",
             "course", "course_name", "status",
             "motivation", "line_manager_email", "department", "employee_id",
+            "hexco_level",
+            "national_id_doc", "academic_certs_doc", "student_photo",
             "reviewer", "reviewer_name", "reviewer_notes",
             "rejection_reason", "more_info_request",
             "submitted_at", "reviewed_at", "approved_at", "enrolled_at",

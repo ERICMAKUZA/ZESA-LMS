@@ -38,6 +38,7 @@ LOCAL_APPS = [
     "apps.enrollments",
     "apps.certificates",
     "apps.reports",
+    "centres",
 ]
 
 INSTALLED_APPS = DJANGO_APPS + THIRD_PARTY_APPS + LOCAL_APPS
@@ -167,8 +168,8 @@ CORS_ALLOWED_ORIGINS = config(
 CORS_ALLOW_CREDENTIALS = True
 
 SPECTACULAR_SETTINGS = {
-    "TITLE": "ZESA ILMP API",
-    "DESCRIPTION": "Individual Learning and Management Platform for ZESA",
+    "TITLE": "ZESA NTC API",
+    "DESCRIPTION": "Training at ZESA National Training Centre — API",
     "VERSION": "1.0.0",
     "SERVE_INCLUDE_SCHEMA": False,
 }

@@ -6,7 +6,12 @@ const nextConfig = {
     NEXT_PUBLIC_MOODLE_URL: process.env.NEXT_PUBLIC_MOODLE_URL,
   },
   images: {
-    domains: ['localhost', 'learning.kenac.tech'],
+    remotePatterns: [
+      { protocol: 'http',  hostname: 'localhost' },
+      { protocol: 'https', hostname: 'learning.kenac.tech' },
+      { protocol: 'https', hostname: 'images.unsplash.com' },
+      { protocol: 'https', hostname: 'plus.unsplash.com' },
+    ],
   },
 }
 

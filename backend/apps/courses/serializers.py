@@ -32,6 +32,7 @@ class CourseSerializer(serializers.ModelSerializer):
             "id", "moodle_course_id", "shortname", "fullname", "summary",
             "category", "category_id", "enrolled_count", "max_capacity",
             "is_active", "requires_approval", "price", "thumbnail_url",
+            "duration_days", "level",
             "is_full", "created_at", "updated_at",
         )
         read_only_fields = ("id", "enrolled_count", "created_at", "updated_at")

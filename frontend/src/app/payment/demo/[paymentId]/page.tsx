@@ -151,7 +151,7 @@ export default function DemoPaymentPage({ params }: { params: { paymentId: strin
         </div>
 
         <p className="mt-4 text-center text-xs text-gray-400">
-          ZESA ILMP · Integrated Learning Management Platform
+          Training at ZESA National Training Centre
         </p>
       </div>
     </div>

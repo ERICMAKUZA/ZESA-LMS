@@ -6,7 +6,7 @@ import Providers from './providers'
 const inter = Inter({ subsets: ['latin'] })
 
 export const metadata: Metadata = {
-  title: 'ZESA ILMP — Integrated Learning Management Platform',
+  title: 'Training at ZESA National Training Centre',
   description: 'ZESA employee training and certification portal',
 }
 

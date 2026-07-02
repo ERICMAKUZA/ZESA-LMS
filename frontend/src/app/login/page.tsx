@@ -87,7 +87,8 @@ function LoginContent() {
             <div className="inline-flex items-center gap-2 rounded-full bg-yellow-50 border border-yellow-200 px-4 py-1.5 text-sm font-medium text-yellow-800 mb-4">
               DEMO MODE — no real credentials required
             </div>
-            <h1 className="text-3xl font-bold text-gray-900">ZESA ILMP</h1>
+            <h1 className="text-3xl font-bold text-gray-900">ZESA National Training Centre</h1>
+            <p className="mt-1 text-sm font-medium text-accent">Empowering Zimbabwe's Future Through Excellence</p>
             <p className="mt-2 text-gray-500">Click any account below to sign in instantly</p>
           </div>
 

@@ -20,6 +20,13 @@ interface ToastContextValue {
 
 const ToastContext = createContext<ToastContextValue | null>(null)
 
+function genId(): string {
+  if (typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function') {
+    return crypto.randomUUID()
+  }
+  return `${Date.now().toString(36)}-${Math.random().toString(36).slice(2)}`
+}
+
 const icons = {
   success: <CheckCircle className="h-5 w-5 text-success" />,
   error: <XCircle className="h-5 w-5 text-danger" />,
@@ -30,7 +37,7 @@ export function ToastProvider({ children }: { children: ReactNode }) {
   const [toasts, setToasts] = useState<ToastMessage[]>([])
 
   const toast = useCallback((msg: Omit<ToastMessage, 'id'>) => {
-    setToasts((prev) => [...prev, { ...msg, id: crypto.randomUUID() }])
+    setToasts((prev) => [...prev, { ...msg, id: genId() }])
   }, [])
 
   const dismiss = useCallback((id: string) => {

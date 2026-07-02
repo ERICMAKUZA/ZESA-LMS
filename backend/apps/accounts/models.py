@@ -39,6 +39,10 @@ class User(AbstractBaseUser, PermissionsMixin):
     department = models.CharField(max_length=150, blank=True)
     phone = models.CharField(max_length=20, blank=True)
     role = models.CharField(max_length=20, choices=Role.choices, default=Role.STUDENT)
+    assigned_centre = models.ForeignKey(
+        'centres.Centre', null=True, blank=True,
+        on_delete=models.SET_NULL, related_name='users'
+    )
     is_active = models.BooleanField(default=True)
     is_staff = models.BooleanField(default=False)
     date_joined = models.DateTimeField(default=timezone.now)

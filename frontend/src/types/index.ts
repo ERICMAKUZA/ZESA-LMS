@@ -27,6 +27,8 @@ export interface Course {
   max_capacity: number | null
   price: string | null
   thumbnail_url: string
+  duration_days: number | null
+  level: 'BEGINNER' | 'INTERMEDIATE' | 'ADVANCED' | 'ALL_LEVELS' | null
   is_active: boolean
   is_full: boolean
   requires_approval: boolean
@@ -177,4 +179,6 @@ export interface DashboardStats {
   enrolled_today: number
   total_this_month: number
   by_status: Partial<Record<ApplicationStatus, number>>
+  by_course: { course: string; count: number }[]
+  weekly_trend: { day: string; submissions: number }[]
 }

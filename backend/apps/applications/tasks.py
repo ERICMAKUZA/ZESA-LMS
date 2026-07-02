@@ -36,7 +36,7 @@ def notify_application_submitted(self, application_id):
         f"Course    : {app.course.fullname}\n"
         f"Department: {app.department}\n"
         f"Employee  : {app.employee_id or 'N/A'}\n\n"
-        f"Log in to the ILMP admin portal to review this application."
+        f"Log in to the NTC admin portal to review this application."
     )
     try:
         send_mail(subject, message, settings.DEFAULT_FROM_EMAIL, recipients)
@@ -79,7 +79,7 @@ def notify_application_reviewed(self, application_id):
                 f"Hi {app.applicant.first_name},\n\n"
                 f"Your reviewer has requested additional information.\n\n"
                 f"Request: {app.more_info_request}\n\n"
-                f"Please log in to the ILMP portal, update your application, and resubmit."
+                f"Please log in to the NTC portal, update your application, and resubmit."
             ),
         ),
     }
@@ -115,7 +115,7 @@ def notify_payment_required(self, application_id):
         f"Hi {app.applicant.first_name},\n\n"
         f"Your application for {app.course.fullname} is approved and awaiting payment.\n\n"
         f"Course fee : {price} USD\n\n"
-        f"Log in to the ILMP portal and go to My Applications to complete payment via Paynow.\n"
+        f"Log in to the NTC portal and go to My Applications to complete payment via Paynow.\n"
         f"Enrolment is activated automatically once payment is confirmed."
     )
     try:

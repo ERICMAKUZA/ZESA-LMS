@@ -20,9 +20,9 @@ class ApplicationDocumentInline(admin.TabularInline):
 
 @admin.register(Application)
 class ApplicationAdmin(admin.ModelAdmin):
-    list_display = ("id", "applicant", "course", "status", "reviewer", "submitted_at")
+    list_display = ("ref", "applicant", "course", "status", "reviewer", "submitted_at")
     list_filter = ("status", "course")
-    search_fields = ("applicant__email", "applicant__first_name", "applicant__last_name")
+    search_fields = ("ref", "applicant__email", "applicant__first_name", "applicant__last_name")
     readonly_fields = (
         "id", "created_at", "updated_at",
         "submitted_at", "reviewed_at", "approved_at", "enrolled_at",
