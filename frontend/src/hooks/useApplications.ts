@@ -11,6 +11,7 @@ interface ApplicationFilters {
   submitted_after?: string
   submitted_before?: string
   reviewer?: string | number
+  escalated?: boolean
 }
 
 type CreateApplicationPayload = FormData | Record<string, unknown>

@@ -87,7 +87,9 @@ class ApplicationListSerializer(serializers.ModelSerializer):
         model = Application
         fields = (
             "id", "applicant_name", "applicant_email",
-            "course_name", "status", "source", "submitted_at", "created_at",
+            "course_name", "status", "source",
+            "escalated", "escalated_at",
+            "submitted_at", "created_at",
         )
 
     def get_applicant_name(self, obj):
@@ -122,6 +124,7 @@ class ApplicationDetailSerializer(serializers.ModelSerializer):
             "reviewer", "reviewer_name", "reviewer_notes",
             "rejection_reason", "more_info_request",
             "code_of_conduct_signed", "code_of_conduct_signed_at",
+            "escalated", "escalated_at",
             "submitted_at", "reviewed_at", "approved_at", "enrolled_at",
             "created_at", "updated_at",
             "documents", "recent_history",

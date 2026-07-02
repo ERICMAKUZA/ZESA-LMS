@@ -32,6 +32,7 @@ export default function AdminApplicationsPage() {
   const [email, setEmail] = useState('')
   const [submittedAfter, setSubmittedAfter] = useState('')
   const [submittedBefore, setSubmittedBefore] = useState('')
+  const [escalatedOnly, setEscalatedOnly] = useState(false)
   const [walkInOpen, setWalkInOpen] = useState(false)
 
   const { data, isLoading } = useAdminApplications({
@@ -39,6 +40,7 @@ export default function AdminApplicationsPage() {
     applicant__email: email || undefined,
     submitted_after: submittedAfter || undefined,
     submitted_before: submittedBefore || undefined,
+    escalated: escalatedOnly || undefined,
   })
 
   const applications = data?.results ?? []
@@ -84,6 +86,17 @@ export default function AdminApplicationsPage() {
             onChange={(e) => setSubmittedBefore(e.target.value)}
           />
         </div>
+        <div className="mt-3 pt-3 border-t border-gray-100">
+          <label className="flex items-center gap-2 text-sm text-gray-600 cursor-pointer w-fit">
+            <input
+              type="checkbox"
+              checked={escalatedOnly}
+              onChange={(e) => setEscalatedOnly(e.target.checked)}
+              className="w-4 h-4 accent-red-600"
+            />
+            Show escalated only
+          </label>
+        </div>
       </Card>
 
       <Card>
@@ -124,7 +137,16 @@ export default function AdminApplicationsPage() {
                       <p className="text-xs text-gray-500">{app.applicant_email}</p>
                     </td>
                     <td className="py-3 text-gray-700">{app.course_name}</td>
-                    <td className="py-3"><Badge status={app.status as ApplicationStatus} /></td>
+                    <td className="py-3">
+                      <div className="flex items-center gap-1.5 flex-wrap">
+                        <Badge status={app.status as ApplicationStatus} />
+                        {app.escalated && (
+                          <span className="inline-flex items-center gap-1 text-[10px] font-bold uppercase tracking-wider bg-red-100 text-red-700 border border-red-300 rounded px-1.5 py-0.5 animate-pulse">
+                            ⚑ Escalated
+                          </span>
+                        )}
+                      </div>
+                    </td>
                     <td className="py-3 text-gray-500 hidden lg:table-cell">
                       {app.submitted_at ? format(new Date(app.submitted_at), 'dd MMM yyyy') : '—'}
                     </td>

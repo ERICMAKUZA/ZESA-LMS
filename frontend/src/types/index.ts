@@ -167,6 +167,8 @@ export interface Application {
   enrollment: ApplicationEnrollment | null
   code_of_conduct_signed: boolean
   code_of_conduct_signed_at: string | null
+  escalated: boolean
+  escalated_at: string | null
 }
 
 export interface ApplicationListItem {
@@ -176,6 +178,8 @@ export interface ApplicationListItem {
   course_name: string
   status: ApplicationStatus
   source: string
+  escalated: boolean
+  escalated_at: string | null
   submitted_at: string | null
   created_at: string
 }

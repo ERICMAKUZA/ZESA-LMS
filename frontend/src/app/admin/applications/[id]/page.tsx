@@ -117,6 +117,25 @@ export default function AdminApplicationDetailPage({ params }: { params: { id: s
         <div className="lg:col-span-2 flex flex-col gap-6">
           {/* Header */}
           <Card>
+            {app.escalated && (
+              <div className="flex items-start gap-3 bg-red-50 border border-red-300 rounded-lg p-4 mb-5">
+                <span className="text-red-500 text-lg">⚑</span>
+                <div>
+                  <p className="font-semibold text-red-800 text-sm">This application is escalated</p>
+                  <p className="text-red-700 text-xs mt-0.5">
+                    It has been waiting without action since{' '}
+                    {app.escalated_at
+                      ? new Date(app.escalated_at).toLocaleDateString('en-GB', {
+                          day: 'numeric', month: 'long', year: 'numeric',
+                          hour: '2-digit', minute: '2-digit',
+                        })
+                      : 'an unknown date'}.
+                    {' '}Please take action immediately.
+                  </p>
+                </div>
+              </div>
+            )}
+
             <div className="flex items-start justify-between flex-wrap gap-3">
               <div>
                 <h1 className="text-xl font-bold text-gray-900">{app.course_name}</h1>
