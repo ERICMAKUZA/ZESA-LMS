@@ -1,6 +1,6 @@
 'use client'
 
-import { ArrowLeft, CheckCircle, Clock, ExternalLink, ShieldCheck } from 'lucide-react'
+import { ArrowLeft, CheckCircle, Clock, ExternalLink } from 'lucide-react'
 import Link from 'next/link'
 import { format } from 'date-fns'
 import { useState } from 'react'
@@ -34,7 +34,7 @@ export default function ApplicationDetailPage({ params }: { params: { id: string
       return res.data
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['application', params.id] })
+      queryClient.invalidateQueries({ queryKey: ['my-applications', params.id] })
       toast({ variant: 'success', title: 'Code of conduct signed', description: 'You may now proceed with payment.' })
     },
     onError: () => {
@@ -71,6 +71,10 @@ export default function ApplicationDetailPage({ params }: { params: { id: string
       toast({ variant: 'error', title: 'Demo confirm failed', description: 'Please try again.' })
     },
   })
+
+  const showCoCBanner =
+    ['APPROVED', 'PAYMENT_PENDING', 'PAYMENT_CONFIRMED'].includes(app?.status ?? '') &&
+    !app?.code_of_conduct_signed
 
   const handleSubmit = async () => {
     try {
@@ -154,51 +158,6 @@ export default function ApplicationDetailPage({ params }: { params: { id: string
               </div>
             )}
 
-            {/* Code of Conduct */}
-            {['APPROVED', 'PAYMENT_PENDING', 'PAYMENT_CONFIRMED'].includes(app.status) && (
-              app.code_of_conduct_signed ? (
-                <div className="mt-4 flex items-center gap-2 rounded-md bg-green-50 border border-green-200 px-4 py-3">
-                  <ShieldCheck className="h-4 w-4 text-green-600 shrink-0" />
-                  <p className="text-sm text-green-700 font-medium">
-                    Code of conduct signed
-                    {app.code_of_conduct_signed_at && (
-                      <span className="font-normal text-green-600">
-                        {' '}on {format(new Date(app.code_of_conduct_signed_at), 'dd MMM yyyy')}
-                      </span>
-                    )}
-                  </p>
-                </div>
-              ) : (
-                <div className="mt-4 rounded-md border border-amber-200 bg-amber-50 p-4">
-                  <p className="text-sm font-semibold text-amber-800 mb-1">
-                    Action required: Code of Conduct
-                  </p>
-                  <p className="text-sm text-amber-700 mb-3">
-                    Before proceeding, please read and acknowledge the ZNTC Code of Conduct.
-                  </p>
-                  <label className="flex items-start gap-2 cursor-pointer mb-3">
-                    <input
-                      type="checkbox"
-                      checked={cocChecked}
-                      onChange={(e) => setCocChecked(e.target.checked)}
-                      className="mt-0.5 h-4 w-4 rounded border-gray-300 text-primary"
-                    />
-                    <span className="text-sm text-amber-800">
-                      I have read and agree to the ZNTC Code of Conduct
-                    </span>
-                  </label>
-                  <Button
-                    onClick={() => cocMutation.mutate()}
-                    loading={cocMutation.isPending}
-                    disabled={!cocChecked}
-                    variant="secondary"
-                  >
-                    Sign &amp; Continue
-                  </Button>
-                </div>
-              )
-            )}
-
             {app.status === 'APPROVED' && (
               <div className="mt-4 rounded-md bg-green-50 border border-green-200 p-4">
                 <p className="text-sm font-semibold text-green-800">Your application has been approved!</p>
@@ -247,6 +206,65 @@ export default function ApplicationDetailPage({ params }: { params: { id: string
                 </a>
               </div>
             </Card>
+          )}
+
+          {/* CoC banner — shown when approved/pending payment and not yet signed */}
+          {showCoCBanner && (
+            <div className="rounded-lg border-2 border-amber-400 bg-amber-50 p-5 mb-6">
+              <div className="flex items-start gap-3">
+                <span className="text-amber-500 text-xl mt-0.5">⚠</span>
+                <div className="flex-1">
+                  <p className="font-semibold text-amber-800 mb-1">
+                    Action Required: Sign the Code of Conduct
+                  </p>
+                  <p className="text-sm text-amber-700 mb-4">
+                    Before your enrolment can be confirmed, you must read and
+                    acknowledge the ZNTC Code of Conduct. This is a mandatory step.
+                  </p>
+                  <a
+                    href="/code-of-conduct.pdf"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-sm text-amber-700 underline mb-4 block"
+                  >
+                    Read the ZNTC Code of Conduct (PDF) →
+                  </a>
+                  <label className="flex items-center gap-2 cursor-pointer mb-4">
+                    <input
+                      type="checkbox"
+                      checked={cocChecked}
+                      onChange={(e) => setCocChecked(e.target.checked)}
+                      className="w-4 h-4 accent-green-600"
+                    />
+                    <span className="text-sm text-gray-700">
+                      I have read and agree to the ZNTC Code of Conduct
+                    </span>
+                  </label>
+                  <Button
+                    variant="primary"
+                    disabled={!cocChecked || cocMutation.isPending}
+                    loading={cocMutation.isPending}
+                    onClick={() => cocMutation.mutate()}
+                  >
+                    Sign &amp; Continue
+                  </Button>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* CoC confirmation strip — shown once signed */}
+          {['APPROVED', 'PAYMENT_PENDING', 'PAYMENT_CONFIRMED'].includes(app.status) &&
+            app.code_of_conduct_signed && (
+            <div className="flex items-center gap-2 text-green-700 bg-green-50 border border-green-200 rounded-lg px-4 py-2 mb-6 text-sm">
+              <span>✓</span>
+              <span>
+                Code of conduct signed on{' '}
+                {new Date(app.code_of_conduct_signed_at!).toLocaleDateString('en-GB', {
+                  day: 'numeric', month: 'long', year: 'numeric',
+                })}
+              </span>
+            </div>
           )}
 
           {/* Status timeline */}
