@@ -112,6 +112,20 @@ class Application(models.Model):
 
     ref = models.CharField(max_length=20, unique=True, blank=True, db_index=True)
 
+    SOURCE_CHOICES = [
+        ('ONLINE', 'Online (Student Self-Service)'),
+        ('WALK_IN', 'Walk-in (Staff Captured)'),
+    ]
+
+    source = models.CharField(
+        max_length=10, choices=SOURCE_CHOICES, default='ONLINE'
+    )
+    staff_captured_by = models.ForeignKey(
+        'accounts.User', null=True, blank=True,
+        on_delete=models.SET_NULL, related_name='captured_applications',
+        help_text="Set when source=WALK_IN; the staff member who entered this application"
+    )
+
     national_id_doc = models.FileField(
         upload_to=application_upload_path, null=True, blank=True,
         help_text="National ID card or passport scan (PDF, JPG, PNG)"

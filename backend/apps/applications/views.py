@@ -46,6 +46,12 @@ class StudentApplicationViewSet(viewsets.ModelViewSet):
             return ApplicationDetailSerializer
         return ApplicationListSerializer
 
+    def perform_create(self, serializer):
+        if serializer.validated_data.get('source') == 'WALK_IN':
+            serializer.save(staff_captured_by=self.request.user)
+        else:
+            serializer.save()
+
     @action(detail=True, methods=["post"])
     def submit(self, request, pk=None):
         application = self.get_object()
@@ -84,6 +90,12 @@ class AdminApplicationViewSet(viewsets.ModelViewSet):
         if self.action in ("retrieve", "start_review", "review_action"):
             return ApplicationDetailSerializer
         return ApplicationListSerializer
+
+    def perform_create(self, serializer):
+        if serializer.validated_data.get('source') == 'WALK_IN':
+            serializer.save(staff_captured_by=self.request.user)
+        else:
+            serializer.save()
 
     @action(detail=True, methods=["post"], url_path="start_review")
     def start_review(self, request, pk=None):

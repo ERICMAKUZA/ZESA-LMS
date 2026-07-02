@@ -222,6 +222,7 @@ class Command(BaseCommand):
             dept="Human Resources",
         )
         make_user("finance@zesa.co.zw", "Prosper", "Ncube", User.Role.FINANCE, dept="Finance")
+        make_user("lecturer@zntc.ac.zw", "Rutendo", "Mwangi", User.Role.LECTURER, dept="Training")
 
         student_demo = make_user(
             "student.demo@zesa.co.zw", "Demo", "Student", User.Role.STUDENT,
