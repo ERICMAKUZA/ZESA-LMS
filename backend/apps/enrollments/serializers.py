@@ -45,6 +45,28 @@ class EnrollmentSerializer(serializers.ModelSerializer):
         return f"{base}/course/view.php?id={obj.moodle_course_id}"
 
 
+class StudentEnrollmentSerializer(serializers.ModelSerializer):
+    course_name = serializers.CharField(
+        source="application.course.fullname", read_only=True
+    )
+    moodle_course_url = serializers.SerializerMethodField()
+
+    class Meta:
+        model = Enrollment
+        fields = (
+            "id", "application", "course_name",
+            "moodle_user_id", "moodle_course_url",
+            "status", "enrolled_at",
+        )
+        read_only_fields = fields
+
+    def get_moodle_course_url(self, obj):
+        if not obj.moodle_course_id:
+            return None
+        base = getattr(settings, "MOODLE_BASE_URL", "").rstrip("/")
+        return f"{base}/course/view.php?id={obj.moodle_course_id}"
+
+
 class EnrollmentListSerializer(serializers.ModelSerializer):
     applicant_email = serializers.EmailField(
         source="application.applicant.email", read_only=True

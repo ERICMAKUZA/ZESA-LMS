@@ -39,6 +39,7 @@ class User(AbstractBaseUser, PermissionsMixin):
     last_name = models.CharField(max_length=150)
     employee_id = models.CharField(max_length=50, unique=True, null=True, blank=True)
     student_id = models.CharField(max_length=25, blank=True, unique=True, null=True)
+    zntc_email = models.EmailField(blank=True, null=True, unique=True)
     department = models.CharField(max_length=150, blank=True)
     phone = models.CharField(max_length=20, blank=True)
     role = models.CharField(max_length=20, choices=Role.choices, default=Role.STUDENT)

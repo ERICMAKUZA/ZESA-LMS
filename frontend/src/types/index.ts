@@ -13,9 +13,21 @@ export interface User {
   full_name: string
   role: 'STUDENT' | 'REVIEWER' | 'ADMIN' | 'FINANCE' | 'SUPERADMIN' | 'LECTURER' | 'CENTRE_ADMIN'
   employee_id: string
+  student_id: string | null
+  zntc_email: string | null
   department: string
   is_active: boolean
   date_joined: string
+}
+
+export interface StudentEnrollment {
+  id: string
+  application: string
+  course_name: string
+  moodle_user_id: number | null
+  moodle_course_url: string | null
+  status: string
+  enrolled_at: string | null
 }
 
 export interface CourseCategory {

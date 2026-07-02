@@ -1,7 +1,7 @@
 import logging
 
 from django.conf import settings
-from rest_framework import permissions, status, viewsets
+from rest_framework import generics, permissions, status, viewsets
 from rest_framework.decorators import action
 from rest_framework.response import Response
 from rest_framework.views import APIView
@@ -10,10 +10,23 @@ from apps.accounts.permissions import IsAdmin
 from apps.applications.models import Application
 
 from .models import Enrollment, EnrollmentStatus
-from .serializers import EnrollmentListSerializer, EnrollmentSerializer
+from .serializers import EnrollmentListSerializer, EnrollmentSerializer, StudentEnrollmentSerializer
 from .services import MoodleAPIError, MoodleEnrollmentService
 
 logger = logging.getLogger(__name__)
+
+
+class StudentEnrollmentListView(generics.ListAPIView):
+    serializer_class = StudentEnrollmentSerializer
+    permission_classes = [permissions.IsAuthenticated]
+    pagination_class = None
+
+    def get_queryset(self):
+        return (
+            Enrollment.objects.filter(application__applicant=self.request.user)
+            .select_related("application__course")
+            .order_by("-enrolled_at")
+        )
 
 
 class EnrollmentStatusView(APIView):

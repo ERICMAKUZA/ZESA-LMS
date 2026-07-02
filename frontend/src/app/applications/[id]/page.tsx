@@ -4,7 +4,7 @@ import { ArrowLeft, CheckCircle, Clock, ExternalLink } from 'lucide-react'
 import Link from 'next/link'
 import { format } from 'date-fns'
 import { useState } from 'react'
-import { useMutation, useQueryClient } from '@tanstack/react-query'
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useRouter } from 'next/navigation'
 import StudentLayout from '@/components/layout/StudentLayout'
 import Card from '@/components/ui/Card'
@@ -14,7 +14,7 @@ import Spinner from '@/components/ui/Spinner'
 import { useApplication, useSubmitForReview } from '@/hooks/useApplications'
 import { useToast } from '@/components/ui/Toast'
 import api from '@/lib/api'
-import type { ApplicationStatus } from '@/types'
+import type { ApplicationStatus, User } from '@/types'
 
 const timelineStatuses: ApplicationStatus[] = [
   'SUBMITTED', 'UNDER_REVIEW', 'APPROVED', 'PAYMENT_PENDING', 'PAYMENT_CONFIRMED', 'ENROLLED', 'CERTIFIED',
@@ -70,6 +70,11 @@ export default function ApplicationDetailPage({ params }: { params: { id: string
     onError: () => {
       toast({ variant: 'error', title: 'Demo confirm failed', description: 'Please try again.' })
     },
+  })
+
+  const { data: me } = useQuery<User>({
+    queryKey: ['me'],
+    queryFn: () => api.get<User>('/users/me/').then(r => r.data),
   })
 
   const showCoCBanner =
@@ -294,6 +299,37 @@ export default function ApplicationDetailPage({ params }: { params: { id: string
               })}
             </ol>
           </Card>
+
+          {/* Enrolment confirmation panel — shown after enrolment */}
+          {['ENROLLED', 'CERTIFIED'].includes(app.status) && me?.student_id && (
+            <div className="p-4 bg-green-50 border border-green-200 rounded-lg">
+              <p className="text-sm font-semibold text-green-800 mb-3">
+                ✓ Enrolment Confirmed
+              </p>
+              <div className="space-y-2 text-sm">
+                <div className="flex justify-between">
+                  <span className="text-gray-500">Student ID</span>
+                  <span className="font-mono font-bold text-gray-800">{me.student_id}</span>
+                </div>
+                {me.zntc_email && (
+                  <div className="flex justify-between">
+                    <span className="text-gray-500">ZNTC Email</span>
+                    <span className="text-gray-800">{me.zntc_email}</span>
+                  </div>
+                )}
+                <div className="pt-2">
+                  <a
+                    href={process.env.NEXT_PUBLIC_MOODLE_URL}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="block text-center bg-green-700 text-white text-sm font-medium px-4 py-2 rounded-lg hover:bg-green-800 transition-colors"
+                  >
+                    Access Learning Portal (Moodle) →
+                  </a>
+                </div>
+              </div>
+            </div>
+          )}
         </div>
 
         {/* Details sidebar */}

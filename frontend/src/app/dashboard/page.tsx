@@ -1,5 +1,6 @@
 'use client'
 
+import { useQuery } from '@tanstack/react-query'
 import StudentLayout from '@/components/layout/StudentLayout'
 import PageHeader from '@/components/ui/PageHeader'
 import Card from '@/components/ui/Card'
@@ -7,8 +8,9 @@ import Badge from '@/components/ui/Badge'
 import Spinner from '@/components/ui/Spinner'
 import { useAuth } from '@/hooks/useAuth'
 import { useMyApplications } from '@/hooks/useApplications'
+import api from '@/lib/api'
 import { format } from 'date-fns'
-import type { ApplicationStatus } from '@/types'
+import type { ApplicationStatus, User, StudentEnrollment } from '@/types'
 
 const statuses: ApplicationStatus[] = ['SUBMITTED', 'APPROVED', 'ENROLLED', 'CERTIFIED']
 const statLabel: Partial<Record<ApplicationStatus, string>> = {
@@ -23,8 +25,20 @@ export default function DashboardPage() {
   const { data, isLoading } = useMyApplications()
   const applications = data?.results ?? []
 
+  const { data: me } = useQuery<User>({
+    queryKey: ['me'],
+    queryFn: () => api.get<User>('/users/me/').then(r => r.data),
+  })
+
+  const { data: enrollments = [] } = useQuery<StudentEnrollment[]>({
+    queryKey: ['enrollments'],
+    queryFn: () => api.get<StudentEnrollment[]>('/enrollments/').then(r => r.data),
+  })
+
   const countByStatus = (status: ApplicationStatus) =>
     applications.filter((a) => a.status === status).length
+
+  const activeEnrollments = enrollments.filter(e => e.status === 'ENROLLED')
 
   return (
     <StudentLayout>
@@ -32,6 +46,34 @@ export default function DashboardPage() {
         title={`Welcome back, ${user?.full_name?.split(' ')[0] ?? 'there'}`}
         subtitle="Here's an overview of your training activity."
       />
+
+      {/* Student ID card — only shown once enrolled */}
+      {me?.student_id && (
+        <div className="bg-gradient-to-r from-green-700 to-green-900 rounded-xl p-5 mb-6 text-white flex items-center justify-between">
+          <div>
+            <p className="text-green-200 text-xs font-medium uppercase tracking-wider mb-1">
+              Student ID
+            </p>
+            <p className="text-2xl font-bold tracking-widest font-mono">
+              {me.student_id}
+            </p>
+            {me.zntc_email && (
+              <p className="text-green-200 text-sm mt-1">{me.zntc_email}</p>
+            )}
+          </div>
+          <div className="text-right">
+            <p className="text-green-200 text-xs mb-2">Learning Portal</p>
+            <a
+              href={process.env.NEXT_PUBLIC_MOODLE_URL || '#'}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-block bg-white text-green-800 font-semibold text-sm px-4 py-2 rounded-lg hover:bg-green-50 transition-colors"
+            >
+              Go to Moodle →
+            </a>
+          </div>
+        </div>
+      )}
 
       {/* Stats row */}
       <div className="grid grid-cols-2 gap-4 sm:grid-cols-4 mb-8">
@@ -42,6 +84,38 @@ export default function DashboardPage() {
           </Card>
         ))}
       </div>
+
+      {/* My Courses — only shown when there are active enrollments */}
+      {activeEnrollments.length > 0 && (
+        <div className="mt-6 mb-6">
+          <h2 className="text-base font-semibold text-gray-700 mb-3">My Courses</h2>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            {activeEnrollments.map(enrollment => (
+              <a
+                key={enrollment.id}
+                href={enrollment.moodle_course_url ?? '#'}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex items-center justify-between p-4 bg-white rounded-lg border border-gray-200 hover:border-green-500 hover:shadow-sm transition-all group"
+              >
+                <div>
+                  <p className="font-medium text-gray-800 text-sm">
+                    {enrollment.course_name || 'Enrolled Course'}
+                  </p>
+                  <p className="text-xs text-gray-400 mt-0.5">
+                    Enrolled {enrollment.enrolled_at
+                      ? new Date(enrollment.enrolled_at).toLocaleDateString('en-GB')
+                      : '—'}
+                  </p>
+                </div>
+                <span className="text-green-600 group-hover:translate-x-1 transition-transform">
+                  →
+                </span>
+              </a>
+            ))}
+          </div>
+        </div>
+      )}
 
       {/* Recent applications */}
       <Card header={<h2 className="text-base font-semibold text-gray-900">Recent Applications</h2>}>
