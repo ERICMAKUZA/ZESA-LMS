@@ -15,6 +15,13 @@ const schema = z.object({
   first_name: z.string().min(1, 'Required'),
   last_name: z.string().min(1, 'Required'),
   email: z.string().email('Enter a valid email'),
+  phone: z
+    .string()
+    .min(1, 'Phone number is required')
+    .regex(
+      /^(\+263|0)(7[1-9]|8[6-9])\d{7}$/,
+      'Enter a valid Zimbabwe mobile number (e.g. +263 77 123 4567)'
+    ),
   employee_id: z.string().optional(),
   department: z.string().optional(),
   password: z.string().min(8, 'At least 8 characters'),
@@ -37,7 +44,11 @@ export default function RegisterPage() {
 
   const onSubmit = async (values: FormValues) => {
     try {
-      const { confirm_password: _, ...payload } = values
+      const { confirm_password: _, ...rest } = values
+      const phone = rest.phone.startsWith('+263')
+        ? rest.phone.replace(/\s/g, '')
+        : '+263' + rest.phone.replace(/^0/, '').replace(/\s/g, '')
+      const payload = { ...rest, phone }
       await registerUser(payload)
       toast({ variant: 'success', title: 'Account created', description: 'You can now sign in.' })
       router.push('/login')
@@ -58,6 +69,28 @@ export default function RegisterPage() {
                 <Input label="Last name"  error={errors.last_name?.message}  {...register('last_name')} />
               </div>
               <Input label="Email"       type="email" error={errors.email?.message}       {...register('email')} />
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Phone Number <span className="text-red-500">*</span>
+                </label>
+                <div className="flex">
+                  <span className="inline-flex items-center px-3 rounded-l-md border border-r-0 border-gray-300 bg-gray-50 text-gray-500 text-sm select-none">
+                    🇿🇼 +263
+                  </span>
+                  <input
+                    {...register('phone')}
+                    type="tel"
+                    placeholder="77 123 4567"
+                    className="flex-1 rounded-r-md border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-green-500"
+                  />
+                </div>
+                {errors.phone && (
+                  <p className="text-red-500 text-xs mt-1">{errors.phone.message}</p>
+                )}
+                <p className="text-gray-400 text-xs mt-1">
+                  Used for WhatsApp notifications about your application.
+                </p>
+              </div>
               <Input label="Employee ID" error={errors.employee_id?.message} helper="Optional — will be auto-filled from HR records." {...register('employee_id')} />
               <Input label="Department"  error={errors.department?.message}  {...register('department')} />
               <Input label="Password"    type="password" error={errors.password?.message} {...register('password')} />
