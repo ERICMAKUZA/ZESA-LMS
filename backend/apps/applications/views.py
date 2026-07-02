@@ -250,6 +250,65 @@ def de_enrol_student(request, pk):
     return Response({'status': 'de_enrolment_queued'})
 
 
+@api_view(['POST'])
+@permission_classes([IsAdminOrReviewer])
+def create_walkin_application(request):
+    from django.contrib.auth import get_user_model
+    from apps.courses.models import Course
+    from centres.models import Centre
+
+    User = get_user_model()
+    email = request.data.get('student_email', '').lower().strip()
+    if not email:
+        return Response({'detail': 'student_email is required.'}, status=http_status.HTTP_400_BAD_REQUEST)
+
+    course_id = request.data.get('course')
+    if not course_id:
+        return Response({'detail': 'course is required.'}, status=http_status.HTTP_400_BAD_REQUEST)
+    try:
+        course = Course.objects.get(pk=course_id)
+    except Course.DoesNotExist:
+        return Response({'detail': 'Course not found.'}, status=http_status.HTTP_400_BAD_REQUEST)
+
+    student, created = User.objects.get_or_create(
+        email=email,
+        defaults={
+            'first_name': request.data.get('student_first_name', ''),
+            'last_name': request.data.get('student_last_name', ''),
+            'phone': request.data.get('student_phone', ''),
+            'role': 'STUDENT',
+            'is_active': True,
+        }
+    )
+    if created:
+        student.set_unusable_password()
+        student.save()
+
+    preferred_centre = None
+    centre_id = request.data.get('preferred_centre')
+    if centre_id:
+        try:
+            preferred_centre = Centre.objects.get(pk=centre_id)
+        except Centre.DoesNotExist:
+            pass
+
+    app = Application.objects.create(
+        applicant=student,
+        course=course,
+        hexco_level=request.data.get('hexco_level', ''),
+        department=request.data.get('department', ''),
+        student_category=request.data.get('student_category', ''),
+        preferred_centre=preferred_centre,
+        motivation=request.data.get('motivation', 'Walk-in registration'),
+        source='WALK_IN',
+        staff_captured_by=request.user,
+        status=ApplicationStatus.SUBMITTED,
+    )
+    app._record_transition(ApplicationStatus.SUBMITTED, request.user, 'Walk-in registration')
+
+    return Response({'id': str(app.id), 'ref': app.ref, 'status': app.status}, status=http_status.HTTP_201_CREATED)
+
+
 @api_view(['GET'])
 @permission_classes([AllowAny])
 def track_application(request, ref):

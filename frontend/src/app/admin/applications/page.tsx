@@ -4,13 +4,13 @@ import { useState } from 'react'
 import Link from 'next/link'
 import { format } from 'date-fns'
 import AdminLayout from '@/components/layout/AdminLayout'
-import PageHeader from '@/components/ui/PageHeader'
 import Card from '@/components/ui/Card'
 import Badge from '@/components/ui/Badge'
 import Button from '@/components/ui/Button'
 import Input from '@/components/ui/Input'
 import Select from '@/components/ui/Select'
 import Spinner from '@/components/ui/Spinner'
+import WalkInModal from '@/components/WalkInModal'
 import { useAdminApplications } from '@/hooks/useApplications'
 import type { ApplicationStatus } from '@/types'
 
@@ -32,6 +32,7 @@ export default function AdminApplicationsPage() {
   const [email, setEmail] = useState('')
   const [submittedAfter, setSubmittedAfter] = useState('')
   const [submittedBefore, setSubmittedBefore] = useState('')
+  const [walkInOpen, setWalkInOpen] = useState(false)
 
   const { data, isLoading } = useAdminApplications({
     status: status || undefined,
@@ -44,7 +45,15 @@ export default function AdminApplicationsPage() {
 
   return (
     <AdminLayout>
-      <PageHeader title="Applications" subtitle={`${data?.count ?? 0} total`} />
+      <div className="flex items-center justify-between mb-6">
+        <div>
+          <h1 className="text-2xl font-bold text-gray-900">Applications</h1>
+          <p className="mt-1 text-sm text-gray-500">{data?.count ?? 0} total</p>
+        </div>
+        <Button variant="primary" onClick={() => setWalkInOpen(true)}>
+          + Register Walk-in
+        </Button>
+      </div>
 
       {/* Filters */}
       <Card className="mb-6">
@@ -104,7 +113,14 @@ export default function AdminApplicationsPage() {
                 {applications.map((app) => (
                   <tr key={app.id}>
                     <td className="py-3">
-                      <p className="font-medium text-gray-900">{app.applicant_name}</p>
+                      <p className="font-medium text-gray-900 flex items-center gap-1.5">
+                        {app.applicant_name}
+                        {app.source === 'WALK_IN' && (
+                          <span className="inline-block text-[10px] font-bold uppercase tracking-wider bg-orange-100 text-orange-700 border border-orange-300 rounded px-1.5 py-0.5">
+                            Walk-in
+                          </span>
+                        )}
+                      </p>
                       <p className="text-xs text-gray-500">{app.applicant_email}</p>
                     </td>
                     <td className="py-3 text-gray-700">{app.course_name}</td>
@@ -124,6 +140,8 @@ export default function AdminApplicationsPage() {
           </div>
         )}
       </Card>
+
+      <WalkInModal open={walkInOpen} onClose={() => setWalkInOpen(false)} />
     </AdminLayout>
   )
 }

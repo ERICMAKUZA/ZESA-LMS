@@ -175,6 +175,7 @@ export interface ApplicationListItem {
   applicant_email: string
   course_name: string
   status: ApplicationStatus
+  source: string
   submitted_at: string | null
   created_at: string
 }
