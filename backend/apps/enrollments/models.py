@@ -31,7 +31,15 @@ class Enrollment(models.Model):
     unenrolled_at = models.DateTimeField(null=True, blank=True)
     completion_status = models.JSONField(null=True, blank=True)
     last_access = models.DateTimeField(null=True, blank=True)
+    moodle_temp_password = models.CharField(max_length=50, blank=True, default='')
     error_message = models.CharField(max_length=500, blank=True, null=True)
+    de_enrolment_reason = models.CharField(max_length=500, blank=True, default='')
+    de_enrolment_type = models.CharField(
+        max_length=10,
+        choices=[('MANDATORY', 'Mandatory'), ('VOLUNTARY', 'Voluntary')],
+        blank=True,
+        default='',
+    )
     created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:

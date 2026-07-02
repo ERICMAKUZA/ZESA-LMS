@@ -23,6 +23,7 @@ class ApplicationStatus(models.TextChoices):
     PAYMENT_PENDING = "PAYMENT_PENDING", "Payment Pending"
     PAYMENT_CONFIRMED = "PAYMENT_CONFIRMED", "Payment Confirmed"
     ENROLLED = "ENROLLED", "Enrolled"
+    DE_ENROLLED = "DE_ENROLLED", "De-enrolled"
     CERTIFIED = "CERTIFIED", "Certified"
 
 
@@ -138,6 +139,12 @@ class Application(models.Model):
         upload_to=application_upload_path, null=True, blank=True,
         help_text="Passport-size photo (JPG, PNG)"
     )
+
+    escalated = models.BooleanField(default=False)
+    escalated_at = models.DateTimeField(null=True, blank=True)
+
+    code_of_conduct_signed = models.BooleanField(default=False)
+    code_of_conduct_signed_at = models.DateTimeField(null=True, blank=True)
 
     class Meta:
         verbose_name = "Application"
@@ -267,12 +274,28 @@ class Application(models.Model):
         self.save(update_fields=["status", "updated_at"])
 
     def enroll(self):
+        if not self.code_of_conduct_signed:
+            raise ValueError("Student must sign the code of conduct before enrolment.")
         if self.status != ApplicationStatus.PAYMENT_CONFIRMED:
             raise ValueError(f"Cannot enroll from status '{self.status}'.")
         self._record_transition(ApplicationStatus.ENROLLED)
         self.status = ApplicationStatus.ENROLLED
         self.enrolled_at = timezone.now()
         self.save(update_fields=["status", "enrolled_at", "updated_at"])
+        if self.applicant and not self.applicant.student_id:
+            from django.contrib.auth import get_user_model
+            User = get_user_model()
+            self.applicant.student_id = User.generate_student_id(
+                department=self.department or ''
+            )
+            self.applicant.save(update_fields=['student_id'])
+        from apps.enrollments.models import Enrollment
+        from apps.enrollments.tasks import sync_to_moodle
+        enrollment, _ = Enrollment.objects.get_or_create(
+            application=self,
+            defaults={'moodle_course_id': self.course.moodle_course_id or 0},
+        )
+        sync_to_moodle.delay(str(enrollment.pk))
 
     def certify(self):
         if self.status != ApplicationStatus.ENROLLED:

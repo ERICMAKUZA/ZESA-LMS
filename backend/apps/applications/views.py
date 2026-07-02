@@ -4,11 +4,14 @@ from django.db.models import Count
 from django.db.models.functions import TruncDate
 from django.utils import timezone
 from rest_framework import permissions, status, viewsets
-from rest_framework.decorators import action
+from rest_framework import status as http_status
+from rest_framework.decorators import action, api_view, permission_classes
 from rest_framework.parsers import FormParser, JSONParser, MultiPartParser
+from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
 
 from apps.accounts.permissions import IsAdminOrReviewer
+from apps.enrollments.models import Enrollment
 
 from .filters import ApplicationFilter
 from .models import Application, ApplicationStatus
@@ -118,6 +121,22 @@ class AdminApplicationViewSet(viewsets.ModelViewSet):
 
         try:
             if act == ReviewActionSerializer.ACTION_APPROVE:
+                centre_id = request.data.get('assigned_centre')
+                if centre_id:
+                    from centres.models import Centre
+                    try:
+                        application.assigned_centre = Centre.objects.get(pk=centre_id)
+                    except Centre.DoesNotExist:
+                        return Response(
+                            {'detail': 'Invalid centre ID.'},
+                            status=status.HTTP_400_BAD_REQUEST,
+                        )
+                if not application.assigned_centre:
+                    return Response(
+                        {'detail': 'assigned_centre is required to approve an application.'},
+                        status=status.HTTP_400_BAD_REQUEST,
+                    )
+                application.save(update_fields=['assigned_centre'])
                 application.approve(notes=notes)
                 notify_application_reviewed.delay(str(application.id))
                 notify_payment_required.delay(str(application.id))
@@ -179,3 +198,77 @@ class AdminApplicationViewSet(viewsets.ModelViewSet):
             "by_course": by_course,
             "weekly_trend": weekly_trend,
         })
+
+
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])
+def sign_code_of_conduct(request, pk):
+    try:
+        app = Application.objects.get(pk=pk, applicant=request.user)
+    except Application.DoesNotExist:
+        return Response({'detail': 'Not found.'}, status=http_status.HTTP_404_NOT_FOUND)
+    if app.status not in [
+        ApplicationStatus.APPROVED,
+        ApplicationStatus.PAYMENT_PENDING,
+        ApplicationStatus.PAYMENT_CONFIRMED,
+    ]:
+        return Response(
+            {'detail': 'Code of conduct can only be signed after approval.'},
+            status=http_status.HTTP_400_BAD_REQUEST,
+        )
+    app.code_of_conduct_signed = True
+    app.code_of_conduct_signed_at = timezone.now()
+    app.save(update_fields=['code_of_conduct_signed', 'code_of_conduct_signed_at'])
+    return Response({'signed': True, 'signed_at': app.code_of_conduct_signed_at})
+
+
+@api_view(['POST'])
+@permission_classes([IsAdminOrReviewer])
+def de_enrol_student(request, pk):
+    from apps.enrollments.tasks import unenrol_from_moodle
+    try:
+        app = Application.objects.get(pk=pk)
+    except Application.DoesNotExist:
+        return Response({'detail': 'Not found.'}, status=http_status.HTTP_404_NOT_FOUND)
+    de_type = request.data.get('type', 'MANDATORY')
+    reason = request.data.get('reason', '')
+    if not reason:
+        return Response({'detail': 'reason is required.'}, status=http_status.HTTP_400_BAD_REQUEST)
+    if de_type not in ('MANDATORY', 'VOLUNTARY'):
+        return Response(
+            {'detail': 'type must be MANDATORY or VOLUNTARY.'},
+            status=http_status.HTTP_400_BAD_REQUEST,
+        )
+    try:
+        enrollment = app.enrollment
+    except Enrollment.DoesNotExist:
+        return Response(
+            {'detail': 'No enrollment found for this application.'},
+            status=http_status.HTTP_400_BAD_REQUEST,
+        )
+    unenrol_from_moodle.delay(str(enrollment.pk), de_type, reason)
+    return Response({'status': 'de_enrolment_queued'})
+
+
+@api_view(['GET'])
+@permission_classes([AllowAny])
+def track_application(request, ref):
+    try:
+        app = Application.objects.select_related(
+            'assigned_centre', 'course'
+        ).get(ref=ref)
+    except Application.DoesNotExist:
+        return Response({'detail': 'Not found.'}, status=http_status.HTTP_404_NOT_FOUND)
+
+    history = app.history.order_by('changed_at').values(
+        'from_status', 'to_status', 'changed_at', 'notes'
+    )
+    return Response({
+        'ref': app.ref,
+        'status': app.status,
+        'status_display': app.get_status_display(),
+        'course_name': app.course.fullname if app.course else None,
+        'assigned_centre': app.assigned_centre.name if app.assigned_centre else None,
+        'last_updated': app.updated_at,
+        'history': list(history),
+    })

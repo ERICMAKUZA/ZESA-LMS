@@ -1,5 +1,6 @@
 from rest_framework import serializers
 
+from centres.models import Centre
 from .models import Application, ApplicationDocument, ApplicationStatus, ApplicationStatusHistory
 
 
@@ -84,6 +85,12 @@ class ApplicationDetailSerializer(serializers.ModelSerializer):
     applicant_email = serializers.EmailField(source="applicant.email", read_only=True)
     course_name = serializers.CharField(source="course.fullname", read_only=True)
     reviewer_name = serializers.SerializerMethodField()
+    assigned_centre = serializers.PrimaryKeyRelatedField(
+        queryset=Centre.objects.all(), allow_null=True, required=False,
+    )
+    assigned_centre_name = serializers.CharField(
+        source="assigned_centre.name", read_only=True, default=None,
+    )
     documents = ApplicationDocumentSerializer(many=True, read_only=True)
     recent_history = serializers.SerializerMethodField()
     payment = serializers.SerializerMethodField()
@@ -97,8 +104,10 @@ class ApplicationDetailSerializer(serializers.ModelSerializer):
             "motivation", "line_manager_email", "department", "employee_id",
             "hexco_level",
             "national_id_doc", "academic_certs_doc", "student_photo",
+            "assigned_centre", "assigned_centre_name",
             "reviewer", "reviewer_name", "reviewer_notes",
             "rejection_reason", "more_info_request",
+            "code_of_conduct_signed", "code_of_conduct_signed_at",
             "submitted_at", "reviewed_at", "approved_at", "enrolled_at",
             "created_at", "updated_at",
             "documents", "recent_history",

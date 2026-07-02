@@ -23,6 +23,9 @@ export default function LandingPage() {
             <Link href="/courses" className="hidden sm:block text-sm font-medium text-gray-600 hover:text-primary transition-colors">
               Courses
             </Link>
+            <Link href="/track" className="hidden sm:block text-sm font-medium text-gray-600 hover:text-primary transition-colors">
+              Track Application
+            </Link>
             <Link href="/login" className="text-sm font-medium text-gray-600 hover:text-primary transition-colors">
               Sign In
             </Link>

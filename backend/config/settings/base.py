@@ -145,6 +145,16 @@ CELERY_ACCEPT_CONTENT = ["json"]
 CELERY_TIMEZONE = TIME_ZONE
 CELERY_TASK_TRACK_STARTED = True
 
+ESCALATION_DAYS_THRESHOLD = config("ESCALATION_DAYS_THRESHOLD", cast=int, default=3)
+
+from celery.schedules import crontab  # noqa: E402
+CELERY_BEAT_SCHEDULE = {
+    'escalate-stale-applications': {
+        'task': 'applications.escalate_stale_applications',
+        'schedule': crontab(hour=8, minute=0),
+    },
+}
+
 CACHES = {
     "default": {
         "BACKEND": "django.core.cache.backends.redis.RedisCache",
@@ -176,6 +186,12 @@ SPECTACULAR_SETTINGS = {
 
 MOODLE_BASE_URL = config("MOODLE_BASE_URL", default="")
 MOODLE_WSTOKEN = config("MOODLE_WSTOKEN", default="")
+PORTAL_BASE_URL = config("PORTAL_BASE_URL", default="http://localhost:3000")
+MOODLE_CENTRE_COHORT_IDS = {
+    'Harare NTC': 1,
+    'Bulawayo Centre': 2,
+    'Kariba Centre': 3,
+}
 
 PAYNOW_INTEGRATION_ID = config("PAYNOW_INTEGRATION_ID", default="")
 PAYNOW_INTEGRATION_KEY = config("PAYNOW_INTEGRATION_KEY", default="")

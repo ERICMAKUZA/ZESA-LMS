@@ -1,8 +1,9 @@
 'use client'
 
-import { ArrowLeft, CheckCircle, Clock, ExternalLink } from 'lucide-react'
+import { ArrowLeft, CheckCircle, Clock, ExternalLink, ShieldCheck } from 'lucide-react'
 import Link from 'next/link'
 import { format } from 'date-fns'
+import { useState } from 'react'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { useRouter } from 'next/navigation'
 import StudentLayout from '@/components/layout/StudentLayout'
@@ -25,6 +26,21 @@ export default function ApplicationDetailPage({ params }: { params: { id: string
   const { toast } = useToast()
   const queryClient = useQueryClient()
   const router = useRouter()
+  const [cocChecked, setCocChecked] = useState(false)
+
+  const cocMutation = useMutation({
+    mutationFn: async () => {
+      const res = await api.post(`/my-applications/${params.id}/sign-code-of-conduct/`)
+      return res.data
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['application', params.id] })
+      toast({ variant: 'success', title: 'Code of conduct signed', description: 'You may now proceed with payment.' })
+    },
+    onError: () => {
+      toast({ variant: 'error', title: 'Failed to sign', description: 'Please try again.' })
+    },
+  })
 
   const payNowMutation = useMutation({
     mutationFn: async () => {
@@ -85,10 +101,18 @@ export default function ApplicationDetailPage({ params }: { params: { id: string
 
   return (
     <StudentLayout>
-      <div className="mb-4">
+      <div className="mb-4 flex items-center justify-between">
         <Link href="/applications" className="inline-flex items-center gap-1 text-sm text-gray-500 hover:text-primary">
           <ArrowLeft className="h-4 w-4" /> Back to applications
         </Link>
+        {app.ref && (
+          <Link
+            href={`/track/${app.ref}`}
+            className="text-xs text-gray-400 hover:text-primary transition-colors"
+          >
+            Track without logging in: /track/{app.ref}
+          </Link>
+        )}
       </div>
 
       <div className="grid gap-6 lg:grid-cols-3">
@@ -128,6 +152,51 @@ export default function ApplicationDetailPage({ params }: { params: { id: string
                   {app.status === 'MORE_INFO_REQUESTED' ? 'Resubmit Application' : 'Submit Application'}
                 </Button>
               </div>
+            )}
+
+            {/* Code of Conduct */}
+            {['APPROVED', 'PAYMENT_PENDING', 'PAYMENT_CONFIRMED'].includes(app.status) && (
+              app.code_of_conduct_signed ? (
+                <div className="mt-4 flex items-center gap-2 rounded-md bg-green-50 border border-green-200 px-4 py-3">
+                  <ShieldCheck className="h-4 w-4 text-green-600 shrink-0" />
+                  <p className="text-sm text-green-700 font-medium">
+                    Code of conduct signed
+                    {app.code_of_conduct_signed_at && (
+                      <span className="font-normal text-green-600">
+                        {' '}on {format(new Date(app.code_of_conduct_signed_at), 'dd MMM yyyy')}
+                      </span>
+                    )}
+                  </p>
+                </div>
+              ) : (
+                <div className="mt-4 rounded-md border border-amber-200 bg-amber-50 p-4">
+                  <p className="text-sm font-semibold text-amber-800 mb-1">
+                    Action required: Code of Conduct
+                  </p>
+                  <p className="text-sm text-amber-700 mb-3">
+                    Before proceeding, please read and acknowledge the ZNTC Code of Conduct.
+                  </p>
+                  <label className="flex items-start gap-2 cursor-pointer mb-3">
+                    <input
+                      type="checkbox"
+                      checked={cocChecked}
+                      onChange={(e) => setCocChecked(e.target.checked)}
+                      className="mt-0.5 h-4 w-4 rounded border-gray-300 text-primary"
+                    />
+                    <span className="text-sm text-amber-800">
+                      I have read and agree to the ZNTC Code of Conduct
+                    </span>
+                  </label>
+                  <Button
+                    onClick={() => cocMutation.mutate()}
+                    loading={cocMutation.isPending}
+                    disabled={!cocChecked}
+                    variant="secondary"
+                  >
+                    Sign &amp; Continue
+                  </Button>
+                </div>
+              )
             )}
 
             {app.status === 'APPROVED' && (

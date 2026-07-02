@@ -4,6 +4,7 @@ from celery import shared_task
 from django.conf import settings
 from django.contrib.auth import get_user_model
 from django.core.mail import send_mail
+from django.utils import timezone
 
 logger = logging.getLogger(__name__)
 
@@ -123,6 +124,61 @@ def notify_payment_required(self, application_id):
     except Exception as exc:
         logger.exception("notify_payment_required: send failed: %s", exc)
         raise self.retry(exc=exc, countdown=60)
+
+
+@shared_task(name='applications.escalate_stale_applications')
+def escalate_stale_applications():
+    from datetime import timedelta
+    from .models import Application
+    threshold_days = getattr(settings, 'ESCALATION_DAYS_THRESHOLD', 3)
+    cutoff = timezone.now() - timedelta(days=threshold_days)
+    stale = Application.objects.filter(
+        status__in=['SUBMITTED', 'UNDER_REVIEW'],
+        escalated=False,
+        updated_at__lt=cutoff,
+    )
+    escalated_count = 0
+    for app in stale:
+        app.escalated = True
+        app.escalated_at = timezone.now()
+        app.save(update_fields=['escalated', 'escalated_at'])
+        notify_escalation.delay(str(app.pk))
+        escalated_count += 1
+    return f"Escalated {escalated_count} applications"
+
+
+@shared_task(name='applications.notify_escalation')
+def notify_escalation(application_pk):
+    from .models import Application
+    try:
+        app = Application.objects.select_related('course', 'reviewer').get(pk=application_pk)
+    except Application.DoesNotExist:
+        return
+    User = get_user_model()
+    if app.reviewer:
+        recipients = [app.reviewer.email]
+    else:
+        recipients = list(
+            User.objects.filter(
+                role__in=['REVIEWER', 'ADMIN', 'SUPERADMIN'],
+                is_active=True,
+            ).values_list('email', flat=True)
+        )
+    if not recipients:
+        return
+    threshold_days = getattr(settings, 'ESCALATION_DAYS_THRESHOLD', 3)
+    send_mail(
+        subject=f"[ESCALATED] Application {app.ref} needs attention",
+        message=(
+            f"Application {app.ref} for "
+            f"{app.course.fullname if app.course else 'N/A'} "
+            f"has been waiting for review for more than {threshold_days} days.\n\n"
+            f"Please review it at your earliest convenience."
+        ),
+        from_email=settings.DEFAULT_FROM_EMAIL,
+        recipient_list=recipients,
+        fail_silently=True,
+    )
 
 
 @shared_task(bind=True, max_retries=3)

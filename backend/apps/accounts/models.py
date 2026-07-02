@@ -38,6 +38,7 @@ class User(AbstractBaseUser, PermissionsMixin):
     first_name = models.CharField(max_length=150)
     last_name = models.CharField(max_length=150)
     employee_id = models.CharField(max_length=50, unique=True, null=True, blank=True)
+    student_id = models.CharField(max_length=25, blank=True, unique=True, null=True)
     department = models.CharField(max_length=150, blank=True)
     phone = models.CharField(max_length=20, blank=True)
     role = models.CharField(max_length=20, choices=Role.choices, default=Role.STUDENT)
@@ -77,3 +78,25 @@ class User(AbstractBaseUser, PermissionsMixin):
     @property
     def is_admin(self):
         return self.role in (self.Role.ADMIN, self.Role.SUPERADMIN)
+
+    @classmethod
+    def generate_student_id(cls, department, year=None):
+        import datetime
+        year = year or datetime.date.today().year
+        dept_map = {
+            'ELECTRICAL': 'EL',
+            'TELECOMS': 'TC',
+            'MECHANICAL': 'ME',
+            '': 'GN',
+        }
+        dept_code = dept_map.get(department, 'GN')
+        prefix = f"ZNTC-{year}-{dept_code}-"
+        last = (
+            cls.objects
+            .filter(student_id__startswith=prefix)
+            .order_by('student_id')
+            .values_list('student_id', flat=True)
+            .last()
+        )
+        last_seq = int(last.split('-')[-1]) if last else 0
+        return f"{prefix}{str(last_seq + 1).zfill(4)}"

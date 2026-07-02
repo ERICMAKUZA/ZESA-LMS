@@ -4,7 +4,7 @@ export interface User {
   first_name: string
   last_name: string
   full_name: string
-  role: 'STUDENT' | 'REVIEWER' | 'ADMIN' | 'FINANCE' | 'SUPERADMIN'
+  role: 'STUDENT' | 'REVIEWER' | 'ADMIN' | 'FINANCE' | 'SUPERADMIN' | 'LECTURER' | 'CENTRE_ADMIN'
   employee_id: string
   department: string
   is_active: boolean
@@ -107,6 +107,7 @@ export interface ApplicationEnrollment {
 
 export interface Application {
   id: string
+  ref: string
   applicant: number
   applicant_name: string
   applicant_email: string
@@ -132,6 +133,8 @@ export interface Application {
   recent_history: ApplicationStatusHistory[]
   payment: ApplicationPayment | null
   enrollment: ApplicationEnrollment | null
+  code_of_conduct_signed: boolean
+  code_of_conduct_signed_at: string | null
 }
 
 export interface ApplicationListItem {
