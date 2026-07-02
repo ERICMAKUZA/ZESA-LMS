@@ -19,6 +19,7 @@ interface ReviewActionData {
   action: 'approve' | 'reject' | 'request_more_info'
   notes?: string
   rejection_reason?: string
+  assigned_centre?: string
 }
 
 export function useMyApplications() {

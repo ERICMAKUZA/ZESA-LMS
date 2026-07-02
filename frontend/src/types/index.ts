@@ -129,6 +129,8 @@ export interface Application {
   hexco_level: 'NC' | 'ND' | ''
   student_category: 'DIRECT' | 'APPRENTICE' | 'INTERNAL' | ''
   preferred_centre: string | null
+  assigned_centre: string | null
+  assigned_centre_name: string | null
   is_resident: boolean
   hostel_name: string
   room_number: string

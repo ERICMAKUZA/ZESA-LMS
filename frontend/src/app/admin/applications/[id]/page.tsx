@@ -1,6 +1,7 @@
 'use client'
 
 import { useState } from 'react'
+import { useQuery } from '@tanstack/react-query'
 import { ArrowLeft, CheckCircle, Clock } from 'lucide-react'
 import Link from 'next/link'
 import { format } from 'date-fns'
@@ -12,7 +13,8 @@ import Modal from '@/components/ui/Modal'
 import Spinner from '@/components/ui/Spinner'
 import { useToast } from '@/components/ui/Toast'
 import { useAdminApplication, useStartReview, useReviewAction } from '@/hooks/useApplications'
-import type { ApplicationStatus } from '@/types'
+import api from '@/lib/api'
+import type { ApplicationStatus, Centre } from '@/types'
 
 type ReviewAction = 'approve' | 'reject' | 'request_more_info'
 
@@ -35,6 +37,21 @@ export default function AdminApplicationDetailPage({ params }: { params: { id: s
   const [modalAction, setModalAction] = useState<ReviewAction | null>(null)
   const [notes, setNotes] = useState('')
   const [rejectionReason, setRejectionReason] = useState('')
+  const [selectedCentre, setSelectedCentre] = useState('')
+  const [approveSubmitted, setApproveSubmitted] = useState(false)
+
+  const { data: centres = [] } = useQuery<Centre[]>({
+    queryKey: ['centres'],
+    queryFn: () => api.get<Centre[]>('/centres/').then(r => r.data),
+  })
+
+  const closeModal = () => {
+    setModalAction(null)
+    setNotes('')
+    setRejectionReason('')
+    setSelectedCentre('')
+    setApproveSubmitted(false)
+  }
 
   const handleStartReview = async () => {
     try {
@@ -42,6 +59,23 @@ export default function AdminApplicationDetailPage({ params }: { params: { id: s
       toast({ variant: 'success', title: 'Review started' })
     } catch {
       toast({ variant: 'error', title: 'Failed to start review' })
+    }
+  }
+
+  const handleApprove = async () => {
+    setApproveSubmitted(true)
+    if (!selectedCentre) return
+    try {
+      await reviewAction.mutateAsync({
+        action: 'approve',
+        notes: notes || undefined,
+        assigned_centre: selectedCentre,
+      })
+      toast({ variant: 'success', title: 'Application approved' })
+      closeModal()
+    } catch (err: unknown) {
+      const msg = (err as { response?: { data?: { detail?: string } } })?.response?.data?.detail
+      toast({ variant: 'error', title: 'Action failed', description: msg })
     }
   }
 
@@ -54,9 +88,7 @@ export default function AdminApplicationDetailPage({ params }: { params: { id: s
         rejection_reason: rejectionReason || undefined,
       })
       toast({ variant: 'success', title: actionLabels[modalAction] + ' successful' })
-      setModalAction(null)
-      setNotes('')
-      setRejectionReason('')
+      closeModal()
     } catch (err: unknown) {
       const msg = (err as { response?: { data?: { detail?: string } } })?.response?.data?.detail
       toast({ variant: 'error', title: 'Action failed', description: msg })
@@ -163,6 +195,7 @@ export default function AdminApplicationDetailPage({ params }: { params: { id: s
               <div><dt className="text-xs text-gray-500">Employee ID</dt><dd>{app.employee_id || '—'}</dd></div>
               <div><dt className="text-xs text-gray-500">Line Manager</dt><dd>{app.line_manager_email}</dd></div>
               <div><dt className="text-xs text-gray-500">Reviewer</dt><dd>{app.reviewer_name ?? 'Unassigned'}</dd></div>
+              <div><dt className="text-xs text-gray-500">Assigned Centre</dt><dd>{app.assigned_centre_name ?? '—'}</dd></div>
               <div><dt className="text-xs text-gray-500">Motivation</dt><dd className="whitespace-pre-line">{app.motivation}</dd></div>
             </dl>
           </Card>
@@ -186,21 +219,43 @@ export default function AdminApplicationDetailPage({ params }: { params: { id: s
       {/* Review action modal */}
       <Modal
         open={!!modalAction}
-        onOpenChange={(open) => { if (!open) setModalAction(null) }}
+        onOpenChange={(open) => { if (!open) closeModal() }}
         title={modalAction ? actionLabels[modalAction] : ''}
         footer={
           <>
-            <Button variant="ghost" onClick={() => setModalAction(null)}>Cancel</Button>
+            <Button variant="ghost" onClick={closeModal}>Cancel</Button>
             <Button
               variant={modalAction === 'reject' ? 'danger' : 'primary'}
               loading={reviewAction.isPending}
-              onClick={handleReviewAction}
+              onClick={modalAction === 'approve' ? handleApprove : handleReviewAction}
             >
-              Confirm
+              {modalAction === 'approve' ? 'Confirm Approval' : 'Confirm'}
             </Button>
           </>
         }
       >
+        {modalAction === 'approve' && (
+          <div className="mb-4">
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Assign to Centre <span className="text-red-500">*</span>
+            </label>
+            <select
+              value={selectedCentre}
+              onChange={(e) => setSelectedCentre(e.target.value)}
+              className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-green-500"
+            >
+              <option value="">— Select a centre —</option>
+              {centres.map((c) => (
+                <option key={c.id} value={c.id}>
+                  {c.name}{c.is_primary ? ' (Primary)' : ''} — {c.location}
+                </option>
+              ))}
+            </select>
+            {approveSubmitted && !selectedCentre && (
+              <p className="text-red-500 text-xs mt-1">Centre is required to approve.</p>
+            )}
+          </div>
+        )}
         {modalAction === 'reject' && (
           <div className="mb-4">
             <label className="block text-sm font-medium text-gray-700 mb-1">Rejection reason <span className="text-danger">*</span></label>
