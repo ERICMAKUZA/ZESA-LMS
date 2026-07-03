@@ -34,12 +34,15 @@ services:
 
   django:
     <<: *django-common
+    user: root
     expose:
       - "8000"
     command: >
-      sh -c "python manage.py migrate --noinput &&
+      sh -c "chmod 777 /app/media &&
+             su -s /bin/sh appuser -c '
+             python manage.py migrate --noinput &&
              python manage.py collectstatic --noinput &&
-             gunicorn config.wsgi:application --bind 0.0.0.0:8000 --workers 4"
+             gunicorn config.wsgi:application --bind 0.0.0.0:8000 --workers 4'"
 
   celery:
     <<: *django-common

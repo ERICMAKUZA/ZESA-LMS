@@ -337,11 +337,25 @@ function NewApplicationForm() {
       })
       router.push('/applications')
     } catch (err: unknown) {
-      const msg = (err as { response?: { data?: { detail?: string } } })?.response?.data?.detail
+      const errData = (err as { response?: { data?: unknown } })?.response?.data
+      let description = 'Please check your details and try again.'
+      if (errData && typeof errData === 'object') {
+        const d = errData as Record<string, unknown>
+        if (typeof d.detail === 'string') {
+          description = d.detail
+        } else {
+          const fieldMsgs = Object.entries(d)
+            .map(([field, msgs]) =>
+              `${field}: ${Array.isArray(msgs) ? msgs[0] : String(msgs)}`,
+            )
+            .join(' · ')
+          if (fieldMsgs) description = fieldMsgs
+        }
+      }
       toast({
         variant: 'error',
         title: 'Submission failed',
-        description: msg ?? 'Please check your details and try again.',
+        description,
       })
     }
   }
