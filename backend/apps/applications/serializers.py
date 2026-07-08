@@ -29,6 +29,7 @@ class ApplicationCreateSerializer(serializers.ModelSerializer):
         queryset=Centre.objects.all(), allow_null=True, required=False,
     )
     line_manager_email = serializers.EmailField(required=False, allow_blank=True, default='')
+    department = serializers.CharField(required=False, allow_blank=True, default='')
 
     class Meta:
         model = Application
