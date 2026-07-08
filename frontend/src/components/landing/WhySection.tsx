@@ -4,17 +4,17 @@ const features = [
   {
     icon: Clock,
     title: 'Flexible Learning',
-    desc: 'Learn at your own pace, on any device, anytime.',
+    desc: 'Learn at your own pace, on any device, anytime — whether you are on-site or off.',
   },
   {
     icon: Award,
-    title: 'Industry-Recognized Certificates',
-    desc: 'Earn certificates verified with QR codes and digital signatures.',
+    title: 'HEXCO-Aligned Certificates',
+    desc: 'Earn nationally recognised certificates verified with QR codes and digital signatures.',
   },
   {
     icon: Users,
-    title: 'Expert-Led Content',
-    desc: 'Courses built and reviewed by ZESA subject matter experts.',
+    title: 'Open to All Applicants',
+    desc: 'Programmes are open to ZESA staff, company-sponsored apprentices, and self-funded learners.',
   },
 ]
 

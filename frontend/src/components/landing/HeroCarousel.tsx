@@ -8,18 +8,18 @@ import { ChevronLeft, ChevronRight } from 'lucide-react'
 const slides = [
   {
     image: 'https://images.unsplash.com/photo-1705579608642-19a05c1b7b96?auto=format&fit=crop&w=1920&q=80',
-    heading: 'Power Your Career with ZESA Training',
-    subtext: 'Certified courses built for the energy sector — from technical skills to leadership.',
+    heading: 'Advance Your Career at ZNTC',
+    subtext: 'Certified programmes open to ZESA staff, apprentices, and self-funded applicants — from technical skills to leadership.',
   },
   {
     image: 'https://images.unsplash.com/photo-1531482615713-2afd69097998?auto=format&fit=crop&w=1920&q=80',
     heading: 'Learn From Industry Experts',
-    subtext: 'Structured learning paths reviewed and approved by your department leads.',
+    subtext: 'Structured learning paths designed and reviewed by Zimbabwe\'s leading energy sector professionals.',
   },
   {
     image: 'https://plus.unsplash.com/premium_photo-1704756437789-8b033df16181?auto=format&fit=crop&w=1920&q=80',
-    heading: 'Built by the Power Sector, for the Power Sector',
-    subtext: 'Courses designed around real ZESA operations, safety standards, and systems.',
+    heading: 'Built for Zimbabwe\'s Energy Sector',
+    subtext: 'Programmes aligned to HEXCO standards, designed around real-world operations, safety, and systems.',
   },
 ]
 

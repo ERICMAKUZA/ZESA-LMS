@@ -1,6 +1,6 @@
 const stats = [
-  { value: '500+', label: 'Employees Trained' },
-  { value: '12',   label: 'Certified Courses' },
+  { value: '500+', label: 'Learners Trained' },
+  { value: '12',   label: 'Certified Programmes' },
   { value: '98%',  label: 'Completion Rate' },
   { value: '24/7', label: 'Platform Access' },
 ]
