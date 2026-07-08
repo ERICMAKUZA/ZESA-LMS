@@ -1,14 +1,19 @@
 'use client'
 
+import { useState } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
-import { BookOpen, DollarSign, ArrowLeft } from 'lucide-react'
-import StudentLayout from '@/components/layout/StudentLayout'
+import { DollarSign, ArrowLeft } from 'lucide-react'
+import Image from 'next/image'
+import { getCourseHeroImage } from '@/lib/courseImages'
+import PublicLayout from '@/components/layout/PublicLayout'
 import Card from '@/components/ui/Card'
 import Button from '@/components/ui/Button'
 import Spinner from '@/components/ui/Spinner'
 import { useCourse } from '@/hooks/useCourses'
 import { useAuth } from '@/hooks/useAuth'
+import EnquiryModal from '@/components/EnquiryModal'
+import type { CourseSchedule } from '@/types'
 
 function CapacityBadge({ max, enrolled }: { max: number | null; enrolled: number }) {
   if (!max) return null
@@ -33,17 +38,32 @@ function CapacityBadge({ max, enrolled }: { max: number | null; enrolled: number
   )
 }
 
+function ScheduleStatusBadge({ s }: { s: CourseSchedule }) {
+  if (s.status === 'FULL')
+    return <span className="text-xs font-semibold bg-red-100 text-red-700 rounded-full px-2.5 py-1">Full</span>
+  if (s.places_remaining <= 3)
+    return (
+      <span className="text-xs font-semibold bg-amber-100 text-amber-700 rounded-full px-2.5 py-1">
+        {s.places_remaining} left
+      </span>
+    )
+  return <span className="text-xs font-semibold bg-green-100 text-green-700 rounded-full px-2.5 py-1">Open</span>
+}
+
 export default function CourseDetailPage({ params }: { params: { id: string } }) {
   const { data: course, isLoading, isError } = useCourse(params.id)
   const { user } = useAuth()
   const router = useRouter()
+  const [enquiryOpen, setEnquiryOpen] = useState(false)
 
   const isFull = course
     ? course.max_capacity !== null && course.enrolled_count >= course.max_capacity
     : false
 
-  const handleApply = () => {
-    const dest = `/applications/new?course=${course!.id}`
+  const handleApply = (scheduleId?: string) => {
+    const params = new URLSearchParams({ course: String(course!.id) })
+    if (scheduleId) params.set('schedule', scheduleId)
+    const dest = `/applications/new?${params}`
     if (!user) {
       router.push(`/login?next=${encodeURIComponent(dest)}`)
     } else {
@@ -52,7 +72,7 @@ export default function CourseDetailPage({ params }: { params: { id: string } })
   }
 
   return (
-    <StudentLayout>
+    <PublicLayout>
       <div className="mb-4">
         <Link href="/courses" className="inline-flex items-center gap-1 text-sm text-gray-500 hover:text-primary">
           <ArrowLeft className="h-4 w-4" /> Back to courses
@@ -71,19 +91,66 @@ export default function CourseDetailPage({ params }: { params: { id: string } })
 
       {course && (
         <div className="grid gap-6 lg:grid-cols-3">
+          {/* Main column */}
           <div className="lg:col-span-2 flex flex-col gap-6">
-            <Card>
-              <div className="h-40 bg-primary/10 rounded-t-lg flex items-center justify-center -mx-6 -mt-4 mb-4">
-                <BookOpen className="h-12 w-12 text-primary/40" />
+            {/* Description card */}
+            <Card className="overflow-hidden">
+              <div className="relative h-52 -mx-6 -mt-4 mb-4 rounded-t-lg overflow-hidden">
+                <Image
+                  src={getCourseHeroImage(course.category?.name)}
+                  alt={course.category?.name ?? course.fullname}
+                  fill
+                  className="object-cover"
+                  sizes="(max-width: 1024px) 100vw, 66vw"
+                  priority
+                />
+                <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent" />
+                {course.category && (
+                  <span className="absolute bottom-3 left-4 text-xs font-semibold text-white/90 uppercase tracking-wide">
+                    {course.category.name}
+                  </span>
+                )}
               </div>
-              {course.category && (
-                <span className="text-xs font-medium text-accent">{course.category.name}</span>
-              )}
-              <h1 className="mt-1 text-2xl font-bold text-gray-900">{course.fullname}</h1>
+              <h1 className="text-2xl font-bold text-gray-900">{course.fullname}</h1>
               <p className="mt-3 text-sm text-gray-700 leading-relaxed whitespace-pre-line">{course.summary}</p>
             </Card>
+
+            {/* Upcoming intakes */}
+            {course.upcoming_schedules && course.upcoming_schedules.length > 0 && (
+              <Card>
+                <h3 className="text-base font-semibold text-gray-800 mb-3">Upcoming Intakes</h3>
+                <div className="space-y-2">
+                  {course.upcoming_schedules.map(s => (
+                    <div
+                      key={s.id}
+                      className="flex items-center justify-between px-4 py-3 rounded-lg bg-gray-50 border border-gray-200"
+                    >
+                      <div>
+                        <span className="text-sm font-medium text-gray-800">
+                          {s.month_display} {s.year} — Week {s.week_in_month}
+                        </span>
+                        <span className="text-xs text-gray-400 ml-2">
+                          (~{s.approximate_start_date} to {s.approximate_end_date})
+                        </span>
+                      </div>
+                      <div className="flex items-center gap-3">
+                        <ScheduleStatusBadge s={s} />
+                        <button
+                          onClick={() => handleApply(s.id)}
+                          disabled={s.status === 'FULL'}
+                          className="text-xs font-medium text-green-700 hover:text-green-900 disabled:text-gray-400 disabled:cursor-not-allowed"
+                        >
+                          {s.status === 'FULL' ? 'Full' : 'Apply →'}
+                        </button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </Card>
+            )}
           </div>
 
+          {/* Sidebar */}
           <div className="flex flex-col gap-4">
             <Card>
               <h2 className="font-semibold text-gray-900 mb-4">Course Info</h2>
@@ -107,7 +174,6 @@ export default function CourseDetailPage({ params }: { params: { id: string } })
                   </div>
                 )}
 
-                {/* Capacity row */}
                 {course.max_capacity && (
                   <div className="flex items-center justify-between py-3 border-t border-gray-100">
                     <span className="text-sm text-gray-500">Availability</span>
@@ -125,7 +191,7 @@ export default function CourseDetailPage({ params }: { params: { id: string } })
                 <Button
                   className="mt-4 w-full"
                   disabled={isFull}
-                  onClick={handleApply}
+                  onClick={() => handleApply()}
                 >
                   {isFull ? 'Course Full' : 'Apply for This Course'}
                 </Button>
@@ -133,10 +199,25 @@ export default function CourseDetailPage({ params }: { params: { id: string } })
               {!course.is_active && (
                 <p className="mt-4 text-xs text-gray-400 text-center">This course is currently inactive.</p>
               )}
+
+              <button
+                onClick={() => setEnquiryOpen(true)}
+                className="mt-3 w-full text-center text-xs text-green-700 hover:text-green-900 underline underline-offset-2"
+              >
+                Have questions? Enquire about this course
+              </button>
             </Card>
           </div>
         </div>
       )}
-    </StudentLayout>
+
+      {course && (
+        <EnquiryModal
+          open={enquiryOpen}
+          onClose={() => setEnquiryOpen(false)}
+          preselectedCourse={{ id: String(course.id), fullname: course.fullname }}
+        />
+      )}
+    </PublicLayout>
   )
 }

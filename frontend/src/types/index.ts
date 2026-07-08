@@ -34,6 +34,28 @@ export interface CourseCategory {
   id: number
   name: string
   moodle_id: number | null
+  course_count?: number
+}
+
+export interface CourseSchedule {
+  id: string
+  course: number
+  course_name: string
+  course_shortname: string
+  category: string
+  course_price: string | null
+  course_duration_days: number | null
+  year: number
+  month: number
+  month_display: string
+  week_in_month: number
+  max_capacity: number
+  enrolled_count: number
+  places_remaining: number
+  status: 'OPEN' | 'FULL' | 'CANCELLED' | 'COMPLETED'
+  approximate_start_date: string
+  approximate_end_date: string
+  notes: string
 }
 
 export interface Course {
@@ -54,6 +76,8 @@ export interface Course {
   moodle_course_id: number | null
   created_at: string
   updated_at: string
+  next_schedule: CourseSchedule | null
+  upcoming_schedules: CourseSchedule[]
 }
 
 export interface Certificate {
@@ -150,6 +174,9 @@ export interface Application {
   guardian_contact: string
   guardian_email: string
   responsible_party: string
+  national_id_doc: string | null
+  academic_certs_doc: string | null
+  student_photo: string | null
   reviewer: number | null
   reviewer_name: string | null
   reviewer_notes: string | null
