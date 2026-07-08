@@ -22,8 +22,6 @@ const schema = z.object({
       /^(\+263|0)(7[1-9]|8[6-9])\d{7}$/,
       'Enter a valid Zimbabwe mobile number (e.g. +263 77 123 4567)'
     ),
-  employee_id: z.string().optional(),
-  department: z.string().optional(),
   password: z.string().min(8, 'At least 8 characters'),
   confirm_password: z.string(),
 }).refine((d) => d.password === d.confirm_password, {
@@ -44,11 +42,11 @@ export default function RegisterPage() {
 
   const onSubmit = async (values: FormValues) => {
     try {
-      const { confirm_password: _, ...rest } = values
+      const { confirm_password, ...rest } = values
       const phone = rest.phone.startsWith('+263')
         ? rest.phone.replace(/\s/g, '')
         : '+263' + rest.phone.replace(/^0/, '').replace(/\s/g, '')
-      const payload = { ...rest, phone }
+      const payload = { ...rest, phone, password_confirm: confirm_password }
       await registerUser(payload)
       toast({ variant: 'success', title: 'Account created', description: 'You can now sign in.' })
       router.push('/login')
@@ -91,8 +89,6 @@ export default function RegisterPage() {
                   Used for WhatsApp notifications about your application.
                 </p>
               </div>
-              <Input label="Employee ID" error={errors.employee_id?.message} helper="Optional — will be auto-filled from HR records." {...register('employee_id')} />
-              <Input label="Department"  error={errors.department?.message}  {...register('department')} />
               <Input label="Password"    type="password" error={errors.password?.message} {...register('password')} />
               <Input label="Confirm password" type="password" error={errors.confirm_password?.message} {...register('confirm_password')} />
               <Button type="submit" loading={isSubmitting} className="mt-2">Create account</Button>

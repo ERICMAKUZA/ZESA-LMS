@@ -334,14 +334,88 @@ export default function ApplicationDetailPage({ params }: { params: { id: string
 
         {/* Details sidebar */}
         <div className="flex flex-col gap-4">
-          <Card header={<h2 className="font-semibold text-gray-900">Application Details</h2>}>
+          {/* Programme */}
+          <Card header={<h2 className="font-semibold text-gray-900">Programme Details</h2>}>
             <dl className="flex flex-col gap-3 text-sm">
+              <div><dt className="text-xs text-gray-500">HEXCO Level</dt><dd className="text-gray-800 font-medium">{app.hexco_level || '—'}</dd></div>
+              <div><dt className="text-xs text-gray-500">Student Category</dt><dd className="text-gray-800 font-medium">{app.student_category || '—'}</dd></div>
               <div><dt className="text-xs text-gray-500">Department</dt><dd className="text-gray-800">{app.department || '—'}</dd></div>
               <div><dt className="text-xs text-gray-500">Employee ID</dt><dd className="text-gray-800">{app.employee_id || '—'}</dd></div>
               <div><dt className="text-xs text-gray-500">Line Manager</dt><dd className="text-gray-800">{app.line_manager_email || '—'}</dd></div>
-              <div><dt className="text-xs text-gray-500">Motivation</dt><dd className="text-gray-800 whitespace-pre-line">{app.motivation}</dd></div>
+              {app.responsible_party && (
+                <div><dt className="text-xs text-gray-500">Responsible Party</dt><dd className="text-gray-800">{app.responsible_party}</dd></div>
+              )}
             </dl>
           </Card>
+
+          {/* Accommodation */}
+          <Card header={<h2 className="font-semibold text-gray-900">Accommodation</h2>}>
+            <dl className="flex flex-col gap-3 text-sm">
+              <div><dt className="text-xs text-gray-500">Residential</dt><dd className="text-gray-800 font-medium">{app.is_resident ? 'Yes' : 'No'}</dd></div>
+              {app.is_resident && (
+                <>
+                  <div><dt className="text-xs text-gray-500">Hostel</dt><dd className="text-gray-800">{app.hostel_name || '—'}</dd></div>
+                  <div><dt className="text-xs text-gray-500">Room</dt><dd className="text-gray-800">{app.room_number || '—'}</dd></div>
+                </>
+              )}
+            </dl>
+          </Card>
+
+          {/* Guardian */}
+          <Card header={<h2 className="font-semibold text-gray-900">Guardian / Next of Kin</h2>}>
+            <dl className="flex flex-col gap-3 text-sm">
+              <div><dt className="text-xs text-gray-500">Name</dt><dd className="text-gray-800">{app.guardian_name || '—'}</dd></div>
+              <div><dt className="text-xs text-gray-500">Contact</dt><dd className="text-gray-800">{app.guardian_contact || '—'}</dd></div>
+              {app.guardian_email && (
+                <div><dt className="text-xs text-gray-500">Email</dt><dd className="text-gray-800">{app.guardian_email}</dd></div>
+              )}
+            </dl>
+          </Card>
+
+          {/* Motivation */}
+          <Card header={<h2 className="font-semibold text-gray-900">Motivation</h2>}>
+            <p className="text-sm text-gray-700 whitespace-pre-line leading-relaxed">{app.motivation || '—'}</p>
+          </Card>
+
+          {/* Documents */}
+          {(app.national_id_doc || app.academic_certs_doc || app.student_photo || app.documents.length > 0) && (
+            <Card header={<h2 className="font-semibold text-gray-900">Documents</h2>}>
+              <ul className="flex flex-col gap-2">
+                {app.national_id_doc && (
+                  <li>
+                    <a href={app.national_id_doc} target="_blank" rel="noreferrer"
+                       className="flex items-center gap-2 text-sm text-primary hover:underline">
+                      <span>📄</span> National ID / Passport
+                    </a>
+                  </li>
+                )}
+                {app.academic_certs_doc && (
+                  <li>
+                    <a href={app.academic_certs_doc} target="_blank" rel="noreferrer"
+                       className="flex items-center gap-2 text-sm text-primary hover:underline">
+                      <span>📄</span> Academic Certificates
+                    </a>
+                  </li>
+                )}
+                {app.student_photo && (
+                  <li>
+                    <a href={app.student_photo} target="_blank" rel="noreferrer"
+                       className="flex items-center gap-2 text-sm text-primary hover:underline">
+                      <span>🖼</span> Passport Photo
+                    </a>
+                  </li>
+                )}
+                {app.documents.map((doc) => (
+                  <li key={doc.id}>
+                    <a href={doc.file} target="_blank" rel="noreferrer"
+                       className="flex items-center gap-2 text-sm text-primary hover:underline">
+                      <span>📎</span> {doc.filename}
+                    </a>
+                  </li>
+                ))}
+              </ul>
+            </Card>
+          )}
 
           {app.payment && (
             <Card header={<h2 className="font-semibold text-gray-900">Payment</h2>}>
@@ -353,20 +427,6 @@ export default function ApplicationDetailPage({ params }: { params: { id: string
                   <div><dt className="text-xs text-gray-500">Confirmed</dt><dd className="text-gray-800">{format(new Date(app.payment.confirmed_at), 'dd MMM yyyy HH:mm')}</dd></div>
                 )}
               </dl>
-            </Card>
-          )}
-
-          {app.documents.length > 0 && (
-            <Card header={<h2 className="font-semibold text-gray-900">Documents</h2>}>
-              <ul className="flex flex-col gap-2">
-                {app.documents.map((doc) => (
-                  <li key={doc.id}>
-                    <a href={doc.file} className="text-sm text-primary hover:underline" target="_blank" rel="noreferrer">
-                      {doc.filename}
-                    </a>
-                  </li>
-                ))}
-              </ul>
             </Card>
           )}
         </div>

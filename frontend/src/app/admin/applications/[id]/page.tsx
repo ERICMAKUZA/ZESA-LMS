@@ -163,6 +163,49 @@ export default function AdminApplicationDetailPage({ params }: { params: { id: s
             </div>
           </Card>
 
+          {/* Programme Details */}
+          <Card header={<h2 className="font-semibold text-gray-900">Programme Details</h2>}>
+            <dl className="grid grid-cols-2 gap-x-6 gap-y-3 text-sm">
+              <div><dt className="text-xs text-gray-500 mb-0.5">HEXCO Level</dt><dd className="font-medium">{app.hexco_level || '—'}</dd></div>
+              <div><dt className="text-xs text-gray-500 mb-0.5">Student Category</dt><dd className="font-medium">{app.student_category || '—'}</dd></div>
+              <div><dt className="text-xs text-gray-500 mb-0.5">Department</dt><dd className="font-medium">{app.department || '—'}</dd></div>
+              <div><dt className="text-xs text-gray-500 mb-0.5">Employee ID</dt><dd className="font-medium">{app.employee_id || '—'}</dd></div>
+              <div><dt className="text-xs text-gray-500 mb-0.5">Line Manager</dt><dd className="font-medium">{app.line_manager_email || '—'}</dd></div>
+              <div><dt className="text-xs text-gray-500 mb-0.5">Responsible Party</dt><dd className="font-medium">{app.responsible_party || '—'}</dd></div>
+              <div className="col-span-2"><dt className="text-xs text-gray-500 mb-0.5">Preferred Centre</dt><dd className="font-medium">{app.preferred_centre || '—'}</dd></div>
+            </dl>
+          </Card>
+
+          {/* Accommodation */}
+          <Card header={<h2 className="font-semibold text-gray-900">Accommodation</h2>}>
+            <dl className="grid grid-cols-2 gap-x-6 gap-y-3 text-sm">
+              <div className="col-span-2">
+                <dt className="text-xs text-gray-500 mb-0.5">Residential student?</dt>
+                <dd className="font-medium">{app.is_resident ? 'Yes' : 'No'}</dd>
+              </div>
+              {app.is_resident && (
+                <>
+                  <div><dt className="text-xs text-gray-500 mb-0.5">Hostel</dt><dd className="font-medium">{app.hostel_name || '—'}</dd></div>
+                  <div><dt className="text-xs text-gray-500 mb-0.5">Room</dt><dd className="font-medium">{app.room_number || '—'}</dd></div>
+                </>
+              )}
+            </dl>
+          </Card>
+
+          {/* Guardian / Next of Kin */}
+          <Card header={<h2 className="font-semibold text-gray-900">Guardian / Next of Kin</h2>}>
+            <dl className="grid grid-cols-2 gap-x-6 gap-y-3 text-sm">
+              <div><dt className="text-xs text-gray-500 mb-0.5">Name</dt><dd className="font-medium">{app.guardian_name || '—'}</dd></div>
+              <div><dt className="text-xs text-gray-500 mb-0.5">Contact</dt><dd className="font-medium">{app.guardian_contact || '—'}</dd></div>
+              <div className="col-span-2"><dt className="text-xs text-gray-500 mb-0.5">Email</dt><dd className="font-medium">{app.guardian_email || '—'}</dd></div>
+            </dl>
+          </Card>
+
+          {/* Motivation */}
+          <Card header={<h2 className="font-semibold text-gray-900">Statement of Motivation</h2>}>
+            <p className="text-sm text-gray-700 whitespace-pre-line leading-relaxed">{app.motivation || '—'}</p>
+          </Card>
+
           {/* Status history */}
           <Card header={<h2 className="font-semibold text-gray-900">Status History</h2>}>
             {app.recent_history.length === 0 && (
@@ -208,30 +251,64 @@ export default function AdminApplicationDetailPage({ params }: { params: { id: s
 
         {/* Sidebar */}
         <div className="flex flex-col gap-4">
-          <Card header={<h2 className="font-semibold text-gray-900">Applicant Info</h2>}>
+          {/* Review info */}
+          <Card header={<h2 className="font-semibold text-gray-900">Review Info</h2>}>
             <dl className="flex flex-col gap-3 text-sm">
-              <div><dt className="text-xs text-gray-500">Department</dt><dd>{app.department || '—'}</dd></div>
-              <div><dt className="text-xs text-gray-500">Employee ID</dt><dd>{app.employee_id || '—'}</dd></div>
-              <div><dt className="text-xs text-gray-500">Line Manager</dt><dd>{app.line_manager_email}</dd></div>
-              <div><dt className="text-xs text-gray-500">Reviewer</dt><dd>{app.reviewer_name ?? 'Unassigned'}</dd></div>
-              <div><dt className="text-xs text-gray-500">Assigned Centre</dt><dd>{app.assigned_centre_name ?? '—'}</dd></div>
-              <div><dt className="text-xs text-gray-500">Motivation</dt><dd className="whitespace-pre-line">{app.motivation}</dd></div>
+              <div><dt className="text-xs text-gray-500">Reviewer</dt><dd className="font-medium">{app.reviewer_name ?? 'Unassigned'}</dd></div>
+              <div><dt className="text-xs text-gray-500">Assigned Centre</dt><dd className="font-medium">{app.assigned_centre_name ?? '—'}</dd></div>
+              {app.reviewer_notes && (
+                <div><dt className="text-xs text-gray-500">Reviewer Notes</dt><dd className="text-gray-700 whitespace-pre-line">{app.reviewer_notes}</dd></div>
+              )}
+              {app.rejection_reason && (
+                <div><dt className="text-xs text-gray-500 text-danger">Rejection Reason</dt><dd className="text-danger whitespace-pre-line">{app.rejection_reason}</dd></div>
+              )}
+              {app.more_info_request && (
+                <div><dt className="text-xs text-gray-500">Info Requested</dt><dd className="text-gray-700 whitespace-pre-line">{app.more_info_request}</dd></div>
+              )}
             </dl>
           </Card>
 
-          {app.documents.length > 0 && (
-            <Card header={<h2 className="font-semibold text-gray-900">Documents</h2>}>
+          {/* Documents */}
+          <Card header={<h2 className="font-semibold text-gray-900">Documents</h2>}>
+            {!app.national_id_doc && !app.academic_certs_doc && !app.student_photo && app.documents.length === 0 ? (
+              <p className="text-sm text-gray-400">No documents uploaded.</p>
+            ) : (
               <ul className="flex flex-col gap-2">
+                {app.national_id_doc && (
+                  <li>
+                    <a href={app.national_id_doc} target="_blank" rel="noreferrer"
+                       className="flex items-center gap-2 text-sm text-primary hover:underline">
+                      <span className="text-gray-400">📄</span> National ID / Passport
+                    </a>
+                  </li>
+                )}
+                {app.academic_certs_doc && (
+                  <li>
+                    <a href={app.academic_certs_doc} target="_blank" rel="noreferrer"
+                       className="flex items-center gap-2 text-sm text-primary hover:underline">
+                      <span className="text-gray-400">📄</span> Academic Certificates
+                    </a>
+                  </li>
+                )}
+                {app.student_photo && (
+                  <li>
+                    <a href={app.student_photo} target="_blank" rel="noreferrer"
+                       className="flex items-center gap-2 text-sm text-primary hover:underline">
+                      <span className="text-gray-400">🖼</span> Passport Photo
+                    </a>
+                  </li>
+                )}
                 {app.documents.map((doc) => (
                   <li key={doc.id}>
-                    <a href={doc.file} className="text-sm text-primary hover:underline" target="_blank" rel="noreferrer">
-                      {doc.filename}
+                    <a href={doc.file} target="_blank" rel="noreferrer"
+                       className="flex items-center gap-2 text-sm text-primary hover:underline">
+                      <span className="text-gray-400">📎</span> {doc.filename}
                     </a>
                   </li>
                 ))}
               </ul>
-            </Card>
-          )}
+            )}
+          </Card>
         </div>
       </div>
 

@@ -34,9 +34,7 @@ const applicationSchema = z.object({
   motivation: z.string().min(50, 'Please write at least 50 characters'),
   line_manager_email: z.string().email('Enter a valid email').optional().or(z.literal('')),
   hexco_level: z.enum(['NC', 'ND'], { required_error: 'Select NC or ND' }),
-  department: z.enum(['ELECTRICAL', 'TELECOMS', 'MECHANICAL'], {
-    required_error: 'Select a department',
-  }),
+  department: z.enum(['ELECTRICAL', 'TELECOMS', 'MECHANICAL']).optional(),
   student_category: z.enum(['DIRECT', 'APPRENTICE', 'INTERNAL'], {
     required_error: 'Select a category',
   }),
@@ -62,10 +60,27 @@ const applicationSchema = z.object({
     .refine((f) => f.size <= MAX_FILE_SIZE, 'File must be under 5 MB')
     .refine((f) => ACCEPTED_IMAGE_TYPES.includes(f.type), 'JPG or PNG only')
     .optional(),
-}).refine(
+})
+.refine(
   (data) => !data.is_resident || (!!data.hostel_name && data.hostel_name.length > 0),
   { message: 'Hostel name is required for residents', path: ['hostel_name'] },
 )
+.superRefine((data, ctx) => {
+  if (data.student_category === 'INTERNAL' && !data.department) {
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      message: 'Department is required for ZESA staff',
+      path: ['department'],
+    })
+  }
+  if (data.student_category === 'APPRENTICE' && !data.responsible_party) {
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      message: 'Sponsoring company or party is required',
+      path: ['responsible_party'],
+    })
+  }
+})
 
 type FormValues = z.infer<typeof applicationSchema>
 
@@ -275,6 +290,7 @@ function NewApplicationForm() {
   })
 
   const isResident = useWatch({ control, name: 'is_resident' }) ?? false
+  const studentCategory = useWatch({ control, name: 'student_category' })
   const motivationValue = useWatch({ control, name: 'motivation' }) ?? ''
   const motivationLength = motivationValue.length
 
@@ -442,26 +458,6 @@ function NewApplicationForm() {
                   )}
                 />
 
-                {/* Department */}
-                <Controller
-                  control={control}
-                  name="department"
-                  render={({ field }) => (
-                    <Select
-                      label="Department *"
-                      placeholder="Select a department…"
-                      options={[
-                        { value: 'ELECTRICAL', label: 'Electrical Engineering' },
-                        { value: 'TELECOMS', label: 'Telecommunications' },
-                        { value: 'MECHANICAL', label: 'Mechanical Engineering' },
-                      ]}
-                      value={field.value}
-                      onValueChange={field.onChange}
-                      error={errors.department?.message}
-                    />
-                  )}
-                />
-
                 {/* Preferred Centre */}
                 <Controller
                   control={control}
@@ -491,7 +487,7 @@ function NewApplicationForm() {
                   render={({ field, fieldState }) => (
                     <div className="flex flex-col gap-1.5">
                       <label className="text-sm font-medium text-gray-700">
-                        Student Category <span className="text-danger">*</span>
+                        Applicant Category <span className="text-danger">*</span>
                       </label>
                       <div className="grid grid-cols-3 gap-3">
                         <RadioCard
@@ -520,21 +516,49 @@ function NewApplicationForm() {
                   )}
                 />
 
-                <Input
-                  label="Line Manager / Supervisor Email"
-                  type="email"
-                  placeholder="manager@zesa.co.zw"
-                  helper="Optional — your supervisor will be notified of this application."
-                  error={errors.line_manager_email?.message}
-                  {...register('line_manager_email')}
-                />
+                {/* Department — INTERNAL only */}
+                {studentCategory === 'INTERNAL' && (
+                  <Controller
+                    control={control}
+                    name="department"
+                    render={({ field }) => (
+                      <Select
+                        label="Department *"
+                        placeholder="Select your ZESA department…"
+                        options={[
+                          { value: 'ELECTRICAL', label: 'Electrical Engineering' },
+                          { value: 'TELECOMS', label: 'Telecommunications' },
+                          { value: 'MECHANICAL', label: 'Mechanical Engineering' },
+                        ]}
+                        value={field.value ?? ''}
+                        onValueChange={field.onChange}
+                        error={errors.department?.message}
+                      />
+                    )}
+                  />
+                )}
 
-                <Input
-                  label="Responsible Party"
-                  placeholder="Company or person responsible for fees (if sponsored)"
-                  error={errors.responsible_party?.message}
-                  {...register('responsible_party')}
-                />
+                {/* Line Manager — INTERNAL (required) and APPRENTICE (optional) */}
+                {(studentCategory === 'INTERNAL' || studentCategory === 'APPRENTICE') && (
+                  <Input
+                    label={studentCategory === 'INTERNAL' ? 'Line Manager Email' : 'Supervisor / Company Email'}
+                    type="email"
+                    placeholder={studentCategory === 'INTERNAL' ? 'manager@zesa.co.zw' : 'supervisor@company.co.zw'}
+                    helper="Your supervisor will be notified of this application."
+                    error={errors.line_manager_email?.message}
+                    {...register('line_manager_email')}
+                  />
+                )}
+
+                {/* Responsible Party — APPRENTICE only */}
+                {studentCategory === 'APPRENTICE' && (
+                  <Input
+                    label="Sponsoring Company / Party *"
+                    placeholder="Name of the company or organisation funding your training"
+                    error={errors.responsible_party?.message}
+                    {...register('responsible_party')}
+                  />
+                )}
               </div>
             </Card>
 

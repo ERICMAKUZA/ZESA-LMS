@@ -44,148 +44,24 @@ class Command(BaseCommand):
 
         now = timezone.now()
 
-        # ── 0. Remove legacy demo courses so new ones take their place ────────
-        legacy_shortnames = ["POWERBI-ESS", "SAP-FIN-RPT", "WS-INDUCT", "PM-FUND"]
-        Course.objects.filter(shortname__in=legacy_shortnames).delete()
-        legacy_cats = ["Data & Analytics", "Enterprise Systems", "HSE"]
-        CourseCategory.objects.filter(name__in=legacy_cats).delete()
+        # ── 1. Look up real courses (seed_courses must run first) ─────────────
 
-        # ── 1. Categories ─────────────────────────────────────────────────────
+        required = ["RPA-DRONE", "SOLAR-PV", "33KV-SWITCH", "VFL", "OHS-PS"]
+        missing = [s for s in required if not Course.objects.filter(shortname=s).exists()]
+        if missing:
+            self.stderr.write(
+                self.style.ERROR(
+                    f"ERROR: Real courses not found: {missing}. "
+                    "Run 'python manage.py seed_courses' first."
+                )
+            )
+            return
 
-        cat_drone, _ = CourseCategory.objects.get_or_create(
-            name="Drone Technology", defaults={"moodle_id": 10}
-        )
-        cat_renew, _ = CourseCategory.objects.get_or_create(
-            name="Renewable Energy", defaults={"moodle_id": 11}
-        )
-        cat_tech, _ = CourseCategory.objects.get_or_create(
-            name="Technical Skills", defaults={"moodle_id": 12}
-        )
-        cat_lead, _ = CourseCategory.objects.get_or_create(
-            name="Leadership", defaults={"moodle_id": 13}
-        )
-
-        # ── 2. Courses ────────────────────────────────────────────────────────
-
-        course_drone, _ = Course.objects.get_or_create(
-            shortname="DRONE-INSP",
-            defaults=dict(
-                moodle_course_id=101,
-                fullname="Drone Piloting for System Inspection",
-                summary=(
-                    "Revolutionize energy system inspection and maintenance with cutting-edge "
-                    "drone technology training. Learn to plan, execute, and analyze aerial "
-                    "inspections of transmission lines, substations, and generation facilities "
-                    "in compliance with ZESA operational and safety protocols."
-                ),
-                category=cat_drone,
-                duration_days=7,
-                level=Course.LEVEL_BEGINNER,
-                price=250.00,
-                requires_approval=True,
-                is_active=True,
-                thumbnail_url=(
-                    "https://images.unsplash.com/photo-1473968512647-3e447244af8f"
-                    "?auto=format&fit=crop&w=800&q=80"
-                ),
-            ),
-        )
-
-        course_solar, _ = Course.objects.get_or_create(
-            shortname="SOLAR-GRID",
-            defaults=dict(
-                moodle_course_id=102,
-                fullname="Solar & Grid Training",
-                summary=(
-                    "Master renewable energy systems with hands-on training in solar PV, "
-                    "grid integration, and maintenance. Covers system sizing, installation "
-                    "standards, fault diagnosis, and grid-tie procedures aligned with Zimbabwe's "
-                    "renewable energy expansion programme."
-                ),
-                category=cat_renew,
-                duration_days=5,
-                level=Course.LEVEL_INTERMEDIATE,
-                price=300.00,
-                requires_approval=True,
-                is_active=True,
-                thumbnail_url=(
-                    "https://images.unsplash.com/photo-1509391366360-2e959784a276"
-                    "?auto=format&fit=crop&w=800&q=80"
-                ),
-            ),
-        )
-
-        course_tech, _ = Course.objects.get_or_create(
-            shortname="TECH-SKILLS",
-            defaults=dict(
-                moodle_course_id=103,
-                fullname="Hands-On Technical Skills",
-                summary=(
-                    "Gain practical, industry-leading skills required in the power sector "
-                    "with hands-on training and certification. Topics include electrical "
-                    "installation, switchgear operation, transformer maintenance, and "
-                    "fault-finding techniques used across ZESA's network."
-                ),
-                category=cat_tech,
-                duration_days=10,
-                level=Course.LEVEL_ALL,
-                price=200.00,
-                requires_approval=True,
-                is_active=True,
-                thumbnail_url=(
-                    "https://images.unsplash.com/photo-1581092160562-40aa08e78837"
-                    "?auto=format&fit=crop&w=800&q=80"
-                ),
-            ),
-        )
-
-        course_lead, _ = Course.objects.get_or_create(
-            shortname="LEAD-CORP",
-            defaults=dict(
-                moodle_course_id=104,
-                fullname="Leadership & Corporate Development",
-                summary=(
-                    "Elevate your management skills and foster a more efficient, safe, and "
-                    "productive work environment. Covers strategic thinking, team development, "
-                    "performance management, and corporate governance principles tailored to "
-                    "the energy utility sector."
-                ),
-                category=cat_lead,
-                duration_days=5,
-                level=Course.LEVEL_INTERMEDIATE,
-                price=180.00,
-                requires_approval=True,
-                is_active=True,
-                thumbnail_url=(
-                    "https://images.unsplash.com/photo-1556761175-5973dc0f32e7"
-                    "?auto=format&fit=crop&w=800&q=80"
-                ),
-            ),
-        )
-
-        course_digital, _ = Course.objects.get_or_create(
-            shortname="DIGITECH-NRG",
-            defaults=dict(
-                moodle_course_id=105,
-                fullname="Digital Technologies for Energy",
-                summary=(
-                    "Embrace modern technology with specialized training in digital solutions "
-                    "for the energy sector. Topics include SCADA systems, IoT sensor networks, "
-                    "predictive maintenance platforms, and cybersecurity fundamentals for "
-                    "operational technology environments."
-                ),
-                category=cat_renew,
-                duration_days=5,
-                level=Course.LEVEL_INTERMEDIATE,
-                price=220.00,
-                requires_approval=True,
-                is_active=True,
-                thumbnail_url=(
-                    "https://images.unsplash.com/photo-1518770660439-4636190af475"
-                    "?auto=format&fit=crop&w=800&q=80"
-                ),
-            ),
-        )
+        course_drone = Course.objects.get(shortname="RPA-DRONE")
+        course_solar = Course.objects.get(shortname="SOLAR-PV")
+        course_tech  = Course.objects.get(shortname="33KV-SWITCH")
+        course_lead  = Course.objects.get(shortname="VFL")
+        course_digital = Course.objects.get(shortname="OHS-PS")
 
         # ── 3. Users ──────────────────────────────────────────────────────────
 
@@ -484,8 +360,8 @@ class Command(BaseCommand):
         self.stdout.write(self.style.SUCCESS("  Training at ZESA NTC — Demo Seed Complete"))
         self.stdout.write(self.style.SUCCESS("=" * 62))
         self.stdout.write("")
-        self.stdout.write(f"  {'Categories:':<22} {CourseCategory.objects.count()} (4 expected)")
-        self.stdout.write(f"  {'Courses:':<22} {Course.objects.count()} (5 expected)")
+        self.stdout.write(f"  {'Categories:':<22} {CourseCategory.objects.count()} (7 expected)")
+        self.stdout.write(f"  {'Courses:':<22} {Course.objects.count()} (56 expected)")
         self.stdout.write(f"  {'Users:':<22} {User.objects.count()}")
         self.stdout.write(f"  {'Applications:':<22} {total_apps} (10 expected)")
         self.stdout.write(f"  {'Payments:':<22} {Payment.objects.count()} (3 expected)")
@@ -499,12 +375,12 @@ class Command(BaseCommand):
         self.stdout.write("")
         self.stdout.write(self.style.HTTP_INFO("  ── Student demo flows ───────────────────────────────"))
         self.stdout.write("")
-        self.stdout.write(f"  {'student.demo@zesa.co.zw':<36} SUBMITTED    Drone Piloting")
-        self.stdout.write(f"  {s3.email:<36} MORE_INFO    Leadership")
-        self.stdout.write(f"  {s5.email:<36} PAY_PENDING  Technical Skills")
-        self.stdout.write(f"  {tendai.email:<36} PAY_CONFIRM  Drone Piloting")
-        self.stdout.write(f"  {rumbidzai.email:<36} ENROLLED     Leadership")
-        self.stdout.write(f"  {tinashe.email:<36} REJECTED     Drone Piloting")
+        self.stdout.write(f"  {'student.demo@zesa.co.zw':<36} SUBMITTED    RPA Drone Training")
+        self.stdout.write(f"  {s3.email:<36} MORE_INFO    Visual Felt Leadership")
+        self.stdout.write(f"  {s5.email:<36} PAY_PENDING  33KV Switching")
+        self.stdout.write(f"  {tendai.email:<36} PAY_CONFIRM  RPA Drone Training")
+        self.stdout.write(f"  {rumbidzai.email:<36} ENROLLED     Visual Felt Leadership")
+        self.stdout.write(f"  {tinashe.email:<36} REJECTED     RPA Drone Training")
         self.stdout.write("")
         self.stdout.write("  All passwords: Demo1234!")
         self.stdout.write("")
