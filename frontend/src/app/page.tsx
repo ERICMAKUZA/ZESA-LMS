@@ -1,5 +1,6 @@
 'use client'
 
+import { useState } from 'react'
 import Link from 'next/link'
 import HeroCarousel from '@/components/landing/HeroCarousel'
 import SearchBar from '@/components/landing/SearchBar'
@@ -8,36 +9,16 @@ import CategoryChips from '@/components/landing/CategoryChips'
 import PopularCourses from '@/components/landing/PopularCourses'
 import WhySection from '@/components/landing/WhySection'
 import CTABanner from '@/components/landing/CTABanner'
+import { FAQSection } from '@/components/FAQSection'
+import EnquiryModal from '@/components/EnquiryModal'
+import PublicNav from '@/components/layout/PublicNav'
 
 export default function LandingPage() {
+  const [enquiryOpen, setEnquiryOpen] = useState(false)
+
   return (
     <div className="min-h-screen flex flex-col bg-white">
-      {/* sticky nav */}
-      <header className="sticky top-0 z-50 border-b border-gray-100 bg-white/95 backdrop-blur-sm">
-        <div className="mx-auto flex max-w-7xl items-center justify-between px-4 py-3 sm:px-6">
-          <Link href="/" className="flex flex-col leading-tight">
-            <span className="text-lg font-extrabold text-primary tracking-tight">ZESA NTC</span>
-            <span className="text-[10px] font-medium text-gray-400 tracking-wide uppercase">National Training Centre</span>
-          </Link>
-          <nav className="flex items-center gap-4 sm:gap-6">
-            <Link href="/courses" className="hidden sm:block text-sm font-medium text-gray-600 hover:text-primary transition-colors">
-              Courses
-            </Link>
-            <Link href="/track" className="hidden sm:block text-sm font-medium text-gray-600 hover:text-primary transition-colors">
-              Track Application
-            </Link>
-            <Link href="/login" className="text-sm font-medium text-gray-600 hover:text-primary transition-colors">
-              Sign In
-            </Link>
-            <Link
-              href="/login"
-              className="rounded-lg border border-primary px-4 py-2 text-sm font-semibold text-primary hover:bg-primary hover:text-white transition-colors"
-            >
-              Get Started
-            </Link>
-          </nav>
-        </div>
-      </header>
+      <PublicNav />
 
       <main className="flex-1">
         {/* hero + overlapping search */}
@@ -50,7 +31,8 @@ export default function LandingPage() {
         <CategoryChips />
         <PopularCourses />
         <WhySection />
-        <CTABanner />
+        <FAQSection onEnquire={() => setEnquiryOpen(true)} />
+        <CTABanner onEnquire={() => setEnquiryOpen(true)} />
       </main>
 
       {/* footer */}
@@ -65,6 +47,8 @@ export default function LandingPage() {
           </nav>
         </div>
       </footer>
+
+      <EnquiryModal open={enquiryOpen} onClose={() => setEnquiryOpen(false)} />
     </div>
   )
 }
