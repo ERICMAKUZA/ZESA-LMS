@@ -169,6 +169,7 @@ EMAIL_USE_TLS = config("EMAIL_USE_TLS", cast=bool, default=True)
 EMAIL_HOST_USER = config("EMAIL_HOST_USER", default="")
 EMAIL_HOST_PASSWORD = config("EMAIL_HOST_PASSWORD", default="")
 DEFAULT_FROM_EMAIL = config("DEFAULT_FROM_EMAIL", default="noreply@example.com")
+TRAINING_ADMIN_EMAIL = config("TRAINING_ADMIN_EMAIL", default=DEFAULT_FROM_EMAIL)
 
 CORS_ALLOWED_ORIGINS = config(
     "CORS_ALLOWED_ORIGINS",
