@@ -4,7 +4,7 @@ import { useState, useEffect, type ReactNode } from 'react'
 import Link from 'next/link'
 import { usePathname, useRouter } from 'next/navigation'
 import {
-  LayoutDashboard, FileText, BookOpen, Users, BarChart2, Menu, X, LogOut, User,
+  LayoutDashboard, FileText, GraduationCap, BookOpen, Users, BarChart2, Menu, X, LogOut, User,
 } from 'lucide-react'
 import { clsx } from 'clsx'
 import { useAuth } from '@/hooks/useAuth'
@@ -12,11 +12,12 @@ import AuthGuard from '@/components/AuthGuard'
 import { useToast } from '@/components/ui/Toast'
 
 const nav = [
-  { href: '/admin',              label: 'Dashboard',     icon: LayoutDashboard },
-  { href: '/admin/applications', label: 'Applications',  icon: FileText },
-  { href: '/admin/courses',      label: 'Courses',        icon: BookOpen },
-  { href: '/admin/users',        label: 'Users',          icon: Users },
-  { href: '/admin/reports',      label: 'Reports',        icon: BarChart2 },
+  { href: '/admin',              label: 'Dashboard',        icon: LayoutDashboard },
+  { href: '/admin/applications', label: 'Applications',     icon: FileText },
+  { href: '/admin/enrolments',   label: 'Enrolled Students', icon: GraduationCap },
+  { href: '/admin/courses',      label: 'Courses',           icon: BookOpen },
+  { href: '/admin/users',        label: 'Users',             icon: Users },
+  { href: '/admin/reports',      label: 'Reports',           icon: BarChart2 },
 ]
 
 const roleColor: Record<string, string> = {

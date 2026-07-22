@@ -68,22 +68,41 @@ class StudentEnrollmentSerializer(serializers.ModelSerializer):
 
 
 class EnrollmentListSerializer(serializers.ModelSerializer):
+    ref = serializers.CharField(source="application.ref", read_only=True)
     applicant_email = serializers.EmailField(
         source="application.applicant.email", read_only=True
     )
     applicant_name = serializers.SerializerMethodField()
+    student_id = serializers.CharField(
+        source="application.applicant.student_id", read_only=True
+    )
+    zntc_email = serializers.CharField(
+        source="application.applicant.zntc_email", read_only=True
+    )
     course_name = serializers.CharField(
         source="application.course.fullname", read_only=True
     )
+    assigned_centre_name = serializers.CharField(
+        source="application.assigned_centre.name", read_only=True, default=None,
+    )
+    department = serializers.CharField(source="application.department", read_only=True)
+    hexco_level = serializers.CharField(source="application.hexco_level", read_only=True)
 
     class Meta:
         model = Enrollment
         fields = (
             "id",
+            "ref",
             "applicant_email",
             "applicant_name",
+            "student_id",
+            "zntc_email",
             "course_name",
+            "assigned_centre_name",
+            "department",
+            "hexco_level",
             "status",
+            "error_message",
             "enrolled_at",
         )
 

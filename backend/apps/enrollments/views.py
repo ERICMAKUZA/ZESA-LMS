@@ -6,7 +6,7 @@ from rest_framework.decorators import action
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from apps.accounts.permissions import IsAdmin
+from apps.accounts.permissions import IsAdmin, IsAdminOrReviewerOrCentreAdmin
 from apps.applications.models import Application
 
 from .models import Enrollment, EnrollmentStatus
@@ -60,12 +60,26 @@ class EnrollmentStatusView(APIView):
 
 class AdminEnrollmentViewSet(viewsets.ReadOnlyModelViewSet):
     permission_classes = [IsAdmin]
-    filterset_fields = ["status", "application__course"]
+    filterset_fields = [
+        "status", "application__status", "application__course",
+        "application__assigned_centre", "application__department",
+    ]
+    search_fields = [
+        "application__applicant__first_name",
+        "application__applicant__last_name",
+        "application__applicant__student_id",
+        "application__ref",
+    ]
+
+    def get_permissions(self):
+        if self.action in ("list", "retrieve"):
+            return [IsAdminOrReviewerOrCentreAdmin()]
+        return super().get_permissions()
 
     def get_queryset(self):
         return (
             Enrollment.objects.all()
-            .select_related("application__applicant", "application__course")
+            .select_related("application__applicant", "application__course", "application__assigned_centre")
             .order_by("-created_at")
         )
 

@@ -30,6 +30,22 @@ export interface StudentEnrollment {
   enrolled_at: string | null
 }
 
+export interface AdminEnrollmentListItem {
+  id: string
+  ref: string
+  applicant_email: string
+  applicant_name: string
+  student_id: string | null
+  zntc_email: string | null
+  course_name: string
+  assigned_centre_name: string | null
+  department: string
+  hexco_level: string
+  status: string
+  error_message: string | null
+  enrolled_at: string | null
+}
+
 export interface CourseCategory {
   id: number
   name: string
