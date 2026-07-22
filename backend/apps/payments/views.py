@@ -6,7 +6,7 @@ from rest_framework import permissions, status
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from apps.accounts.permissions import IsAdmin
+from apps.accounts.permissions import IsAdmin, IsFinance
 from apps.applications.models import Application, ApplicationStatus
 
 from .models import Payment, PaymentMethod, PaymentStatus
@@ -159,6 +159,74 @@ class DemoConfirmPaymentView(APIView):
             pass
 
         return Response(response_data)
+
+
+class ConfirmManualPaymentView(APIView):
+    """
+    Admin/Finance-driven manual payment confirmation — bridges the gap while
+    SAP/PayNow integration is deferred. Confirms (creating if necessary) the
+    Payment for an application, then queues Moodle enrolment.
+    """
+    permission_classes = [IsAdmin | IsFinance]
+
+    def post(self, request, application_id):
+        try:
+            application = Application.objects.select_related("course").get(id=application_id)
+        except Application.DoesNotExist:
+            return Response({"detail": "Not found."}, status=status.HTTP_404_NOT_FOUND)
+
+        if application.status != ApplicationStatus.PAYMENT_PENDING:
+            return Response(
+                {"detail": f"Application must be PAYMENT_PENDING (current: {application.status})."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        method = request.data.get("method", "")
+        reference = request.data.get("reference", "")
+        amount = request.data.get("amount")
+
+        manual_methods = PaymentMethod.manual_methods()
+        if method not in manual_methods:
+            return Response(
+                {"detail": f"method must be one of {[m.value for m in manual_methods]}."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        if not reference:
+            return Response({"detail": "reference is required."}, status=status.HTTP_400_BAD_REQUEST)
+
+        payment = getattr(application, "payment", None)
+        if payment is None:
+            if amount is None:
+                amount = application.course.price
+            if not amount:
+                return Response({"detail": "amount is required."}, status=status.HTTP_400_BAD_REQUEST)
+            payment = Payment.objects.create(application=application, amount=amount, method=method)
+        elif payment.status not in (PaymentStatus.PENDING, PaymentStatus.PROCESSING):
+            return Response(
+                {"detail": f"Payment already {payment.status}."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        elif amount is not None:
+            payment.amount = amount
+            payment.save(update_fields=["amount"])
+
+        try:
+            payment.confirm_manual(confirmed_by=request.user, method=method, reference=reference)
+        except ValueError as exc:
+            return Response({"detail": str(exc)}, status=status.HTTP_400_BAD_REQUEST)
+
+        from apps.enrollments.tasks import enroll_student_in_moodle
+        enroll_student_in_moodle.delay(str(application.id))
+
+        payment.refresh_from_db()
+        application.refresh_from_db()
+
+        return Response({
+            "application_status": application.status,
+            "payment_status": payment.status,
+            "payment_id": str(payment.id),
+            "message": "Payment confirmed. Moodle enrolment queued.",
+        })
 
 
 class SAPSyncView(APIView):

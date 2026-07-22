@@ -5,14 +5,17 @@ from .models import Payment, SAPSyncLog
 
 @admin.register(Payment)
 class PaymentAdmin(admin.ModelAdmin):
-    list_display = ("id", "application", "amount", "currency", "method", "status", "initiated_at", "confirmed_at")
+    list_display = ("id", "application", "amount", "currency", "method", "status", "reference", "initiated_at", "confirmed_at")
     list_filter = ("status", "method", "currency")
-    search_fields = ("application__applicant__email", "paynow_reference", "sap_document_number")
-    readonly_fields = ("id", "initiated_at", "confirmed_at", "raw_webhook_payload")
+    search_fields = ("application__applicant__email", "paynow_reference", "sap_document_number", "reference")
+    readonly_fields = ("id", "initiated_at", "confirmed_at", "confirmed_by", "raw_webhook_payload")
     ordering = ("-initiated_at",)
     fieldsets = (
         ("Payment", {
             "fields": ("id", "application", "amount", "currency", "method", "status"),
+        }),
+        ("Manual / Reference", {
+            "fields": ("reference", "confirmed_by"),
         }),
         ("Paynow", {
             "fields": ("paynow_reference", "paynow_poll_url", "paynow_redirect_url", "raw_webhook_payload"),

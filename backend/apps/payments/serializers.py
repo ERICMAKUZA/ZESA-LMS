@@ -20,6 +20,8 @@ class PaymentSerializer(serializers.ModelSerializer):
             "paynow_redirect_url",
             "sap_document_number",
             "sap_cost_center",
+            "reference",
+            "confirmed_by",
             "initiated_at",
             "confirmed_at",
             "failed_reason",

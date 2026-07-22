@@ -1,5 +1,6 @@
 import uuid
 
+from django.conf import settings
 from django.db import models
 from django.utils import timezone
 
@@ -7,7 +8,16 @@ from django.utils import timezone
 class PaymentMethod(models.TextChoices):
     PAYNOW = "PAYNOW", "Paynow"
     SAP_BUDGET = "SAP_BUDGET", "SAP Budget Transfer"
-    MANUAL = "MANUAL", "Manual"
+    CASH = "CASH", "Cash"
+    EFT = "EFT", "EFT / Bank Transfer"
+    RTGS = "RTGS", "RTGS"
+    ECOCASH = "ECOCASH", "EcoCash"
+    ZIMSWITCH = "ZIMSWITCH", "ZimSwitch"
+    COMPANY = "COMPANY", "Company / Sponsor Payment"
+
+    @classmethod
+    def manual_methods(cls):
+        return (cls.CASH, cls.EFT, cls.RTGS, cls.ECOCASH, cls.ZIMSWITCH, cls.COMPANY)
 
 
 class PaymentStatus(models.TextChoices):
@@ -38,6 +48,18 @@ class Payment(models.Model):
     paynow_redirect_url = models.CharField(max_length=500, blank=True, null=True)
     sap_document_number = models.CharField(max_length=100, blank=True, null=True)
     sap_cost_center = models.CharField(max_length=100, blank=True, null=True)
+    reference = models.CharField(
+        max_length=100, blank=True, default='',
+        help_text="Bank reference, EcoCash transaction ID, or receipt number "
+                   "(manually confirmed payments)."
+    )
+    confirmed_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        null=True, blank=True,
+        on_delete=models.SET_NULL,
+        related_name="payment_confirmations",
+        help_text="Staff member who manually confirmed this payment, if applicable.",
+    )
     initiated_at = models.DateTimeField(auto_now_add=True)
     confirmed_at = models.DateTimeField(null=True, blank=True)
     failed_reason = models.CharField(max_length=500, blank=True, null=True)
@@ -57,6 +79,26 @@ class Payment(models.Model):
         self.save(update_fields=["status", "confirmed_at"])
         self.application.confirm_payment()
         self.application.save()
+
+    def confirm_manual(self, confirmed_by, method, reference):
+        """
+        Admin/Finance-driven manual payment confirmation — bridges the gap
+        while SAP/PayNow integration is deferred.
+        """
+        if self.status not in (PaymentStatus.PENDING, PaymentStatus.PROCESSING):
+            raise ValueError(
+                f"Cannot confirm payment: payment is {self.status}, "
+                f"expected PENDING or PROCESSING"
+            )
+        self.method = method
+        self.reference = reference
+        self.confirmed_by = confirmed_by
+        self.status = PaymentStatus.CONFIRMED
+        self.confirmed_at = timezone.now()
+        self.save(update_fields=[
+            "method", "reference", "confirmed_by", "status", "confirmed_at",
+        ])
+        self.application.confirm_payment()
 
     def fail(self, reason: str):
         self.status = PaymentStatus.FAILED
