@@ -1,5 +1,5 @@
 from django.contrib.auth.models import AbstractBaseUser, BaseUserManager, PermissionsMixin
-from django.db import models
+from django.db import models, transaction
 from django.utils import timezone
 
 
@@ -82,22 +82,44 @@ class User(AbstractBaseUser, PermissionsMixin):
 
     @classmethod
     def generate_student_id(cls, department, year=None):
+        """
+        Generate the next sequential student ID for a department/year.
+        Serializes concurrent callers (e.g. two students confirmed payment
+        at the same time) via a Postgres advisory lock keyed on the prefix —
+        SELECT FOR UPDATE alone acquires no lock when zero rows match, so it
+        can't protect the first ID issued for a given department/year.
+        """
         import datetime
+        from django.db import connection
+
         year = year or datetime.date.today().year
         dept_map = {
             'ELECTRICAL': 'EL',
             'TELECOMS': 'TC',
             'MECHANICAL': 'ME',
+            'GENERAL': 'GN',
             '': 'GN',
         }
-        dept_code = dept_map.get(department, 'GN')
+        dept_code = dept_map.get((department or '').upper(), 'GN')
         prefix = f"ZNTC-{year}-{dept_code}-"
-        last = (
-            cls.objects
-            .filter(student_id__startswith=prefix)
-            .order_by('student_id')
-            .values_list('student_id', flat=True)
-            .last()
-        )
-        last_seq = int(last.split('-')[-1]) if last else 0
-        return f"{prefix}{str(last_seq + 1).zfill(4)}"
+
+        with transaction.atomic():
+            with connection.cursor() as cursor:
+                cursor.execute("SELECT pg_advisory_xact_lock(hashtext(%s))", [prefix])
+
+            last = (
+                cls.objects
+                .select_for_update()
+                .filter(student_id__startswith=prefix)
+                .order_by('student_id')
+                .values_list('student_id', flat=True)
+                .last()
+            )
+            if last:
+                try:
+                    last_seq = int(last.split('-')[-1])
+                except (ValueError, IndexError):
+                    last_seq = 0
+            else:
+                last_seq = 0
+            return f"{prefix}{str(last_seq + 1).zfill(4)}"

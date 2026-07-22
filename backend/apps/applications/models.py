@@ -2,7 +2,7 @@ import uuid
 
 from django.conf import settings
 from django.core.exceptions import ValidationError
-from django.db import models
+from django.db import models, transaction
 from django.utils import timezone
 
 
@@ -285,10 +285,11 @@ class Application(models.Model):
         if self.applicant and not self.applicant.student_id:
             from django.contrib.auth import get_user_model
             User = get_user_model()
-            self.applicant.student_id = User.generate_student_id(
-                department=self.department or ''
-            )
-            self.applicant.save(update_fields=['student_id'])
+            with transaction.atomic():
+                self.applicant.student_id = User.generate_student_id(
+                    department=self.department or ''
+                )
+                self.applicant.save(update_fields=['student_id'])
         from apps.enrollments.models import Enrollment
         from apps.enrollments.tasks import sync_to_moodle
         enrollment, _ = Enrollment.objects.get_or_create(
