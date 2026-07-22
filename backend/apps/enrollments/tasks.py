@@ -8,6 +8,27 @@ from django.utils import timezone
 logger = logging.getLogger(__name__)
 
 
+def _ensure_zntc_email(applicant):
+    """Generate and persist a ZNTC student email (first.last@students.zntc.ac.zw) if missing."""
+    if applicant.zntc_email:
+        return applicant.zntc_email
+
+    from apps.accounts.models import User
+
+    first = (applicant.first_name or '').strip().lower().replace(' ', '')
+    last = (applicant.last_name or '').strip().lower().replace(' ', '')
+    base = f"{first}.{last}".strip('.') or 'student'
+    candidate = f"{base}@students.zntc.ac.zw"
+    suffix = 1
+    while User.objects.filter(zntc_email=candidate).exclude(pk=applicant.pk).exists():
+        candidate = f"{base}{suffix}@students.zntc.ac.zw"
+        suffix += 1
+
+    applicant.zntc_email = candidate
+    applicant.save(update_fields=['zntc_email'])
+    return candidate
+
+
 @shared_task(bind=True, max_retries=3)
 def enroll_student_in_moodle(self, application_id: str):
     """Legacy entry point — delegates to application.enroll() which triggers sync_to_moodle."""
@@ -63,17 +84,19 @@ def sync_to_moodle(self, enrollment_pk):
     centre = enrollment.application.assigned_centre
     client = MoodleClient()
 
+    zntc_email = _ensure_zntc_email(applicant)
+
     try:
         if settings.DEMO_MODE or not client.token:
             moodle_user_id = 9000 + (hash(str(enrollment_pk)) % 1000)
             temp_password = ''
         else:
             # 1. Create Moodle user
-            username = applicant.student_id or applicant.email.split('@')[0]
+            username = zntc_email.split('@')[0]
             temp_password = secrets.token_urlsafe(12) + "Aa1!"
             users = client.create_user(
                 username=username,
-                email=applicant.email,
+                email=zntc_email,
                 firstname=applicant.first_name,
                 lastname=applicant.last_name,
                 password=temp_password,
@@ -136,7 +159,9 @@ def dispatch_credentials_email(enrollment_pk):
     centre = enrollment.application.assigned_centre
     moodle_url = f"{settings.MOODLE_BASE_URL.rstrip('/')}/login/index.php"
     portal_url = getattr(settings, 'PORTAL_BASE_URL', 'http://localhost:3000')
-    username = applicant.student_id or applicant.email.split('@')[0]
+    username = applicant.zntc_email.split('@')[0] if applicant.zntc_email else (
+        applicant.student_id or applicant.email.split('@')[0]
+    )
 
     subject = f"Welcome to ZNTC — Your Learning Portal Access, {applicant.first_name}"
     message = f"""Dear {applicant.first_name} {applicant.last_name},
