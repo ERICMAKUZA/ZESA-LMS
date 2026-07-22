@@ -1,9 +1,11 @@
 'use client'
 
+import { useRef } from 'react'
 import Link from 'next/link'
-import { ArrowRight, Clock, BarChart2 } from 'lucide-react'
+import { ArrowRight, ChevronLeft, ChevronRight, Clock, BarChart2 } from 'lucide-react'
 import { useCourses } from '@/hooks/useCourses'
 import Spinner from '@/components/ui/Spinner'
+import { getCourseCardImage } from '@/lib/courseImages'
 import type { Course } from '@/types'
 
 const LEVEL_LABEL: Record<string, string> = {
@@ -15,21 +17,15 @@ const LEVEL_LABEL: Record<string, string> = {
 
 function CourseCard({ course }: { course: Course }) {
   return (
-    <div className="group flex flex-col rounded-xl border border-gray-100 bg-white overflow-hidden hover:shadow-md hover:-translate-y-0.5 transition-all duration-200">
+    <div className="group flex flex-col w-[260px] sm:w-[280px] flex-shrink-0 snap-start rounded-xl border border-gray-100 bg-white overflow-hidden hover:shadow-md hover:-translate-y-0.5 transition-all duration-200">
       {/* thumbnail */}
       <div className="relative h-40 bg-primary/10 overflow-hidden">
-        {course.thumbnail_url ? (
-          // eslint-disable-next-line @next/next/no-img-element
-          <img
-            src={course.thumbnail_url}
-            alt={course.fullname}
-            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-          />
-        ) : (
-          <div className="w-full h-full flex items-center justify-center">
-            <BarChart2 className="h-10 w-10 text-primary/20" />
-          </div>
-        )}
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img
+          src={course.thumbnail_url || getCourseCardImage(course.category?.name)}
+          alt={course.fullname}
+          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+        />
         {course.category && (
           <span className="absolute top-2 left-2 rounded-full bg-accent/90 px-2.5 py-0.5 text-[10px] font-bold text-primary-dark uppercase tracking-wide">
             {course.category.name}
@@ -79,18 +75,45 @@ function CourseCard({ course }: { course: Course }) {
 export default function PopularCourses() {
   const { data, isLoading } = useCourses()
   const courses = (data?.results ?? []).filter((c) => c.is_active).slice(0, 8)
+  const trackRef = useRef<HTMLDivElement>(null)
+
+  const scroll = (dir: 1 | -1) => {
+    const track = trackRef.current
+    if (!track) return
+    track.scrollBy({ left: dir * (track.clientWidth * 0.9), behavior: 'smooth' })
+  }
 
   return (
     <section id="courses" className="py-14 bg-gray-50">
       <div className="mx-auto max-w-7xl px-4 sm:px-6">
         <div className="flex items-center justify-between mb-8">
           <h2 className="text-2xl font-bold text-gray-900">Popular Courses</h2>
-          <Link
-            href="/courses"
-            className="text-sm font-medium text-primary hover:text-primary-light inline-flex items-center gap-1"
-          >
-            View All <ArrowRight className="h-4 w-4" />
-          </Link>
+          <div className="flex items-center gap-4">
+            <Link
+              href="/courses"
+              className="text-sm font-medium text-primary hover:text-primary-light inline-flex items-center gap-1"
+            >
+              View All <ArrowRight className="h-4 w-4" />
+            </Link>
+            {courses.length > 0 && (
+              <div className="hidden sm:flex items-center gap-2">
+                <button
+                  onClick={() => scroll(-1)}
+                  className="flex h-9 w-9 items-center justify-center rounded-full border border-gray-200 bg-white text-gray-600 hover:bg-primary hover:text-white hover:border-primary transition-colors"
+                  aria-label="Scroll left"
+                >
+                  <ChevronLeft className="h-4 w-4" />
+                </button>
+                <button
+                  onClick={() => scroll(1)}
+                  className="flex h-9 w-9 items-center justify-center rounded-full border border-gray-200 bg-white text-gray-600 hover:bg-primary hover:text-white hover:border-primary transition-colors"
+                  aria-label="Scroll right"
+                >
+                  <ChevronRight className="h-4 w-4" />
+                </button>
+              </div>
+            )}
+          </div>
         </div>
 
         {isLoading && (
@@ -99,7 +122,10 @@ export default function PopularCourses() {
           </div>
         )}
 
-        <div className="grid gap-6 grid-cols-1 sm:grid-cols-2 lg:grid-cols-4">
+        <div
+          ref={trackRef}
+          className="flex gap-6 overflow-x-auto scrollbar-hide snap-x snap-mandatory scroll-smooth pb-2"
+        >
           {courses.map((course) => (
             <CourseCard key={course.id} course={course} />
           ))}
