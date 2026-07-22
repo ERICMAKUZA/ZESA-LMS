@@ -1,13 +1,16 @@
+import csv
 import logging
 
 from django.conf import settings
+from django.http import HttpResponse
+from django.utils import timezone
 from rest_framework import generics, permissions, status, viewsets
 from rest_framework.decorators import action
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from apps.accounts.permissions import IsAdmin, IsAdminOrReviewerOrCentreAdmin
-from apps.applications.models import Application
+from apps.applications.models import Application, ApplicationStatus
 
 from .models import Enrollment, EnrollmentStatus
 from .serializers import EnrollmentListSerializer, EnrollmentSerializer, StudentEnrollmentSerializer
@@ -79,7 +82,10 @@ class AdminEnrollmentViewSet(viewsets.ReadOnlyModelViewSet):
     def get_queryset(self):
         return (
             Enrollment.objects.all()
-            .select_related("application__applicant", "application__course", "application__assigned_centre")
+            .select_related(
+                "application__applicant", "application__course",
+                "application__assigned_centre", "application__payment",
+            )
             .order_by("-created_at")
         )
 
@@ -87,6 +93,50 @@ class AdminEnrollmentViewSet(viewsets.ReadOnlyModelViewSet):
         if self.action == "retrieve":
             return EnrollmentSerializer
         return EnrollmentListSerializer
+
+    @action(detail=False, methods=["get"])
+    def export(self, request):
+        """GET /api/admin/enrollments/export/ — CSV of enrolled students, Admin only."""
+        qs = self.filter_queryset(
+            self.get_queryset().filter(application__status=ApplicationStatus.ENROLLED)
+        )
+
+        response = HttpResponse(content_type="text/csv")
+        response["Content-Disposition"] = (
+            f'attachment; filename="zntc_enrolled_students_{timezone.now():%Y%m%d_%H%M}.csv"'
+        )
+        writer = csv.writer(response)
+        writer.writerow([
+            "Student ID", "First Name", "Last Name", "ZNTC Email",
+            "Personal Email", "Phone", "Course", "Programme Level",
+            "Department", "Centre", "Payment Method", "Payment Reference",
+            "Payment Amount (USD)", "Payment Confirmed At",
+            "Moodle Sync Status", "Enrolled At", "Application Ref",
+        ])
+        for enrollment in qs:
+            app = enrollment.application
+            applicant = app.applicant
+            payment = getattr(app, "payment", None)
+            writer.writerow([
+                applicant.student_id or "",
+                applicant.first_name,
+                applicant.last_name,
+                applicant.zntc_email or "",
+                applicant.email,
+                applicant.phone,
+                app.course.fullname if app.course else "",
+                app.hexco_level or "Short Course",
+                app.department,
+                app.assigned_centre.name if app.assigned_centre else "",
+                payment.method if payment else "",
+                payment.reference if payment else "",
+                str(payment.amount) if payment else "",
+                payment.confirmed_at.strftime("%Y-%m-%d %H:%M") if payment and payment.confirmed_at else "",
+                enrollment.status,
+                enrollment.enrolled_at.strftime("%Y-%m-%d %H:%M") if enrollment.enrolled_at else "",
+                app.ref,
+            ])
+        return response
 
     @action(detail=True, methods=["post"])
     def retry(self, request, pk=None):

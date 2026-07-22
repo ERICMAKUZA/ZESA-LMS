@@ -4,10 +4,13 @@ import { useState } from 'react'
 import { format } from 'date-fns'
 import AdminLayout from '@/components/layout/AdminLayout'
 import Card from '@/components/ui/Card'
+import Button from '@/components/ui/Button'
 import Input from '@/components/ui/Input'
 import Spinner from '@/components/ui/Spinner'
 import { useToast } from '@/components/ui/Toast'
+import { useAuth } from '@/hooks/useAuth'
 import { useAdminEnrollments, useRetryEnrollment } from '@/hooks/useEnrollments'
+import api from '@/lib/api'
 
 const MOODLE_STATUS: Record<string, { label: string; className: string }> = {
   ENROLLED:   { label: '✓ Moodle',    className: 'bg-green-100 text-green-700' },
@@ -23,7 +26,9 @@ const HEXCO_LABEL: Record<string, string> = {
 }
 
 export default function AdminEnrolmentsPage() {
+  const { user } = useAuth()
   const [search, setSearch] = useState('')
+  const [exporting, setExporting] = useState(false)
   const { data, isLoading } = useAdminEnrollments({ search: search || undefined })
   const retryEnrollment = useRetryEnrollment()
   const { toast } = useToast()
@@ -40,6 +45,28 @@ export default function AdminEnrolmentsPage() {
     }
   }
 
+  const handleExportCsv = async () => {
+    setExporting(true)
+    try {
+      const response = await api.get('/admin/enrollments/export/', {
+        responseType: 'blob',
+        params: { search: search || undefined },
+      })
+      const url = window.URL.createObjectURL(new Blob([response.data]))
+      const link = document.createElement('a')
+      link.href = url
+      link.download = `zntc_enrolled_students_${format(new Date(), 'yyyyMMdd_HHmm')}.csv`
+      document.body.appendChild(link)
+      link.click()
+      link.remove()
+      window.URL.revokeObjectURL(url)
+    } catch {
+      toast({ variant: 'error', title: 'Failed to export CSV' })
+    } finally {
+      setExporting(false)
+    }
+  }
+
   return (
     <AdminLayout>
       <div className="flex items-center justify-between mb-6">
@@ -47,6 +74,11 @@ export default function AdminEnrolmentsPage() {
           <h1 className="text-2xl font-bold text-gray-900">Enrolled Students</h1>
           <p className="mt-1 text-sm text-gray-500">{data?.count ?? 0} total</p>
         </div>
+        {user?.role === 'ADMIN' && (
+          <Button variant="outline" onClick={handleExportCsv} loading={exporting}>
+            Export CSV
+          </Button>
+        )}
       </div>
 
       <Card className="mb-6">

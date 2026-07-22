@@ -101,6 +101,15 @@ export function useAdminApplication(id: string) {
       return data
     },
     enabled: !!id,
+    // Poll while Moodle enrolment is in flight after a payment confirmation,
+    // so the sync banner/badge updates without a manual reload. Stops as
+    // soon as the enrolment reaches a terminal state.
+    refetchInterval: (query) => {
+      const data = query.state.data
+      if (!data || data.status !== 'PAYMENT_CONFIRMED') return false
+      const syncing = !data.enrollment || ['PENDING', 'ENROLLING'].includes(data.enrollment.status)
+      return syncing ? 5000 : false
+    },
   })
 }
 
