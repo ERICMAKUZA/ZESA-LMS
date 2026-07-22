@@ -11,7 +11,7 @@ import Input from '@/components/ui/Input'
 import Select from '@/components/ui/Select'
 import Spinner from '@/components/ui/Spinner'
 import WalkInModal from '@/components/WalkInModal'
-import { useAdminApplications } from '@/hooks/useApplications'
+import { useAdminApplications, useDashboardStats } from '@/hooks/useApplications'
 import type { ApplicationStatus } from '@/types'
 
 const STATUS_OPTIONS = [
@@ -42,8 +42,10 @@ export default function AdminApplicationsPage() {
     submitted_before: submittedBefore || undefined,
     escalated: escalatedOnly || undefined,
   })
+  const { data: stats } = useDashboardStats()
 
   const applications = data?.results ?? []
+  const awaitingPaymentCount = stats?.approved_awaiting_payment ?? 0
 
   return (
     <AdminLayout>
@@ -56,6 +58,20 @@ export default function AdminApplicationsPage() {
           + Register Walk-in
         </Button>
       </div>
+
+      {/* Quick filter */}
+      {awaitingPaymentCount > 0 && (
+        <button
+          onClick={() => setStatus('PAYMENT_PENDING')}
+          className={`mb-4 inline-flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-sm font-medium transition-colors ${
+            status === 'PAYMENT_PENDING'
+              ? 'bg-amber-600 text-white border-amber-600'
+              : 'text-amber-700 border-amber-200 bg-amber-50 hover:bg-amber-100'
+          }`}
+        >
+          Awaiting Payment ({awaitingPaymentCount})
+        </button>
+      )}
 
       {/* Filters */}
       <Card className="mb-6">
@@ -143,6 +159,11 @@ export default function AdminApplicationsPage() {
                         {app.escalated && (
                           <span className="inline-flex items-center gap-1 text-[10px] font-bold uppercase tracking-wider bg-red-100 text-red-700 border border-red-300 rounded px-1.5 py-0.5 animate-pulse">
                             ⚑ Escalated
+                          </span>
+                        )}
+                        {app.enrollment_status === 'FAILED' && (
+                          <span className="text-xs font-semibold bg-red-100 text-red-700 rounded-full px-2.5 py-1">
+                            Moodle Sync Failed
                           </span>
                         )}
                       </div>

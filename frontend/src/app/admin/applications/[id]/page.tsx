@@ -1,6 +1,9 @@
 'use client'
 
 import { useState } from 'react'
+import { useForm } from 'react-hook-form'
+import { zodResolver } from '@hookform/resolvers/zod'
+import { z } from 'zod'
 import { useQuery } from '@tanstack/react-query'
 import { ArrowLeft, CheckCircle, Clock } from 'lucide-react'
 import Link from 'next/link'
@@ -9,14 +12,36 @@ import AdminLayout from '@/components/layout/AdminLayout'
 import Card from '@/components/ui/Card'
 import Badge from '@/components/ui/Badge'
 import Button from '@/components/ui/Button'
+import Input from '@/components/ui/Input'
 import Modal from '@/components/ui/Modal'
 import Spinner from '@/components/ui/Spinner'
 import { useToast } from '@/components/ui/Toast'
-import { useAdminApplication, useStartReview, useReviewAction } from '@/hooks/useApplications'
+import {
+  useAdminApplication, useStartReview, useReviewAction,
+  useConfirmPayment, useRetryMoodleSync,
+} from '@/hooks/useApplications'
 import api from '@/lib/api'
 import type { ApplicationStatus, Centre } from '@/types'
 
 type ReviewAction = 'approve' | 'reject' | 'request_more_info'
+
+const paymentSchema = z.object({
+  method: z.enum(['CASH', 'EFT', 'RTGS', 'ECOCASH', 'ZIMSWITCH', 'COMPANY'], {
+    errorMap: () => ({ message: 'Select a payment method' }),
+  }),
+  reference: z.string().min(3, 'Reference required'),
+  amount: z.coerce.number({ invalid_type_error: 'Enter a valid amount' }).positive('Amount must be positive'),
+})
+type PaymentFormValues = z.infer<typeof paymentSchema>
+
+const PAYMENT_METHODS = [
+  { value: 'CASH',      label: 'Cash' },
+  { value: 'EFT',       label: 'EFT / Bank Transfer' },
+  { value: 'RTGS',      label: 'RTGS' },
+  { value: 'ECOCASH',   label: 'EcoCash' },
+  { value: 'ZIMSWITCH', label: 'ZimSwitch' },
+  { value: 'COMPANY',   label: 'Company / Sponsor Payment' },
+]
 
 const actionLabels: Record<ReviewAction, string> = {
   approve: 'Approve Application',
@@ -32,6 +57,8 @@ export default function AdminApplicationDetailPage({ params }: { params: { id: s
   const { data: app, isLoading } = useAdminApplication(params.id)
   const startReview = useStartReview(params.id)
   const reviewAction = useReviewAction(params.id)
+  const confirmPayment = useConfirmPayment(params.id)
+  const retryMoodleSync = useRetryMoodleSync(params.id)
   const { toast } = useToast()
 
   const [modalAction, setModalAction] = useState<ReviewAction | null>(null)
@@ -39,6 +66,41 @@ export default function AdminApplicationDetailPage({ params }: { params: { id: s
   const [rejectionReason, setRejectionReason] = useState('')
   const [selectedCentre, setSelectedCentre] = useState('')
   const [approveSubmitted, setApproveSubmitted] = useState(false)
+  const [confirmPaymentOpen, setConfirmPaymentOpen] = useState(false)
+
+  const {
+    register: registerPayment,
+    handleSubmit: handlePaymentSubmit,
+    reset: resetPaymentForm,
+    formState: { errors: paymentErrors },
+  } = useForm<PaymentFormValues>({ resolver: zodResolver(paymentSchema) })
+
+  const closePaymentModal = () => {
+    setConfirmPaymentOpen(false)
+    resetPaymentForm()
+  }
+
+  const onConfirmPayment = async (values: PaymentFormValues) => {
+    try {
+      await confirmPayment.mutateAsync(values)
+      toast({ variant: 'success', title: 'Payment confirmed. Moodle enrolment queued.' })
+      closePaymentModal()
+    } catch (err: unknown) {
+      const msg = (err as { response?: { data?: { detail?: string } } })?.response?.data?.detail
+      toast({ variant: 'error', title: 'Failed to confirm payment', description: msg })
+    }
+  }
+
+  const handleRetryMoodle = async () => {
+    if (!app?.enrollment) return
+    try {
+      await retryMoodleSync.mutateAsync(app.enrollment.id)
+      toast({ variant: 'success', title: 'Moodle sync queued.' })
+    } catch (err: unknown) {
+      const msg = (err as { response?: { data?: { detail?: string } } })?.response?.data?.detail
+      toast({ variant: 'error', title: 'Failed to queue retry', description: msg })
+    }
+  }
 
   const { data: centres = [] } = useQuery<Centre[]>({
     queryKey: ['centres'],
@@ -113,6 +175,37 @@ export default function AdminApplicationDetailPage({ params }: { params: { id: s
         </Link>
       </div>
 
+      {app.status === 'PAYMENT_PENDING' && (
+        <div className="rounded-xl border border-amber-300 bg-amber-50 px-5 py-4 mb-6 flex items-start justify-between gap-4">
+          <div>
+            <p className="font-semibold text-amber-800">Awaiting Payment Confirmation</p>
+            <p className="text-sm text-amber-700 mt-1">
+              Once payment is received, confirm it here to trigger Moodle enrolment.
+            </p>
+          </div>
+          <Button
+            onClick={() => setConfirmPaymentOpen(true)}
+            className="flex-shrink-0 !bg-amber-600 hover:!bg-amber-700"
+          >
+            Confirm Payment
+          </Button>
+        </div>
+      )}
+
+      {app.enrollment?.status === 'FAILED' && (
+        <div className="rounded-xl border border-red-300 bg-red-50 px-5 py-4 mb-4">
+          <p className="font-semibold text-red-800">Moodle Enrolment Failed</p>
+          <p className="text-sm text-red-600 mt-1 font-mono">{app.enrollment.error_message}</p>
+          <button
+            onClick={handleRetryMoodle}
+            disabled={retryMoodleSync.isPending}
+            className="mt-3 text-sm font-medium text-red-700 underline hover:text-red-900 disabled:opacity-50"
+          >
+            {retryMoodleSync.isPending ? 'Queuing retry…' : 'Retry Moodle Sync'}
+          </button>
+        </div>
+      )}
+
       <div className="grid gap-6 lg:grid-cols-3">
         <div className="lg:col-span-2 flex flex-col gap-6">
           {/* Header */}
@@ -143,7 +236,19 @@ export default function AdminApplicationDetailPage({ params }: { params: { id: s
                   {app.applicant_name} · {app.applicant_email}
                 </p>
               </div>
-              <Badge status={app.status} />
+              <div className="flex items-center gap-2">
+                <Badge status={app.status} />
+                {app.enrollment?.status === 'ENROLLED' && (
+                  <span className="inline-flex items-center gap-1 text-xs font-semibold bg-green-100 text-green-800 rounded-full px-2.5 py-1">
+                    ✓ Moodle Synced
+                    {app.enrollment.enrolled_at && (
+                      <span className="font-normal text-green-700">
+                        · {format(new Date(app.enrollment.enrolled_at), 'dd MMM yyyy HH:mm')}
+                      </span>
+                    )}
+                  </span>
+                )}
+              </div>
             </div>
 
             {/* Action buttons */}
@@ -229,6 +334,24 @@ export default function AdminApplicationDetailPage({ params }: { params: { id: s
                 </li>
               ))}
             </ol>
+
+            {app.payment?.status === 'CONFIRMED' && (
+              <div className="mt-4 p-4 rounded-lg bg-green-50 border border-green-200">
+                <p className="text-sm font-semibold text-green-800">Payment Confirmed</p>
+                <div className="mt-2 grid grid-cols-2 gap-x-4 gap-y-1 text-sm text-green-700">
+                  <span className="text-gray-500">Method</span>
+                  <span>{app.payment.method}</span>
+                  <span className="text-gray-500">Reference</span>
+                  <span>{app.payment.reference || '—'}</span>
+                  <span className="text-gray-500">Amount</span>
+                  <span>{app.payment.currency} {app.payment.amount}</span>
+                  <span className="text-gray-500">Confirmed by</span>
+                  <span>{app.payment.confirmed_by_name || 'Admin'}</span>
+                  <span className="text-gray-500">Date</span>
+                  <span>{app.payment.confirmed_at ? new Date(app.payment.confirmed_at).toLocaleString() : '—'}</span>
+                </div>
+              </div>
+            )}
           </Card>
 
           {/* Timeline progress */}
@@ -383,6 +506,71 @@ export default function AdminApplicationDetailPage({ params }: { params: { id: s
           {modalAction === 'reject' && 'The applicant will be notified with the reason provided.'}
           {modalAction === 'request_more_info' && 'The applicant will be asked to provide additional information and resubmit.'}
         </p>
+      </Modal>
+
+      {/* Confirm payment modal */}
+      <Modal
+        open={confirmPaymentOpen}
+        onOpenChange={(open) => { if (!open) closePaymentModal() }}
+        title="Confirm Payment"
+        footer={
+          <>
+            <Button variant="ghost" onClick={closePaymentModal}>Cancel</Button>
+            <Button
+              type="submit"
+              form="confirm-payment-form"
+              className="!bg-amber-600 hover:!bg-amber-700"
+              loading={confirmPayment.isPending}
+            >
+              Confirm Payment & Enrol Student
+            </Button>
+          </>
+        }
+      >
+        <form id="confirm-payment-form" onSubmit={handlePaymentSubmit(onConfirmPayment)} className="flex flex-col gap-4">
+          <div className="flex flex-col gap-1">
+            <label className="text-sm font-medium text-gray-700">
+              Payment Method <span className="text-danger">*</span>
+            </label>
+            <select
+              className="block w-full rounded-md border-gray-300 shadow-sm text-sm focus:border-primary focus:ring-primary"
+              defaultValue=""
+              {...registerPayment('method')}
+            >
+              <option value="" disabled>— Select a payment method —</option>
+              {PAYMENT_METHODS.map((m) => (
+                <option key={m.value} value={m.value}>{m.label}</option>
+              ))}
+            </select>
+            {paymentErrors.method && (
+              <p className="text-xs text-danger">{paymentErrors.method.message}</p>
+            )}
+          </div>
+
+          <Input
+            label="Reference / Receipt Number *"
+            placeholder="Bank reference, EcoCash transaction ID, receipt no…"
+            error={paymentErrors.reference?.message}
+            {...registerPayment('reference')}
+          />
+
+          <Input
+            label="Amount Received (USD) *"
+            type="number"
+            step="0.01"
+            min="0"
+            placeholder="0.00"
+            error={paymentErrors.amount?.message}
+            {...registerPayment('amount')}
+          />
+
+          <div className="rounded-lg bg-amber-50 border border-amber-200 px-4 py-3">
+            <p className="text-sm text-amber-800">
+              This action will confirm payment and immediately trigger Moodle enrolment for
+              this student. This cannot be undone.
+            </p>
+          </div>
+        </form>
       </Modal>
     </AdminLayout>
   )

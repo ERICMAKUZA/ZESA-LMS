@@ -85,7 +85,7 @@ class AdminApplicationViewSet(viewsets.ModelViewSet):
     def get_queryset(self):
         return (
             Application.objects.all()
-            .select_related("applicant", "course", "reviewer")
+            .select_related("applicant", "course", "reviewer", "enrollment", "payment")
             .prefetch_related("documents", "history")
         )
 

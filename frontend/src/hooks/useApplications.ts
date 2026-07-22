@@ -23,6 +23,19 @@ interface ReviewActionData {
   assigned_centre?: string
 }
 
+interface ConfirmPaymentData {
+  method: 'CASH' | 'EFT' | 'RTGS' | 'ECOCASH' | 'ZIMSWITCH' | 'COMPANY'
+  reference: string
+  amount: number
+}
+
+interface ConfirmPaymentResponse {
+  application_status: string
+  payment_status: string
+  payment_id: string
+  message: string
+}
+
 export function useMyApplications() {
   return useQuery<PaginatedResponse<ApplicationListItem>>({
     queryKey: ['my-applications'],
@@ -113,6 +126,32 @@ export function useReviewAction(id: string) {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['admin-applications'] })
+    },
+  })
+}
+
+export function useConfirmPayment(id: string) {
+  const queryClient = useQueryClient()
+  return useMutation<ConfirmPaymentResponse, Error, ConfirmPaymentData>({
+    mutationFn: async (payload) => {
+      const { data } = await api.post(`/payments/applications/${id}/confirm-manual/`, payload)
+      return data
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['admin-applications'] })
+    },
+  })
+}
+
+export function useRetryMoodleSync(applicationId: string) {
+  const queryClient = useQueryClient()
+  return useMutation<unknown, Error, string>({
+    mutationFn: async (enrollmentId) => {
+      const { data } = await api.post(`/admin/enrollments/${enrollmentId}/retry/`)
+      return data
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['admin-applications', applicationId] })
     },
   })
 }

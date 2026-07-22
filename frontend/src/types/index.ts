@@ -139,7 +139,9 @@ export interface ApplicationPayment {
   currency: string
   status: string
   method: string
+  reference: string
   confirmed_at: string | null
+  confirmed_by_name: string | null
 }
 
 export interface ApplicationEnrollment {
@@ -147,6 +149,7 @@ export interface ApplicationEnrollment {
   status: string
   enrolled_at: string | null
   moodle_course_url: string
+  error_message: string | null
 }
 
 export interface Application {
@@ -209,6 +212,7 @@ export interface ApplicationListItem {
   escalated_at: string | null
   submitted_at: string | null
   created_at: string
+  enrollment_status: string | null
 }
 
 export interface Notification {

@@ -83,6 +83,7 @@ class ApplicationListSerializer(serializers.ModelSerializer):
     applicant_name = serializers.SerializerMethodField()
     applicant_email = serializers.EmailField(source="applicant.email", read_only=True)
     course_name = serializers.CharField(source="course.fullname", read_only=True)
+    enrollment_status = serializers.SerializerMethodField()
 
     class Meta:
         model = Application
@@ -91,10 +92,17 @@ class ApplicationListSerializer(serializers.ModelSerializer):
             "course_name", "status", "source",
             "escalated", "escalated_at",
             "submitted_at", "created_at",
+            "enrollment_status",
         )
 
     def get_applicant_name(self, obj):
         return obj.applicant.full_name
+
+    def get_enrollment_status(self, obj):
+        try:
+            return obj.enrollment.status
+        except Exception:
+            return None
 
 
 class ApplicationDetailSerializer(serializers.ModelSerializer):
@@ -157,7 +165,9 @@ class ApplicationDetailSerializer(serializers.ModelSerializer):
                 "currency": p.currency,
                 "status": p.status,
                 "method": p.method,
+                "reference": p.reference,
                 "confirmed_at": p.confirmed_at,
+                "confirmed_by_name": p.confirmed_by.full_name if p.confirmed_by else None,
             }
         except Exception:
             return None
@@ -170,6 +180,7 @@ class ApplicationDetailSerializer(serializers.ModelSerializer):
                 "status": e.status,
                 "enrolled_at": e.enrolled_at,
                 "moodle_course_url": e.moodle_course_url,
+                "error_message": e.error_message,
             }
         except Exception:
             return None
