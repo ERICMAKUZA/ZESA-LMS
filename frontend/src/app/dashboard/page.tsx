@@ -112,6 +112,20 @@ export default function DashboardPage() {
                         ? new Date(enrollment.enrolled_at).toLocaleDateString('en-GB')
                         : '—'}
                     </p>
+                    {enrollment.start_date && (
+                      <p className="text-xs text-gray-400 mt-0.5">
+                        {new Date(enrollment.start_date).toLocaleDateString('en-GB')}
+                        {' → '}
+                        {enrollment.end_date
+                          ? new Date(enrollment.end_date).toLocaleDateString('en-GB')
+                          : 'TBC'}
+                      </p>
+                    )}
+                    {enrollment.is_suspended && (
+                      <span className="mt-1 inline-flex rounded-full bg-amber-100 px-2 py-0.5 text-xs font-medium text-amber-700">
+                        Suspended
+                      </span>
+                    )}
                   </div>
                   {canOpen && (
                     <span className="text-green-600 group-hover:translate-x-1 transition-transform">

@@ -29,6 +29,9 @@ export interface StudentEnrollment {
   moodle_course_url: string | null
   status: string
   enrolled_at: string | null
+  start_date: string | null
+  end_date: string | null
+  is_suspended: boolean
 }
 
 export interface AdminEnrollmentListItem {
@@ -45,6 +48,9 @@ export interface AdminEnrollmentListItem {
   status: string
   error_message: string | null
   enrolled_at: string | null
+  start_date: string | null
+  end_date: string | null
+  is_suspended: boolean
 }
 
 export interface CourseCategory {

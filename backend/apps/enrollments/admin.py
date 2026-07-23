@@ -7,11 +7,13 @@ from .models import Enrollment
 @admin.register(Enrollment)
 class EnrollmentAdmin(admin.ModelAdmin):
     list_display = (
-        "id", "application_link", "status", "moodle_user_id",
+        "id", "application_link", "status", "is_suspended",
+        "start_date", "end_date", "moodle_user_id",
         "enrolled_at", "last_access",
     )
-    list_filter = ("status",)
+    list_filter = ("status", "is_suspended")
     search_fields = ("application__applicant__email", "application__course__shortname")
+    autocomplete_fields = ["schedule"]
     readonly_fields = (
         "id", "created_at", "enrolled_at", "unenrolled_at",
         "moodle_user_id", "completion_status", "last_access", "error_message",
@@ -20,6 +22,12 @@ class EnrollmentAdmin(admin.ModelAdmin):
     fieldsets = (
         ("Enrollment", {
             "fields": ("id", "application", "status", "moodle_user_id", "moodle_course_id"),
+        }),
+        ("Academic Record (FRS §3.2)", {
+            "fields": (
+                "schedule", "start_date", "end_date",
+                "is_suspended", "suspension_reason", "suspended_at",
+            ),
         }),
         ("Timestamps", {
             "fields": ("created_at", "enrolled_at", "unenrolled_at", "last_access"),

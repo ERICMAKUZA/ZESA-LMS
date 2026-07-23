@@ -167,6 +167,25 @@ class AdminEnrollmentViewSet(viewsets.ReadOnlyModelViewSet):
         )
 
     @action(detail=True, methods=["post"])
+    def suspend(self, request, pk=None):
+        enrollment = self.get_object()
+        reason = request.data.get("reason", "").strip()
+        if not reason:
+            return Response({"detail": "reason is required."}, status=status.HTTP_400_BAD_REQUEST)
+        if enrollment.is_suspended:
+            return Response({"detail": "Enrollment is already suspended."}, status=status.HTTP_400_BAD_REQUEST)
+        enrollment.suspend(reason)
+        return Response(EnrollmentSerializer(enrollment, context={"request": request}).data)
+
+    @action(detail=True, methods=["post"])
+    def reinstate(self, request, pk=None):
+        enrollment = self.get_object()
+        if not enrollment.is_suspended:
+            return Response({"detail": "Enrollment is not suspended."}, status=status.HTTP_400_BAD_REQUEST)
+        enrollment.reinstate()
+        return Response(EnrollmentSerializer(enrollment, context={"request": request}).data)
+
+    @action(detail=True, methods=["post"])
     def unenroll(self, request, pk=None):
         enrollment = self.get_object()
         if enrollment.status != EnrollmentStatus.ENROLLED:

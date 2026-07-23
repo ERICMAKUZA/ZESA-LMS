@@ -305,9 +305,27 @@ class Application(models.Model):
                 self.applicant.save(update_fields=['student_id'])
         from apps.enrollments.models import Enrollment
         from apps.enrollments.tasks import sync_to_moodle
+
+        # No direct FK from Application to a specific CourseSchedule intake,
+        # so resolve the soonest open one for the course (best-effort, same
+        # simplification the lecturer-schedule-assignment feature relies on).
+        schedule = self.course.schedules.filter(status='OPEN').order_by(
+            'year', 'month', 'week_in_month'
+        ).first()
+        start_date = schedule.get_approximate_start_date() if schedule else None
+        end_date = (
+            schedule.get_approximate_end_date()
+            if schedule and self.course.duration_days else None
+        )
+
         enrollment, _ = Enrollment.objects.get_or_create(
             application=self,
-            defaults={'moodle_course_id': self.course.moodle_course_id or 0},
+            defaults={
+                'moodle_course_id': self.course.moodle_course_id or 0,
+                'schedule': schedule,
+                'start_date': start_date,
+                'end_date': end_date,
+            },
         )
         sync_to_moodle.delay(str(enrollment.pk))
 

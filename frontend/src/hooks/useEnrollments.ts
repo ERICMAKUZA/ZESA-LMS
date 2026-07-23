@@ -32,3 +32,29 @@ export function useRetryEnrollment() {
     },
   })
 }
+
+export function useSuspendEnrollment() {
+  const queryClient = useQueryClient()
+  return useMutation<unknown, Error, { id: string; reason: string }>({
+    mutationFn: async ({ id, reason }) => {
+      const { data } = await api.post(`/admin/enrollments/${id}/suspend/`, { reason })
+      return data
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['admin-enrollments'] })
+    },
+  })
+}
+
+export function useReinstateEnrollment() {
+  const queryClient = useQueryClient()
+  return useMutation<unknown, Error, string>({
+    mutationFn: async (enrollmentId) => {
+      const { data } = await api.post(`/admin/enrollments/${enrollmentId}/reinstate/`)
+      return data
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['admin-enrollments'] })
+    },
+  })
+}

@@ -6,11 +6,80 @@ import AdminLayout from '@/components/layout/AdminLayout'
 import Card from '@/components/ui/Card'
 import Button from '@/components/ui/Button'
 import Input from '@/components/ui/Input'
+import Modal from '@/components/ui/Modal'
 import Spinner from '@/components/ui/Spinner'
 import { useToast } from '@/components/ui/Toast'
 import { useAuth } from '@/hooks/useAuth'
-import { useAdminEnrollments, useRetryEnrollment } from '@/hooks/useEnrollments'
+import {
+  useAdminEnrollments, useReinstateEnrollment, useRetryEnrollment, useSuspendEnrollment,
+} from '@/hooks/useEnrollments'
 import api from '@/lib/api'
+import type { AdminEnrollmentListItem } from '@/types'
+
+function SuspendModal({
+  enrollment,
+  onOpenChange,
+}: {
+  enrollment: AdminEnrollmentListItem | null
+  onOpenChange: (open: boolean) => void
+}) {
+  const [reason, setReason] = useState('')
+  const { toast } = useToast()
+  const suspend = useSuspendEnrollment()
+
+  const close = () => {
+    onOpenChange(false)
+    setReason('')
+  }
+
+  const handleConfirm = async () => {
+    if (!enrollment) return
+    try {
+      await suspend.mutateAsync({ id: enrollment.id, reason })
+      toast({ variant: 'success', title: 'Enrolment suspended.' })
+      close()
+    } catch (err: unknown) {
+      const msg = (err as { response?: { data?: { detail?: string } } })?.response?.data?.detail
+      toast({ variant: 'error', title: 'Failed to suspend', description: msg })
+    }
+  }
+
+  if (!enrollment) return null
+
+  return (
+    <Modal
+      open={!!enrollment}
+      onOpenChange={(open) => { if (!open) close() }}
+      title="Suspend Enrolment"
+      footer={
+        <>
+          <Button variant="ghost" onClick={close}>Cancel</Button>
+          <Button variant="danger" loading={suspend.isPending} disabled={!reason.trim()} onClick={handleConfirm}>
+            Suspend
+          </Button>
+        </>
+      }
+    >
+      <div className="space-y-4">
+        <p className="text-sm text-gray-600">
+          Suspending <span className="font-medium text-gray-900">{enrollment.applicant_name}</span>&apos;s
+          enrolment in <span className="font-medium text-gray-900">{enrollment.course_name}</span> marks
+          their academic status as suspended (FRS §3.2). This does not affect their Moodle access.
+        </p>
+        <div>
+          <label className="mb-1 block text-sm font-medium text-gray-700">Reason</label>
+          <textarea
+            value={reason}
+            onChange={(e) => setReason(e.target.value)}
+            rows={3}
+            className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
+            placeholder="Required"
+          />
+        </div>
+      </div>
+    </Modal>
+  )
+}
 
 const MOODLE_STATUS: Record<string, { label: string; className: string }> = {
   ENROLLED:   { label: '✓ Moodle',    className: 'bg-green-100 text-green-700' },
@@ -31,6 +100,8 @@ export default function AdminEnrolmentsPage() {
   const [exporting, setExporting] = useState(false)
   const { data, isLoading } = useAdminEnrollments({ search: search || undefined })
   const retryEnrollment = useRetryEnrollment()
+  const reinstateEnrollment = useReinstateEnrollment()
+  const [suspendTarget, setSuspendTarget] = useState<AdminEnrollmentListItem | null>(null)
   const { toast } = useToast()
 
   const enrolments = data?.results ?? []
@@ -42,6 +113,16 @@ export default function AdminEnrolmentsPage() {
     } catch (err: unknown) {
       const msg = (err as { response?: { data?: { detail?: string } } })?.response?.data?.detail
       toast({ variant: 'error', title: 'Failed to queue retry', description: msg })
+    }
+  }
+
+  const handleReinstate = async (enrollmentId: string) => {
+    try {
+      await reinstateEnrollment.mutateAsync(enrollmentId)
+      toast({ variant: 'success', title: 'Enrolment reinstated.' })
+    } catch (err: unknown) {
+      const msg = (err as { response?: { data?: { detail?: string } } })?.response?.data?.detail
+      toast({ variant: 'error', title: 'Failed to reinstate', description: msg })
     }
   }
 
@@ -113,6 +194,8 @@ export default function AdminEnrolmentsPage() {
                   <th className="pb-3 text-left font-medium">Dept</th>
                   <th className="pb-3 text-left font-medium">Programme</th>
                   <th className="pb-3 text-left font-medium">Moodle</th>
+                  <th className="pb-3 text-left font-medium">Dates</th>
+                  <th className="pb-3 text-left font-medium">Status</th>
                   <th className="pb-3 text-left font-medium">Enrolled</th>
                 </tr>
               </thead>
@@ -154,6 +237,39 @@ export default function AdminEnrolmentsPage() {
                           )}
                         </div>
                       </td>
+                      <td className="py-3 text-gray-500 whitespace-nowrap">
+                        {e.start_date ? format(new Date(e.start_date), 'dd MMM yyyy') : '—'}
+                        {' → '}
+                        {e.end_date ? format(new Date(e.end_date), 'dd MMM yyyy') : 'TBC'}
+                      </td>
+                      <td className="py-3">
+                        {e.is_suspended ? (
+                          <div className="flex items-center gap-2">
+                            <span className="text-xs font-semibold rounded-full px-2.5 py-1 bg-amber-100 text-amber-700">
+                              Suspended
+                            </span>
+                            <button
+                              onClick={() => handleReinstate(e.id)}
+                              disabled={reinstateEnrollment.isPending}
+                              className="text-xs font-medium text-primary hover:underline disabled:opacity-50"
+                            >
+                              Reinstate
+                            </button>
+                          </div>
+                        ) : (
+                          <div className="flex items-center gap-2">
+                            <span className="text-xs font-semibold rounded-full px-2.5 py-1 bg-green-100 text-green-700">
+                              Active
+                            </span>
+                            <button
+                              onClick={() => setSuspendTarget(e)}
+                              className="text-xs font-medium text-gray-500 hover:underline"
+                            >
+                              Suspend
+                            </button>
+                          </div>
+                        )}
+                      </td>
                       <td className="py-3 text-gray-500">
                         {e.enrolled_at ? format(new Date(e.enrolled_at), 'dd MMM yyyy') : '—'}
                       </td>
@@ -165,6 +281,8 @@ export default function AdminEnrolmentsPage() {
           </div>
         )}
       </Card>
+
+      <SuspendModal enrollment={suspendTarget} onOpenChange={(open) => { if (!open) setSuspendTarget(null) }} />
     </AdminLayout>
   )
 }

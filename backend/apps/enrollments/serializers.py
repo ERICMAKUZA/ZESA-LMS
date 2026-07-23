@@ -32,6 +32,10 @@ class EnrollmentSerializer(serializers.ModelSerializer):
             "error_message",
             "created_at",
             "moodle_course_url",
+            "start_date",
+            "end_date",
+            "is_suspended",
+            "suspension_reason",
         )
         read_only_fields = fields
 
@@ -57,6 +61,7 @@ class StudentEnrollmentSerializer(serializers.ModelSerializer):
             "id", "application", "course_name",
             "moodle_user_id", "moodle_course_url",
             "status", "enrolled_at",
+            "start_date", "end_date", "is_suspended",
         )
         read_only_fields = fields
 
@@ -104,6 +109,9 @@ class EnrollmentListSerializer(serializers.ModelSerializer):
             "status",
             "error_message",
             "enrolled_at",
+            "start_date",
+            "end_date",
+            "is_suspended",
         )
 
     def get_applicant_name(self, obj):
