@@ -1,6 +1,7 @@
 'use client'
 
 import { useQuery } from '@tanstack/react-query'
+import { Award } from 'lucide-react'
 import StudentLayout from '@/components/layout/StudentLayout'
 import PageHeader from '@/components/ui/PageHeader'
 import Card from '@/components/ui/Card'
@@ -8,6 +9,7 @@ import Badge from '@/components/ui/Badge'
 import Spinner from '@/components/ui/Spinner'
 import { useAuth } from '@/hooks/useAuth'
 import { useMyApplications } from '@/hooks/useApplications'
+import { useMyCertificates } from '@/hooks/useCertificates'
 import api from '@/lib/api'
 import { format } from 'date-fns'
 import type { ApplicationStatus, User, StudentEnrollment } from '@/types'
@@ -34,6 +36,9 @@ export default function DashboardPage() {
     queryKey: ['enrollments'],
     queryFn: () => api.get<StudentEnrollment[]>('/enrollments/').then(r => r.data),
   })
+
+  const { data: certData } = useMyCertificates()
+  const certificates = certData?.results ?? []
 
   const countByStatus = (status: ApplicationStatus) =>
     applications.filter((a) => a.status === status).length
@@ -112,6 +117,60 @@ export default function DashboardPage() {
                   →
                 </span>
               </a>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* My Certificates */}
+      {certificates.length > 0 && (
+        <div className="mb-6">
+          <h2 className="text-base font-semibold text-gray-700 mb-3">My Certificates</h2>
+          <div className="space-y-3">
+            {certificates.map((cert) => (
+              <div
+                key={cert.id}
+                className="flex items-center gap-4 p-4 bg-white rounded-lg border border-gray-200 hover:border-green-500 transition-colors"
+              >
+                <div className="w-10 h-10 bg-green-700 rounded-lg flex items-center justify-center flex-shrink-0 text-white">
+                  <Award className="h-5 w-5" />
+                </div>
+
+                <div className="flex-1 min-w-0">
+                  <p className="font-medium text-gray-800 text-sm truncate">
+                    {cert.course_detail.fullname}
+                  </p>
+                  <p className="text-xs text-gray-400 mt-0.5">
+                    Issued {format(new Date(cert.issued_at), 'dd MMM yyyy')}
+                  </p>
+                  <p className="text-xs text-green-700 font-mono mt-0.5">
+                    {cert.certificate_number}
+                  </p>
+                </div>
+
+                <div className="flex items-center gap-3 flex-shrink-0">
+                  {cert.pdf_url ? (
+                    <a
+                      href={cert.pdf_url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-sm font-medium bg-green-700 text-white px-3 py-1.5 rounded-lg hover:bg-green-800"
+                    >
+                      Download PDF
+                    </a>
+                  ) : (
+                    <span className="text-xs text-gray-400">PDF generating…</span>
+                  )}
+                  <a
+                    href={`/verify/${cert.certificate_number}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-sm text-green-700 hover:text-green-900 underline underline-offset-2"
+                  >
+                    Verify
+                  </a>
+                </div>
+              </div>
             ))}
           </div>
         </div>

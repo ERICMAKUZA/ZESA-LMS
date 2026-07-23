@@ -2,24 +2,12 @@
 
 import Link from 'next/link'
 import { Award, ExternalLink } from 'lucide-react'
-import { useQuery } from '@tanstack/react-query'
 import { format } from 'date-fns'
 import StudentLayout from '@/components/layout/StudentLayout'
 import PageHeader from '@/components/ui/PageHeader'
 import Card from '@/components/ui/Card'
 import Spinner from '@/components/ui/Spinner'
-import api from '@/lib/api'
-import type { Certificate, PaginatedResponse } from '@/types'
-
-function useMyCertificates() {
-  return useQuery<PaginatedResponse<Certificate>>({
-    queryKey: ['my-certificates'],
-    queryFn: async () => {
-      const { data } = await api.get('/certs/')
-      return data
-    },
-  })
-}
+import { useMyCertificates } from '@/hooks/useCertificates'
 
 export default function CertificatesPage() {
   const { data, isLoading } = useMyCertificates()
