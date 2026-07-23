@@ -43,7 +43,7 @@ export default function DashboardPage() {
   const countByStatus = (status: ApplicationStatus) =>
     applications.filter((a) => a.status === status).length
 
-  const activeEnrollments = enrollments.filter(e => e.status === 'ENROLLED')
+  const activeEnrollments = enrollments.filter(e => e.status !== 'UNENROLLED')
 
   return (
     <StudentLayout>
@@ -68,14 +68,18 @@ export default function DashboardPage() {
           </div>
           <div className="text-right">
             <p className="text-green-200 text-xs mb-2">Learning Portal</p>
-            <a
-              href={process.env.NEXT_PUBLIC_MOODLE_URL || '#'}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="inline-block bg-white text-green-800 font-semibold text-sm px-4 py-2 rounded-lg hover:bg-green-50 transition-colors"
-            >
-              Go to Moodle →
-            </a>
+            {process.env.NEXT_PUBLIC_MOODLE_URL ? (
+              <a
+                href={process.env.NEXT_PUBLIC_MOODLE_URL}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-block bg-white text-green-800 font-semibold text-sm px-4 py-2 rounded-lg hover:bg-green-50 transition-colors"
+              >
+                Go to Moodle →
+              </a>
+            ) : (
+              <span className="text-xs text-green-200">Moodle not configured</span>
+            )}
           </div>
         </div>
       )}
@@ -95,29 +99,59 @@ export default function DashboardPage() {
         <div className="mt-6 mb-6">
           <h2 className="text-base font-semibold text-gray-700 mb-3">My Courses</h2>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-            {activeEnrollments.map(enrollment => (
-              <a
-                key={enrollment.id}
-                href={enrollment.moodle_course_url ?? '#'}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="flex items-center justify-between p-4 bg-white rounded-lg border border-gray-200 hover:border-green-500 hover:shadow-sm transition-all group"
-              >
-                <div>
-                  <p className="font-medium text-gray-800 text-sm">
-                    {enrollment.course_name || 'Enrolled Course'}
-                  </p>
-                  <p className="text-xs text-gray-400 mt-0.5">
-                    Enrolled {enrollment.enrolled_at
-                      ? new Date(enrollment.enrolled_at).toLocaleDateString('en-GB')
-                      : '—'}
-                  </p>
+            {activeEnrollments.map(enrollment => {
+              const canOpen = enrollment.status === 'ENROLLED' && !!enrollment.moodle_course_url
+              const row = (
+                <>
+                  <div>
+                    <p className="font-medium text-gray-800 text-sm">
+                      {enrollment.course_name || 'Enrolled Course'}
+                    </p>
+                    <p className="text-xs text-gray-400 mt-0.5">
+                      Enrolled {enrollment.enrolled_at
+                        ? new Date(enrollment.enrolled_at).toLocaleDateString('en-GB')
+                        : '—'}
+                    </p>
+                  </div>
+                  {canOpen && (
+                    <span className="text-green-600 group-hover:translate-x-1 transition-transform">
+                      →
+                    </span>
+                  )}
+                  {enrollment.status === 'PENDING' || enrollment.status === 'ENROLLING' ? (
+                    <span className="flex-shrink-0 text-xs text-amber-600">Setting up access…</span>
+                  ) : null}
+                  {enrollment.status === 'FAILED' && (
+                    <span className="flex-shrink-0 text-xs text-red-500 text-right max-w-32">
+                      Setup issue — contact training@zntc.ac.zw
+                    </span>
+                  )}
+                </>
+              )
+
+              if (canOpen) {
+                return (
+                  <a
+                    key={enrollment.id}
+                    href={enrollment.moodle_course_url!}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="flex items-center justify-between p-4 bg-white rounded-lg border border-gray-200 hover:border-green-500 hover:shadow-sm transition-all group"
+                  >
+                    {row}
+                  </a>
+                )
+              }
+
+              return (
+                <div
+                  key={enrollment.id}
+                  className="flex items-center justify-between p-4 bg-white rounded-lg border border-gray-200"
+                >
+                  {row}
                 </div>
-                <span className="text-green-600 group-hover:translate-x-1 transition-transform">
-                  →
-                </span>
-              </a>
-            ))}
+              )
+            })}
           </div>
         </div>
       )}

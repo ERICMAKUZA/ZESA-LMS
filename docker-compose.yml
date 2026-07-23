@@ -95,8 +95,12 @@ services:
     restart: unless-stopped
 
   # Moodle and its DB are optional — run with: docker compose --profile moodle up
+  # NOTE: bitnami/moodle:4 no longer exists on Docker Hub (Bitnami moved its
+  # catalog behind a paid tier and removed the free tags). bitnamilegacy/moodle
+  # is Broadcom's frozen mirror of the old free catalog with the same env var
+  # contract, so it's a drop-in replacement.
   moodle:
-    image: bitnami/moodle:4
+    image: bitnamilegacy/moodle:5.0.2
     profiles: ["moodle"]
     expose:
       - "8080"
