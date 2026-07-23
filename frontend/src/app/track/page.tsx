@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import Button from '@/components/ui/Button'
 import Input from '@/components/ui/Input'
+import BrandLogo from '@/components/layout/BrandLogo'
 
 export default function TrackIndexPage() {
   const [ref, setRef] = useState('')
@@ -20,9 +21,8 @@ export default function TrackIndexPage() {
     <div className="min-h-screen bg-gray-50">
       <header className="border-b border-gray-100 bg-white">
         <div className="mx-auto flex max-w-3xl items-center justify-between px-4 py-3">
-          <Link href="/" className="flex flex-col leading-tight">
-            <span className="text-base font-extrabold text-primary tracking-tight">ZESA NTC</span>
-            <span className="text-[9px] font-medium text-gray-400 tracking-wide uppercase">National Training Centre</span>
+          <Link href="/">
+            <BrandLogo />
           </Link>
           <Link href="/login" className="text-sm font-medium text-primary hover:underline">
             Sign In

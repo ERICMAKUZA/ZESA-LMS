@@ -9,6 +9,7 @@ import {
 import { clsx } from 'clsx'
 import { useAuth } from '@/hooks/useAuth'
 import AuthGuard from '@/components/AuthGuard'
+import BrandLogo from './BrandLogo'
 
 const nav = [
   { href: '/dashboard',      label: 'Dashboard',      icon: LayoutDashboard },
@@ -33,7 +34,7 @@ function StudentLayoutInner({ children }: { children: ReactNode }) {
         )}
       >
         <div className="flex items-center gap-2 px-6 py-5 border-b border-primary-light">
-          <span className="text-lg font-bold tracking-tight">ZESA NTC</span>
+          <BrandLogo variant="dark" />
           <button className="ml-auto lg:hidden" onClick={() => setOpen(false)}>
             <X className="h-5 w-5" />
           </button>

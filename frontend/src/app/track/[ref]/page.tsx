@@ -6,6 +6,7 @@ import { format } from 'date-fns'
 import { ArrowRight, MapPin, BookOpen } from 'lucide-react'
 import Badge from '@/components/ui/Badge'
 import Spinner from '@/components/ui/Spinner'
+import BrandLogo from '@/components/layout/BrandLogo'
 import type { ApplicationStatus } from '@/types'
 
 interface HistoryEntry {
@@ -47,9 +48,8 @@ export default function TrackPage({ params }: { params: { ref: string } }) {
       {/* minimal header */}
       <header className="border-b border-gray-100 bg-white">
         <div className="mx-auto flex max-w-3xl items-center justify-between px-4 py-3">
-          <Link href="/" className="flex flex-col leading-tight">
-            <span className="text-base font-extrabold text-primary tracking-tight">ZESA NTC</span>
-            <span className="text-[9px] font-medium text-gray-400 tracking-wide uppercase">National Training Centre</span>
+          <Link href="/">
+            <BrandLogo />
           </Link>
           <Link href="/login" className="text-sm font-medium text-primary hover:underline">
             Sign In

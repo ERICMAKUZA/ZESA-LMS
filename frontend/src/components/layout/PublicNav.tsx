@@ -2,6 +2,7 @@
 
 import Link from 'next/link'
 import { useOptionalAuth } from '@/hooks/useOptionalAuth'
+import BrandLogo from './BrandLogo'
 
 export default function PublicNav() {
   const { user } = useOptionalAuth()
@@ -9,11 +10,8 @@ export default function PublicNav() {
   return (
     <header className="sticky top-0 z-50 border-b border-gray-100 bg-white/95 backdrop-blur-sm">
       <div className="mx-auto flex max-w-7xl items-center justify-between px-4 py-3 sm:px-6">
-        <Link href="/" className="flex flex-col leading-tight">
-          <span className="text-lg font-extrabold text-primary tracking-tight">ZESA NTC</span>
-          <span className="text-[10px] font-medium text-gray-400 tracking-wide uppercase">
-            National Training Centre
-          </span>
+        <Link href="/">
+          <BrandLogo />
         </Link>
         <nav className="flex items-center gap-4 sm:gap-6">
           <Link
