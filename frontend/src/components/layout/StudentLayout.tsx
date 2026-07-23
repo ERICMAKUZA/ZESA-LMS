@@ -16,6 +16,7 @@ const nav = [
   { href: '/courses',        label: 'Browse Courses',  icon: BookOpen },
   { href: '/applications',   label: 'My Applications', icon: FileText },
   { href: '/certificates',   label: 'Certificates',    icon: Award },
+  { href: '/profile',        label: 'My Profile',      icon: User },
 ]
 
 function StudentLayoutInner({ children }: { children: ReactNode }) {

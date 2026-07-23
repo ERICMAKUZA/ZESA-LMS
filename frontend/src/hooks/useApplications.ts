@@ -70,6 +70,23 @@ export function useSubmitApplication() {
   })
 }
 
+export function useUpdatePhoto(id: string) {
+  const queryClient = useQueryClient()
+  return useMutation<Application, Error, File>({
+    mutationFn: async (photo) => {
+      const form = new FormData()
+      form.append('student_photo', photo)
+      const { data } = await api.patch(`/my-applications/${id}/`, form, {
+        headers: { 'Content-Type': 'multipart/form-data' },
+      })
+      return data
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['my-applications'] })
+    },
+  })
+}
+
 export function useSubmitForReview(id: string) {
   const queryClient = useQueryClient()
   return useMutation<Application, Error, void>({
