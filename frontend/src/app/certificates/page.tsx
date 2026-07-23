@@ -69,15 +69,32 @@ export default function CertificatesPage() {
                       Issued {format(new Date(cert.issued_at), 'dd MMM yyyy')}
                     </p>
                   </div>
+                  {cert.is_revoked && (
+                    <span className="shrink-0 rounded-full bg-red-100 px-2 py-0.5 text-[10px] font-semibold text-red-700">
+                      Revoked
+                    </span>
+                  )}
                 </div>
                 <div className="flex items-center justify-between">
                   <span className="font-mono text-xs text-gray-400">{cert.certificate_number}</span>
-                  <Link
-                    href={`/verify/${cert.id}`}
-                    className="inline-flex items-center gap-1 text-xs text-primary hover:underline"
-                  >
-                    Verify <ExternalLink className="h-3 w-3" />
-                  </Link>
+                  <div className="flex items-center gap-3">
+                    {cert.pdf_url && (
+                      <a
+                        href={cert.pdf_url}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="text-xs text-primary hover:underline"
+                      >
+                        Download
+                      </a>
+                    )}
+                    <Link
+                      href={`/verify/${cert.certificate_number}`}
+                      className="inline-flex items-center gap-1 text-xs text-primary hover:underline"
+                    >
+                      Verify <ExternalLink className="h-3 w-3" />
+                    </Link>
+                  </div>
                 </div>
               </div>
             ))}

@@ -293,12 +293,22 @@ def sync_enrollment_completions(self):
             completionstatus = (
                 completion.get("completionstatus", {}) if isinstance(completion, dict) else {}
             )
-            if completionstatus.get("completed"):
-                logger.info(
-                    "sync_enrollment_completions: %s completed course %s — certificate generation pending",
-                    enrollment.application.applicant.email,
-                    enrollment.application.course.shortname,
-                )
+            if completionstatus.get("completed") and not hasattr(enrollment, "certificate"):
+                from apps.certificates.models import Certificate
+
+                try:
+                    cert = Certificate.issue_from_enrollment(enrollment)
+                    logger.info(
+                        "sync_enrollment_completions: issued certificate %s to %s for %s",
+                        cert.certificate_number,
+                        enrollment.application.applicant.email,
+                        enrollment.application.course.shortname,
+                    )
+                except ValueError as exc:
+                    logger.warning(
+                        "sync_enrollment_completions: could not issue certificate for enrollment %s: %s",
+                        enrollment.id, exc,
+                    )
 
         except MoodleAPIError as exc:
             logger.warning(

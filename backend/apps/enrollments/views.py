@@ -151,6 +151,22 @@ class AdminEnrollmentViewSet(viewsets.ReadOnlyModelViewSet):
         return Response({"detail": "Enrollment retry queued."})
 
     @action(detail=True, methods=["post"])
+    def issue_certificate(self, request, pk=None):
+        enrollment = self.get_object()
+        from apps.certificates.models import Certificate
+
+        try:
+            cert = Certificate.issue_from_enrollment(enrollment, issued_by=request.user)
+        except ValueError as exc:
+            return Response({"detail": str(exc)}, status=status.HTTP_400_BAD_REQUEST)
+
+        from apps.certificates.serializers import CertificateSerializer
+        return Response(
+            CertificateSerializer(cert, context={"request": request}).data,
+            status=status.HTTP_201_CREATED,
+        )
+
+    @action(detail=True, methods=["post"])
     def unenroll(self, request, pk=None):
         enrollment = self.get_object()
         if enrollment.status != EnrollmentStatus.ENROLLED:

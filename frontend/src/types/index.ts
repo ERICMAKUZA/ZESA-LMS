@@ -106,6 +106,9 @@ export interface Certificate {
   certificate_number: string
   pdf_url: string
   issued_at: string
+  issued_by: number | null
+  is_revoked: boolean
+  status: 'VALID' | 'REVOKED'
 }
 
 export interface Report {
