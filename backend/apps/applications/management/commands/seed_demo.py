@@ -22,6 +22,8 @@ def _make_history(app, from_status, to_status, changed_by, at):
         from_status=from_status,
         to_status=to_status,
         changed_by=changed_by,
+        changed_by_ec_number=getattr(changed_by, 'ec_number', '') or '',
+        changed_by_name_snapshot=changed_by.full_name if changed_by else 'System',
         notes="",
     )
     _h(h, at)

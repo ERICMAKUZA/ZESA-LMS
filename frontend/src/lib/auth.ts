@@ -37,6 +37,7 @@ export function getUser(): AuthUser | null {
       full_name: payload.full_name ?? '',
       role: payload.role ?? 'STUDENT',
       employee_id: payload.employee_id ?? '',
+      ec_number: payload.ec_number ?? '',
     }
   } catch {
     return null

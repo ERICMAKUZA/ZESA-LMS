@@ -16,11 +16,16 @@ class ApplicationStatusHistorySerializer(serializers.ModelSerializer):
 
     class Meta:
         model = ApplicationStatusHistory
-        fields = ("id", "from_status", "to_status", "changed_by", "changed_by_name", "notes", "changed_at")
+        fields = (
+            "id", "from_status", "to_status", "changed_by", "changed_by_name",
+            "changed_by_ec_number", "notes", "changed_at",
+        )
         read_only_fields = ("id", "changed_at")
 
     def get_changed_by_name(self, obj):
-        return obj.changed_by.full_name if obj.changed_by else "System"
+        # changed_by_name_snapshot is authoritative (survives the actor's
+        # account being edited/deactivated); fall back for pre-snapshot rows.
+        return obj.changed_by_name_snapshot or (obj.changed_by.full_name if obj.changed_by else "System")
 
 
 class ApplicationCreateSerializer(serializers.ModelSerializer):

@@ -75,7 +75,10 @@ export default function AdminUsersPage() {
                   <tr key={user.id}>
                     <td className="py-3">
                       <p className="font-medium text-gray-900">{user.full_name}</p>
-                      <p className="text-xs text-gray-500">{user.employee_id || '—'}</p>
+                      <p className="text-xs text-gray-500">
+                        {user.employee_id || '—'}
+                        {user.ec_number && ` · ${user.ec_number}`}
+                      </p>
                     </td>
                     <td className="py-3 text-gray-600 hidden sm:table-cell">{user.email}</td>
                     <td className="py-3">

@@ -212,6 +212,8 @@ class Application(models.Model):
             from_status=self.status,
             to_status=to_status,
             changed_by=changed_by,
+            changed_by_ec_number=getattr(changed_by, 'ec_number', '') or '',
+            changed_by_name_snapshot=changed_by.full_name if changed_by else 'System',
             notes=notes,
         )
 
@@ -377,6 +379,11 @@ class ApplicationStatusHistory(models.Model):
         blank=True,
         related_name="status_changes",
     )
+    # Snapshots of changed_by's identity at the time of the event, so the
+    # audit trail (FRS: "name and EC number of ZNTC staff member who
+    # actioned") survives the actor's account being edited or deactivated.
+    changed_by_ec_number = models.CharField(max_length=20, blank=True, default='')
+    changed_by_name_snapshot = models.CharField(max_length=200, blank=True, default='')
     notes = models.TextField(blank=True)
     changed_at = models.DateTimeField(auto_now_add=True)
 

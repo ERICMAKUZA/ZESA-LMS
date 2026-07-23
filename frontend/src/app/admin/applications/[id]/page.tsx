@@ -380,6 +380,9 @@ export default function AdminApplicationDetailPage({ params }: { params: { id: s
                   </div>
                   <p className="mt-0.5 text-xs text-gray-400">
                     {format(new Date(entry.changed_at), 'dd MMM yyyy HH:mm')} · {entry.changed_by_name}
+                    {entry.changed_by_ec_number && (
+                      <span className="text-gray-400"> · {entry.changed_by_ec_number}</span>
+                    )}
                   </p>
                   {entry.notes && <p className="mt-1 text-sm text-gray-600">{entry.notes}</p>}
                 </li>

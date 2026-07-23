@@ -42,6 +42,10 @@ class User(AbstractBaseUser, PermissionsMixin):
     zntc_email = models.EmailField(blank=True, null=True, unique=True)
     department = models.CharField(max_length=150, blank=True)
     phone = models.CharField(max_length=20, blank=True)
+    ec_number = models.CharField(
+        max_length=20, blank=True, default='',
+        help_text='ZESA EC number for ZNTC staff (e.g. EC-12345)',
+    )
     role = models.CharField(max_length=20, choices=Role.choices, default=Role.STUDENT)
     assigned_centre = models.ForeignKey(
         'centres.Centre', null=True, blank=True,

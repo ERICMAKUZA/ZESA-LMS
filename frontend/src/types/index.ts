@@ -13,6 +13,7 @@ export interface User {
   full_name: string
   role: 'STUDENT' | 'REVIEWER' | 'ADMIN' | 'FINANCE' | 'SUPERADMIN' | 'LECTURER' | 'CENTRE_ADMIN'
   employee_id: string
+  ec_number: string
   student_id: string | null
   zntc_email: string | null
   department: string
@@ -150,6 +151,7 @@ export interface ApplicationStatusHistory {
   to_status: ApplicationStatus
   changed_by: number | null
   changed_by_name: string
+  changed_by_ec_number: string
   notes: string
   changed_at: string
 }
@@ -281,6 +283,7 @@ export interface AuthUser {
   full_name: string
   role: User['role']
   employee_id: string
+  ec_number: string
 }
 
 export interface PaginatedResponse<T> {

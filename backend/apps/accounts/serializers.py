@@ -12,7 +12,7 @@ class UserSerializer(serializers.ModelSerializer):
         model = User
         fields = (
             "id", "email", "first_name", "last_name", "full_name",
-            "employee_id", "student_id", "zntc_email",
+            "employee_id", "student_id", "zntc_email", "ec_number",
             "department", "phone", "role", "is_active", "date_joined",
         )
         read_only_fields = ("id", "email", "date_joined", "student_id", "zntc_email")
@@ -52,4 +52,5 @@ class TokenObtainPairSerializer(BaseTokenObtainPairSerializer):
         token["full_name"] = user.full_name
         token["role"] = user.role
         token["employee_id"] = user.employee_id or ""
+        token["ec_number"] = user.ec_number or ""
         return token
