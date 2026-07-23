@@ -1,4 +1,3 @@
-import io
 import logging
 
 from celery import shared_task
@@ -8,70 +7,80 @@ from django.utils import timezone
 logger = logging.getLogger(__name__)
 
 
-@shared_task(bind=True, max_retries=3, default_retry_delay=60)
+@shared_task(bind=True, max_retries=3, default_retry_delay=30)
 def generate_certificate_pdf(self, certificate_id: str):
+    """
+    Async task: generate PDF for certificate, save to storage,
+    then email the student a download link.
+    """
     from .models import Certificate
+    from .pdf_generator import generate_certificate_pdf as make_pdf
 
     try:
-        cert = Certificate.objects.select_related("user", "course").get(id=certificate_id)
+        cert = Certificate.objects.select_related(
+            "user", "course", "enrollment__application__assigned_centre",
+        ).get(id=certificate_id)
     except Certificate.DoesNotExist:
         logger.error("generate_certificate_pdf: certificate %s not found", certificate_id)
         return
 
     try:
-        pdf_bytes = _render_pdf(cert)
+        pdf_bytes = make_pdf(cert)
+
+        filename = f"{cert.certificate_number}.pdf"
+        cert.pdf_file.save(filename, ContentFile(pdf_bytes), save=False)
+        cert.pdf_generated_at = timezone.now()
+        cert.save(update_fields=["pdf_file", "pdf_generated_at"])
+
+        logger.info("generate_certificate_pdf: PDF generated for %s", cert.certificate_number)
+
+        _send_certificate_email(cert)
+
     except Exception as exc:
         logger.exception("generate_certificate_pdf: failed for %s: %s", certificate_id, exc)
         raise self.retry(exc=exc)
 
-    cert.pdf_file.save(f"{cert.certificate_number}.pdf", ContentFile(pdf_bytes), save=False)
-    cert.pdf_generated_at = timezone.now()
-    cert.save(update_fields=["pdf_file", "pdf_generated_at"])
 
+def _send_certificate_email(cert):
+    from django.core.mail import EmailMessage
+    from django.conf import settings
 
-def _render_pdf(cert) -> bytes:
-    from reportlab.lib.pagesizes import landscape, A4
-    from reportlab.lib.units import cm
-    from reportlab.lib.colors import HexColor
-    from reportlab.pdfgen import canvas
+    portal_url = getattr(settings, "PORTAL_BASE_URL", "http://localhost:3000")
+    verify_url = cert.verification_url
 
-    buf = io.BytesIO()
-    width, height = landscape(A4)
-    c = canvas.Canvas(buf, pagesize=(width, height))
+    email = EmailMessage(
+        subject=f"Your ZNTC Certificate — {cert.course.fullname}",
+        body=(
+            f"Dear {cert.user.full_name},\n\n"
+            f"Congratulations on successfully completing your programme!\n\n"
+            f"Your certificate details:\n"
+            f"  Course:        {cert.course.fullname}\n"
+            f"  Level:         {cert.get_programme_level_display()}\n"
+            f"  Issue Date:    {cert.issue_date.strftime('%d %B %Y')}\n"
+            f"  Serial Number: {cert.certificate_number}\n\n"
+            f"You can download your certificate and verify it online at:\n"
+            f"  {portal_url}/certificates\n\n"
+            f"Employers and institutions can verify your certificate at:\n"
+            f"  {verify_url}\n\n"
+            f"Congratulations once again from the ZNTC team.\n\n"
+            f"Regards,\n"
+            f"ZESA National Training Centre\n"
+            f"Ganges Road, Workington, Harare"
+        ),
+        from_email=settings.DEFAULT_FROM_EMAIL,
+        to=[cert.user.email],
+    )
 
-    c.setStrokeColor(HexColor("#1e3a8a"))
-    c.setLineWidth(4)
-    c.rect(1.2 * cm, 1.2 * cm, width - 2.4 * cm, height - 2.4 * cm)
+    if cert.pdf_file:
+        try:
+            cert.pdf_file.open("rb")
+            email.attach(
+                f"{cert.certificate_number}.pdf",
+                cert.pdf_file.read(),
+                "application/pdf",
+            )
+            cert.pdf_file.close()
+        except Exception:
+            pass  # Send without attachment if file read fails
 
-    c.setFont("Helvetica-Bold", 26)
-    c.setFillColor(HexColor("#1e3a8a"))
-    c.drawCentredString(width / 2, height - 4 * cm, "ZESA National Training Centre")
-
-    c.setFont("Helvetica", 16)
-    c.setFillColor(HexColor("#374151"))
-    c.drawCentredString(width / 2, height - 5.2 * cm, "Certificate of Completion")
-
-    c.setFont("Helvetica", 13)
-    c.drawCentredString(width / 2, height - 7.5 * cm, "This is to certify that")
-
-    c.setFont("Helvetica-Bold", 22)
-    c.setFillColor(HexColor("#111827"))
-    c.drawCentredString(width / 2, height - 9 * cm, cert.user.full_name)
-
-    c.setFont("Helvetica", 13)
-    c.setFillColor(HexColor("#374151"))
-    c.drawCentredString(width / 2, height - 10.5 * cm, "has successfully completed")
-
-    c.setFont("Helvetica-Bold", 18)
-    c.setFillColor(HexColor("#1e3a8a"))
-    c.drawCentredString(width / 2, height - 12 * cm, cert.course.fullname)
-
-    c.setFont("Helvetica", 10)
-    c.setFillColor(HexColor("#6b7280"))
-    c.drawString(2.5 * cm, 2.2 * cm, f"Certificate No: {cert.certificate_number}")
-    c.drawString(2.5 * cm, 1.7 * cm, f"Issued: {cert.issued_at:%d %B %Y}")
-    c.drawRightString(width - 2.5 * cm, 1.7 * cm, f"Verify at: {cert.verification_url}")
-
-    c.showPage()
-    c.save()
-    return buf.getvalue()
+    email.send(fail_silently=True)

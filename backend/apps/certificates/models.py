@@ -60,6 +60,32 @@ class Certificate(models.Model):
     def status_display(self):
         return "REVOKED" if self.is_revoked else "VALID"
 
+    # ── Convenience accessors for PDF rendering ─────────────────────────────
+    # The certificate doesn't snapshot these itself (unlike name/course, which
+    # live directly on the row); they're read live off the application at
+    # render time via the enrollment relation.
+    @property
+    def centre(self):
+        return self.enrollment.application.assigned_centre
+
+    @property
+    def issue_date(self):
+        return self.issued_at.date()
+
+    @property
+    def student_id_snapshot(self):
+        return self.user.student_id or ""
+
+    @property
+    def programme_level(self):
+        return self.enrollment.application.hexco_level
+
+    def get_programme_level_display(self):
+        return {
+            "NC": "National Certificate (NC)",
+            "ND": "National Diploma (ND)",
+        }.get(self.programme_level, "Short Course")
+
     # ── Certificate number generation ───────────────────────────────────────
     # Race-safe: uses a Postgres advisory lock keyed on the prefix, since a
     # plain SELECT ... FOR UPDATE takes no lock when zero rows exist yet for
