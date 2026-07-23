@@ -23,10 +23,11 @@ class CourseAdmin(admin.ModelAdmin):
 class CourseScheduleAdmin(admin.ModelAdmin):
     list_display = [
         'course', 'year', 'month', 'week_in_month',
-        'status', 'enrolled_count', 'max_capacity', 'places_remaining',
+        'status', 'lecturer', 'enrolled_count', 'max_capacity', 'places_remaining',
     ]
-    list_filter = ['year', 'month', 'status', 'course__category']
+    list_filter = ['year', 'month', 'status', 'course__category', 'lecturer']
     list_editable = ['status', 'max_capacity']
+    autocomplete_fields = ['lecturer']
     ordering = ['year', 'month', 'week_in_month']
     search_fields = ['course__fullname', 'course__shortname']
 

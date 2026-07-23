@@ -40,6 +40,10 @@ class CourseScheduleSerializer(serializers.ModelSerializer):
     approximate_start_date = serializers.SerializerMethodField()
     approximate_end_date = serializers.SerializerMethodField()
     places_remaining = serializers.IntegerField(read_only=True)
+    lecturer_name = serializers.SerializerMethodField()
+
+    def get_lecturer_name(self, obj):
+        return obj.lecturer.full_name if obj.lecturer else None
 
     def get_approximate_start_date(self, obj):
         return obj.get_approximate_start_date().isoformat()
@@ -55,6 +59,7 @@ class CourseScheduleSerializer(serializers.ModelSerializer):
             'year', 'month', 'month_display', 'week_in_month',
             'max_capacity', 'enrolled_count', 'places_remaining',
             'status', 'approximate_start_date', 'approximate_end_date', 'notes',
+            'lecturer', 'lecturer_name',
         ]
 
 

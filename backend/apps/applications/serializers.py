@@ -105,6 +105,32 @@ class ApplicationListSerializer(serializers.ModelSerializer):
             return None
 
 
+class LecturerApplicationSerializer(serializers.ModelSerializer):
+    applicant_name = serializers.SerializerMethodField()
+    student_id = serializers.CharField(source="applicant.student_id", read_only=True)
+    course_name = serializers.CharField(source="course.fullname", read_only=True)
+    assigned_centre_name = serializers.CharField(
+        source="assigned_centre.name", read_only=True, default=None,
+    )
+    lecturer_signed_off_by_name = serializers.SerializerMethodField()
+
+    class Meta:
+        model = Application
+        fields = (
+            "id", "ref", "applicant_name", "student_id",
+            "course_name", "assigned_centre_name", "status",
+            "enrolled_at",
+            "lecturer_signed_off", "lecturer_signed_off_at",
+            "lecturer_signed_off_by_name", "lecturer_signoff_notes",
+        )
+
+    def get_applicant_name(self, obj):
+        return obj.applicant.full_name
+
+    def get_lecturer_signed_off_by_name(self, obj):
+        return obj.lecturer_signed_off_by.full_name if obj.lecturer_signed_off_by else None
+
+
 class ApplicationDetailSerializer(serializers.ModelSerializer):
     applicant_name = serializers.SerializerMethodField()
     applicant_email = serializers.EmailField(source="applicant.email", read_only=True)
@@ -121,6 +147,7 @@ class ApplicationDetailSerializer(serializers.ModelSerializer):
     payment = serializers.SerializerMethodField()
     enrollment = serializers.SerializerMethodField()
     certificate = serializers.SerializerMethodField()
+    lecturer_signed_off_by_name = serializers.SerializerMethodField()
 
     class Meta:
         model = Application
@@ -136,6 +163,8 @@ class ApplicationDetailSerializer(serializers.ModelSerializer):
             "reviewer", "reviewer_name", "reviewer_notes",
             "rejection_reason", "more_info_request",
             "code_of_conduct_signed", "code_of_conduct_signed_at",
+            "lecturer_signed_off", "lecturer_signed_off_at",
+            "lecturer_signed_off_by_name", "lecturer_signoff_notes",
             "escalated", "escalated_at",
             "submitted_at", "reviewed_at", "approved_at", "enrolled_at",
             "created_at", "updated_at",
@@ -152,6 +181,9 @@ class ApplicationDetailSerializer(serializers.ModelSerializer):
 
     def get_reviewer_name(self, obj):
         return obj.reviewer.full_name if obj.reviewer else None
+
+    def get_lecturer_signed_off_by_name(self, obj):
+        return obj.lecturer_signed_off_by.full_name if obj.lecturer_signed_off_by else None
 
     def get_recent_history(self, obj):
         entries = obj.history.order_by("-changed_at")[:5]

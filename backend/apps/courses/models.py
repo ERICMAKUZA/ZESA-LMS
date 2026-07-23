@@ -1,5 +1,6 @@
 import uuid
 
+from django.conf import settings
 from django.db import models
 
 
@@ -93,6 +94,14 @@ class CourseSchedule(models.Model):
     enrolled_count = models.PositiveIntegerField(default=0)
     status = models.CharField(max_length=12, choices=STATUS_CHOICES, default='OPEN')
     notes = models.TextField(blank=True, default='')
+    lecturer = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        null=True, blank=True,
+        on_delete=models.SET_NULL,
+        related_name='assigned_schedules',
+        limit_choices_to={'role': 'LECTURER'},
+        help_text='Lecturer responsible for this intake',
+    )
     created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:

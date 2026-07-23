@@ -5,7 +5,7 @@ import Link from 'next/link'
 import { usePathname, useRouter } from 'next/navigation'
 import {
   LayoutDashboard, FileText, GraduationCap, BookOpen, Users, BarChart2, Menu, X, LogOut, User,
-  Tags, CalendarDays, Award, HelpCircle, ExternalLink,
+  Tags, CalendarDays, Award, HelpCircle, ExternalLink, UserCog,
 } from 'lucide-react'
 import { clsx } from 'clsx'
 import { useAuth } from '@/hooks/useAuth'
@@ -22,6 +22,13 @@ const nav = [
   { href: '/admin/reports',      label: 'Reports',           icon: BarChart2 },
 ]
 
+// A lecturer only manages their own students/intakes (FRS §3.3 sign-off
+// flow) — the full admin nav above isn't relevant/accessible to them.
+const lecturerNav = [
+  { href: '/lecturer',         label: 'My Students', icon: GraduationCap },
+  { href: '/lecturer/courses', label: 'My Courses',  icon: BookOpen },
+]
+
 // Full add/edit/delete management for these lives in the Django admin
 // (django-unfold themed) — there's no in-app CRUD UI for them, so link
 // straight into the relevant changelist instead of duplicating it.
@@ -30,6 +37,7 @@ const managementNav = [
   { href: '/django-admin/courses/courseschedule/',  label: 'Schedules / Calendar', icon: CalendarDays },
   { href: '/django-admin/certificates/certificate/', label: 'Certificates',        icon: Award },
   { href: '/django-admin/courses/enquiry/',          label: 'Enquiries',           icon: HelpCircle },
+  { href: '/django-admin/accounts/user/?role__exact=LECTURER', label: 'Lecturers', icon: UserCog },
 ]
 
 const roleColor: Record<string, string> = {
@@ -37,6 +45,7 @@ const roleColor: Record<string, string> = {
   REVIEWER:  'bg-yellow-100 text-yellow-800',
   SUPERADMIN:'bg-purple-100 text-purple-700',
   FINANCE:   'bg-teal-100 text-teal-700',
+  LECTURER:  'bg-indigo-100 text-indigo-700',
 }
 
 function AdminContent({ children }: { children: ReactNode }) {
@@ -55,6 +64,9 @@ function AdminContent({ children }: { children: ReactNode }) {
 
   if (user?.role === 'STUDENT') return null
 
+  const isLecturer = user?.role === 'LECTURER'
+  const navItems = isLecturer ? lecturerNav : nav
+
   return (
     <div className="flex h-screen overflow-hidden bg-gray-50">
       <aside
@@ -71,7 +83,7 @@ function AdminContent({ children }: { children: ReactNode }) {
           </button>
         </div>
         <nav className="flex-1 overflow-y-auto py-4">
-          {nav.map(({ href, label, icon: Icon }) => (
+          {navItems.map(({ href, label, icon: Icon }) => (
             <Link
               key={href}
               href={href}
@@ -88,22 +100,26 @@ function AdminContent({ children }: { children: ReactNode }) {
             </Link>
           ))}
 
-          <p className="mt-4 px-6 pb-2 text-xs font-semibold uppercase tracking-wide text-white/40">
-            Manage
-          </p>
-          {managementNav.map(({ href, label, icon: Icon }) => (
-            <a
-              key={href}
-              href={href}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="flex items-center gap-3 px-6 py-3 text-sm font-medium text-white/70 transition-colors hover:bg-white/10 hover:text-white"
-            >
-              <Icon className="h-5 w-5 shrink-0" />
-              {label}
-              <ExternalLink className="ml-auto h-3.5 w-3.5 shrink-0 text-white/40" />
-            </a>
-          ))}
+          {!isLecturer && (
+            <>
+              <p className="mt-4 px-6 pb-2 text-xs font-semibold uppercase tracking-wide text-white/40">
+                Manage
+              </p>
+              {managementNav.map(({ href, label, icon: Icon }) => (
+                <a
+                  key={href}
+                  href={href}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex items-center gap-3 px-6 py-3 text-sm font-medium text-white/70 transition-colors hover:bg-white/10 hover:text-white"
+                >
+                  <Icon className="h-5 w-5 shrink-0" />
+                  {label}
+                  <ExternalLink className="ml-auto h-3.5 w-3.5 shrink-0 text-white/40" />
+                </a>
+              ))}
+            </>
+          )}
         </nav>
       </aside>
 

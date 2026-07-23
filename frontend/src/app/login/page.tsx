@@ -63,7 +63,11 @@ function LoginContent() {
       router.push(nextUrl)
       return
     }
-    const isAdmin = user && ['ADMIN', 'REVIEWER', 'SUPERADMIN', 'FINANCE', 'CENTRE_ADMIN', 'LECTURER'].includes(user.role)
+    if (user?.role === 'LECTURER') {
+      router.push('/lecturer')
+      return
+    }
+    const isAdmin = user && ['ADMIN', 'REVIEWER', 'SUPERADMIN', 'FINANCE', 'CENTRE_ADMIN'].includes(user.role)
     router.push(isAdmin ? '/admin' : '/dashboard')
   }
 

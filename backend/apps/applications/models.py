@@ -146,6 +146,17 @@ class Application(models.Model):
     code_of_conduct_signed = models.BooleanField(default=False)
     code_of_conduct_signed_at = models.DateTimeField(null=True, blank=True)
 
+    lecturer_signed_off = models.BooleanField(default=False)
+    lecturer_signed_off_at = models.DateTimeField(null=True, blank=True)
+    lecturer_signed_off_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        null=True, blank=True,
+        on_delete=models.SET_NULL,
+        related_name='lecturer_signoffs',
+        limit_choices_to={'role': 'LECTURER'},
+    )
+    lecturer_signoff_notes = models.TextField(blank=True, default='')
+
     class Meta:
         verbose_name = "Application"
         verbose_name_plural = "Applications"
@@ -304,6 +315,32 @@ class Application(models.Model):
         self._record_transition(ApplicationStatus.CERTIFIED)
         self.status = ApplicationStatus.CERTIFIED
         self.save(update_fields=["status", "updated_at"])
+
+    def lecturer_sign_off(self, lecturer, notes=""):
+        """
+        Lecturer marks a student as having completed the course (FRS §3.3).
+        Certificate issuance is triggered separately by the caller via
+        Certificate.issue_from_enrollment(), which also calls certify().
+        """
+        if self.status != ApplicationStatus.ENROLLED:
+            raise ValueError(
+                f"Cannot sign off: application {self.ref} "
+                f"is {self.status}, expected ENROLLED."
+            )
+        if self.lecturer_signed_off:
+            raise ValueError("Student has already been signed off.")
+        self._record_transition(
+            self.status, changed_by=lecturer,
+            notes=f"Lecturer sign-off by {lecturer.full_name}. Notes: {notes or 'None'}.",
+        )
+        self.lecturer_signed_off = True
+        self.lecturer_signed_off_at = timezone.now()
+        self.lecturer_signed_off_by = lecturer
+        self.lecturer_signoff_notes = notes
+        self.save(update_fields=[
+            "lecturer_signed_off", "lecturer_signed_off_at",
+            "lecturer_signed_off_by", "lecturer_signoff_notes",
+        ])
 
 
 class ApplicationDocument(models.Model):

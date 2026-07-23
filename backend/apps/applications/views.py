@@ -1,5 +1,6 @@
 from datetime import timedelta
 
+from django.db import transaction
 from django.db.models import Count
 from django.db.models.functions import TruncDate
 from django.utils import timezone
@@ -10,7 +11,7 @@ from rest_framework.parsers import FormParser, JSONParser, MultiPartParser
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
 
-from apps.accounts.permissions import IsAdmin, IsAdminOrReviewer
+from apps.accounts.permissions import IsAdmin, IsAdminOrReviewer, IsLecturer
 from apps.enrollments.models import Enrollment
 
 from .filters import ApplicationFilter
@@ -19,6 +20,7 @@ from .serializers import (
     ApplicationCreateSerializer,
     ApplicationDetailSerializer,
     ApplicationListSerializer,
+    LecturerApplicationSerializer,
     ReviewActionSerializer,
 )
 from .tasks import (
@@ -220,6 +222,67 @@ class AdminApplicationViewSet(viewsets.ModelViewSet):
             "by_status": status_counts,
             "by_course": by_course,
             "weekly_trend": weekly_trend,
+        })
+
+
+class LecturerApplicationViewSet(viewsets.ReadOnlyModelViewSet):
+    """
+    A lecturer's view of their own students (FRS §3.3): applications for
+    courses that have at least one CourseSchedule assigned to this lecturer,
+    restricted to ENROLLED/CERTIFIED. Applications don't carry a direct FK
+    to a specific intake, so this scopes at the course level like the
+    schedule assignment itself does.
+    """
+    permission_classes = [IsLecturer]
+    serializer_class = LecturerApplicationSerializer
+
+    def get_queryset(self):
+        if getattr(self, "swagger_fake_view", False):
+            return Application.objects.none()
+        return (
+            Application.objects.filter(
+                course__schedules__lecturer=self.request.user,
+                status__in=[ApplicationStatus.ENROLLED, ApplicationStatus.CERTIFIED],
+            )
+            .select_related("applicant", "course", "assigned_centre")
+            .distinct()
+        )
+
+    def get_serializer_class(self):
+        if self.action == "retrieve":
+            return ApplicationDetailSerializer
+        return LecturerApplicationSerializer
+
+    @action(detail=True, methods=["post"], url_path="sign-off")
+    def sign_off(self, request, pk=None):
+        application = self.get_object()
+        notes = request.data.get("notes", "")
+
+        try:
+            enrollment = application.enrollment
+        except Enrollment.DoesNotExist:
+            return Response(
+                {"detail": "This application has no enrollment yet."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        from apps.certificates.models import Certificate
+        try:
+            with transaction.atomic():
+                application.lecturer_sign_off(lecturer=request.user, notes=notes)
+                Certificate.issue_from_enrollment(enrollment, issued_by=request.user)
+        except ValueError as exc:
+            return Response({"detail": str(exc)}, status=status.HTTP_400_BAD_REQUEST)
+
+        application.refresh_from_db()
+        return Response({
+            "status": application.status,
+            "lecturer_signed_off": True,
+            "certificate_number": (
+                enrollment.certificate.certificate_number
+                if hasattr(enrollment, "certificate") else None
+            ),
+            "message": "Sign-off complete. Certificate issued and emailed to student.",
         })
 
 

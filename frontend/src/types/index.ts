@@ -72,6 +72,8 @@ export interface CourseSchedule {
   approximate_start_date: string
   approximate_end_date: string
   notes: string
+  lecturer: number | null
+  lecturer_name: string | null
 }
 
 export interface Course {
@@ -243,6 +245,21 @@ export interface ApplicationListItem {
   submitted_at: string | null
   created_at: string
   enrollment_status: string | null
+}
+
+export interface LecturerApplication {
+  id: string
+  ref: string
+  applicant_name: string
+  student_id: string | null
+  course_name: string
+  assigned_centre_name: string | null
+  status: ApplicationStatus
+  enrolled_at: string | null
+  lecturer_signed_off: boolean
+  lecturer_signed_off_at: string | null
+  lecturer_signed_off_by_name: string | null
+  lecturer_signoff_notes: string
 }
 
 export interface Notification {

@@ -7,7 +7,7 @@ from rest_framework.permissions import AllowAny
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from apps.accounts.permissions import IsAdmin
+from apps.accounts.permissions import IsAdmin, IsLecturer
 
 from .models import Course, CourseCategory, CourseSchedule, Enquiry
 from .serializers import (
@@ -96,6 +96,19 @@ def schedule_list(request):
         grouped[key]['schedules'].append(CourseScheduleSerializer(s).data)
 
     return Response(list(grouped.values()))
+
+
+@api_view(['GET'])
+@permission_classes([IsLecturer])
+def lecturer_schedule_list(request):
+    """
+    GET /api/courses/lecturer/schedules/ — the intakes assigned to the
+    logged-in lecturer.
+    """
+    qs = CourseSchedule.objects.filter(
+        lecturer=request.user
+    ).select_related('course', 'course__category').order_by('-year', '-month')
+    return Response(CourseScheduleSerializer(qs, many=True).data)
 
 
 from rest_framework import serializers as drf_serializers  # noqa: E402
