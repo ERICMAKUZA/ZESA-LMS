@@ -34,6 +34,12 @@ export default function PublicNav() {
           >
             Track Application
           </Link>
+          <Link
+            href="/verify"
+            className="hidden sm:block text-sm font-medium text-gray-600 hover:text-primary transition-colors"
+          >
+            Verify Certificate
+          </Link>
           {user ? (
             <Link
               href="/dashboard"
