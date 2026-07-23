@@ -171,6 +171,16 @@ export interface ApplicationEnrollment {
   error_message: string | null
 }
 
+export interface ApplicationCertificate {
+  id: string
+  certificate_number: string
+  issued_at: string
+  is_revoked: boolean
+  status: 'VALID' | 'REVOKED'
+  pdf_url: string | null
+  verification_url: string
+}
+
 export interface Application {
   id: string
   ref: string
@@ -214,6 +224,7 @@ export interface Application {
   recent_history: ApplicationStatusHistory[]
   payment: ApplicationPayment | null
   enrollment: ApplicationEnrollment | null
+  certificate: ApplicationCertificate | null
   code_of_conduct_signed: boolean
   code_of_conduct_signed_at: string | null
   escalated: boolean

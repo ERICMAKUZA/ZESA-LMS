@@ -10,7 +10,7 @@ from rest_framework.parsers import FormParser, JSONParser, MultiPartParser
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
 
-from apps.accounts.permissions import IsAdminOrReviewer
+from apps.accounts.permissions import IsAdmin, IsAdminOrReviewer
 from apps.enrollments.models import Enrollment
 
 from .filters import ApplicationFilter
@@ -90,7 +90,7 @@ class AdminApplicationViewSet(viewsets.ModelViewSet):
         )
 
     def get_serializer_class(self):
-        if self.action in ("retrieve", "start_review", "review_action"):
+        if self.action in ("retrieve", "start_review", "review_action", "issue_certificate"):
             return ApplicationDetailSerializer
         return ApplicationListSerializer
 
@@ -150,6 +150,29 @@ class AdminApplicationViewSet(viewsets.ModelViewSet):
             return Response({"detail": str(exc)}, status=status.HTTP_400_BAD_REQUEST)
 
         return Response(ApplicationDetailSerializer(application, context={"request": request}).data)
+
+    @action(detail=True, methods=["post"], permission_classes=[IsAdmin])
+    def issue_certificate(self, request, pk=None):
+        application = self.get_object()
+        try:
+            enrollment = application.enrollment
+        except Enrollment.DoesNotExist:
+            return Response(
+                {"detail": "This application has no enrollment yet."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        from apps.certificates.models import Certificate
+        try:
+            Certificate.issue_from_enrollment(enrollment, issued_by=request.user)
+        except ValueError as exc:
+            return Response({"detail": str(exc)}, status=status.HTTP_400_BAD_REQUEST)
+
+        application.refresh_from_db()
+        return Response(
+            ApplicationDetailSerializer(application, context={"request": request}).data,
+            status=status.HTTP_201_CREATED,
+        )
 
     @action(detail=False, methods=["get"])
     def dashboard(self, request):

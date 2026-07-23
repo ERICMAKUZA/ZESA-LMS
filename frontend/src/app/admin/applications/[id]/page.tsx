@@ -18,7 +18,7 @@ import Spinner from '@/components/ui/Spinner'
 import { useToast } from '@/components/ui/Toast'
 import {
   useAdminApplication, useStartReview, useReviewAction,
-  useConfirmPayment, useRetryMoodleSync,
+  useConfirmPayment, useRetryMoodleSync, useIssueCertificate,
 } from '@/hooks/useApplications'
 import api from '@/lib/api'
 import type { ApplicationStatus, Centre } from '@/types'
@@ -59,6 +59,7 @@ export default function AdminApplicationDetailPage({ params }: { params: { id: s
   const reviewAction = useReviewAction(params.id)
   const confirmPayment = useConfirmPayment(params.id)
   const retryMoodleSync = useRetryMoodleSync(params.id)
+  const issueCertificate = useIssueCertificate(params.id)
   const { toast } = useToast()
 
   const [modalAction, setModalAction] = useState<ReviewAction | null>(null)
@@ -67,6 +68,7 @@ export default function AdminApplicationDetailPage({ params }: { params: { id: s
   const [selectedCentre, setSelectedCentre] = useState('')
   const [approveSubmitted, setApproveSubmitted] = useState(false)
   const [confirmPaymentOpen, setConfirmPaymentOpen] = useState(false)
+  const [issueCertOpen, setIssueCertOpen] = useState(false)
 
   const {
     register: registerPayment,
@@ -99,6 +101,21 @@ export default function AdminApplicationDetailPage({ params }: { params: { id: s
     } catch (err: unknown) {
       const msg = (err as { response?: { data?: { detail?: string } } })?.response?.data?.detail
       toast({ variant: 'error', title: 'Failed to queue retry', description: msg })
+    }
+  }
+
+  const handleIssueCertificate = async () => {
+    try {
+      const data = await issueCertificate.mutateAsync()
+      toast({
+        variant: 'success',
+        title: `Certificate ${data.certificate?.certificate_number ?? ''} issued!`,
+        description: 'The student will receive an email once the PDF is generated.',
+      })
+      setIssueCertOpen(false)
+    } catch (err: unknown) {
+      const msg = (err as { response?: { data?: { detail?: string } } })?.response?.data?.detail
+      toast({ variant: 'error', title: 'Failed to issue certificate', description: msg })
     }
   }
 
@@ -189,6 +206,40 @@ export default function AdminApplicationDetailPage({ params }: { params: { id: s
           >
             Confirm Payment
           </Button>
+        </div>
+      )}
+
+      {app.status === 'ENROLLED' && !app.certificate && (
+        <div className="rounded-xl border border-green-300 bg-green-50 px-5 py-4 mb-6 flex items-start justify-between gap-4">
+          <div>
+            <p className="font-semibold text-green-800">Ready to Certify</p>
+            <p className="text-sm text-green-700 mt-1">
+              This student has completed all requirements. Issue their certificate to finalise their record.
+            </p>
+          </div>
+          <Button
+            onClick={() => setIssueCertOpen(true)}
+            className="flex-shrink-0 !bg-green-700 hover:!bg-green-800"
+          >
+            Issue Certificate
+          </Button>
+        </div>
+      )}
+
+      {app.certificate && (
+        <div className="rounded-xl border border-green-200 bg-green-50 px-5 py-4 mb-6">
+          <p className="font-semibold text-green-800">Certificate Issued ✓</p>
+          <p className="text-sm text-green-600 mt-1">
+            Number: <strong>{app.certificate.certificate_number}</strong>
+          </p>
+          <a
+            href={`/verify/${app.certificate.certificate_number}`}
+            target="_blank"
+            rel="noreferrer"
+            className="text-sm text-green-700 underline mt-1 inline-block"
+          >
+            View Public Verification Page →
+          </a>
         </div>
       )}
 
@@ -571,6 +622,37 @@ export default function AdminApplicationDetailPage({ params }: { params: { id: s
             </p>
           </div>
         </form>
+      </Modal>
+
+      {/* Issue certificate modal */}
+      <Modal
+        open={issueCertOpen}
+        onOpenChange={(open) => { if (!open) setIssueCertOpen(false) }}
+        title="Issue Certificate"
+        footer={
+          <>
+            <Button variant="ghost" onClick={() => setIssueCertOpen(false)}>Cancel</Button>
+            <Button
+              className="!bg-green-700 hover:!bg-green-800"
+              loading={issueCertificate.isPending}
+              onClick={handleIssueCertificate}
+            >
+              Confirm & Issue
+            </Button>
+          </>
+        }
+      >
+        <p className="text-sm text-gray-600 mb-4">
+          You are about to issue an official ZNTC certificate to:
+        </p>
+        <div className="bg-gray-50 rounded-lg p-4 mb-4 text-sm space-y-1">
+          <p><span className="text-gray-500">Student:</span> <strong>{app.applicant_name}</strong></p>
+          <p><span className="text-gray-500">Course:</span> <strong>{app.course_name}</strong></p>
+          <p><span className="text-gray-500">Level:</span> <strong>{app.hexco_level || 'Short Course'}</strong></p>
+        </div>
+        <p className="text-xs text-amber-700 bg-amber-50 border border-amber-200 rounded px-3 py-2">
+          This action cannot be undone. A PDF certificate will be generated and emailed to the student automatically.
+        </p>
       </Modal>
     </AdminLayout>
   )

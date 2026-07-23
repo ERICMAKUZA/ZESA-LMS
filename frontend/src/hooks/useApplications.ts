@@ -139,6 +139,19 @@ export function useReviewAction(id: string) {
   })
 }
 
+export function useIssueCertificate(id: string) {
+  const queryClient = useQueryClient()
+  return useMutation<Application, Error, void>({
+    mutationFn: async () => {
+      const { data } = await api.post(`/admin/applications/${id}/issue_certificate/`)
+      return data
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['admin-applications'] })
+    },
+  })
+}
+
 export function useConfirmPayment(id: string) {
   const queryClient = useQueryClient()
   return useMutation<ConfirmPaymentResponse, Error, ConfirmPaymentData>({

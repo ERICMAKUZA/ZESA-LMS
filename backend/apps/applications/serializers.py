@@ -120,6 +120,7 @@ class ApplicationDetailSerializer(serializers.ModelSerializer):
     recent_history = serializers.SerializerMethodField()
     payment = serializers.SerializerMethodField()
     enrollment = serializers.SerializerMethodField()
+    certificate = serializers.SerializerMethodField()
 
     class Meta:
         model = Application
@@ -139,7 +140,7 @@ class ApplicationDetailSerializer(serializers.ModelSerializer):
             "submitted_at", "reviewed_at", "approved_at", "enrolled_at",
             "created_at", "updated_at",
             "documents", "recent_history",
-            "payment", "enrollment",
+            "payment", "enrollment", "certificate",
         )
         read_only_fields = (
             "id", "applicant", "status", "reviewer",
@@ -184,6 +185,27 @@ class ApplicationDetailSerializer(serializers.ModelSerializer):
             }
         except Exception:
             return None
+
+    def get_certificate(self, obj):
+        try:
+            cert = obj.enrollment.certificate
+        except Exception:
+            return None
+        request = self.context.get("request")
+        pdf_url = None
+        if cert.pdf_file:
+            pdf_url = request.build_absolute_uri(cert.pdf_file.url) if request else cert.pdf_file.url
+        elif cert.pdf_url:
+            pdf_url = cert.pdf_url
+        return {
+            "id": str(cert.id),
+            "certificate_number": cert.certificate_number,
+            "issued_at": cert.issued_at,
+            "is_revoked": cert.is_revoked,
+            "status": cert.status_display,
+            "pdf_url": pdf_url,
+            "verification_url": cert.verification_url,
+        }
 
 
 class ReviewActionSerializer(serializers.Serializer):
