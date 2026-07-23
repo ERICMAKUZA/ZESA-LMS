@@ -12,6 +12,8 @@ ALLOWED_HOSTS = config("DJANGO_ALLOWED_HOSTS", cast=Csv(), default="localhost")
 DEMO_MODE = config("DEMO_MODE", cast=bool, default=True)
 
 DJANGO_APPS = [
+    "unfold",
+    "unfold.contrib.filters",
     "django.contrib.admin",
     "django.contrib.auth",
     "django.contrib.contenttypes",
@@ -108,6 +110,11 @@ MEDIA_ROOT = BASE_DIR / "media"
 
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
+# Django defaults this to /accounts/profile/, which doesn't exist in this
+# app — anyone logging in at /django-admin/login/ without a `next` param
+# (e.g. a bookmarked login page) would land on a 404 instead of the admin.
+LOGIN_REDIRECT_URL = "/django-admin/"
+
 REST_FRAMEWORK = {
     "DEFAULT_AUTHENTICATION_CLASSES": [
         "rest_framework_simplejwt.authentication.JWTAuthentication",
@@ -178,11 +185,134 @@ CORS_ALLOWED_ORIGINS = config(
 )
 CORS_ALLOW_CREDENTIALS = True
 
+# Needed for the (cookie+CSRF based) Django admin login to work when it's
+# reached via a host/port other than what Django infers from the request
+# alone — e.g. behind nginx on a LAN IP. Without this, admin form POSTs
+# (login included) 403 with "CSRF verification failed".
+CSRF_TRUSTED_ORIGINS = config(
+    "CSRF_TRUSTED_ORIGINS",
+    default="http://localhost:8080,http://127.0.0.1:8080",
+    cast=Csv(),
+)
+
 SPECTACULAR_SETTINGS = {
     "TITLE": "ZESA NTC API",
     "DESCRIPTION": "Training at ZESA National Training Centre — API",
     "VERSION": "1.0.0",
     "SERVE_INCLUDE_SCHEMA": False,
+}
+
+from django.urls import reverse_lazy
+
+UNFOLD = {
+    "SITE_TITLE": "ZNTC Admin",
+    "SITE_HEADER": "ZNTC Training Centre",
+    "SITE_SYMBOL": "school",
+    "SHOW_HISTORY": True,
+    "SHOW_VIEW_ON_SITE": False,
+    # Matches the frontend's brand blue (frontend/tailwind.config.ts
+    # `primary`: #1B3A6B) instead of Unfold's default purple.
+    "COLORS": {
+        "primary": {
+            "50": "243 246 252",
+            "100": "226 235 248",
+            "200": "193 211 240",
+            "300": "148 179 229",
+            "400": "92 139 214",
+            "500": "50 106 195",
+            "600": "45 89 159",
+            "700": "34 71 129",
+            "800": "27 57 106",
+            "900": "20 44 82",
+            "950": "15 33 62",
+        },
+    },
+    "ENVIRONMENT_TITLE_PREFIX": lambda request: "",
+    "SIDEBAR": {
+        "show_search": True,
+        "navigation": [
+            {
+                "title": "Training Management",
+                "items": [
+                    {
+                        "title": "Categories",
+                        "icon": "category",
+                        "link": reverse_lazy("admin:courses_coursecategory_changelist"),
+                    },
+                    {
+                        "title": "Courses",
+                        "icon": "menu_book",
+                        "link": reverse_lazy("admin:courses_course_changelist"),
+                    },
+                    {
+                        "title": "Schedules / Calendar",
+                        "icon": "calendar_month",
+                        "link": reverse_lazy("admin:courses_courseschedule_changelist"),
+                    },
+                    {
+                        "title": "Enquiries",
+                        "icon": "help",
+                        "link": reverse_lazy("admin:courses_enquiry_changelist"),
+                    },
+                ],
+            },
+            {
+                "title": "Admissions",
+                "items": [
+                    {
+                        "title": "Applications",
+                        "icon": "assignment",
+                        "link": reverse_lazy("admin:applications_application_changelist"),
+                    },
+                    {
+                        "title": "Enrollments",
+                        "icon": "how_to_reg",
+                        "link": reverse_lazy("admin:enrollments_enrollment_changelist"),
+                    },
+                    {
+                        "title": "Certificates",
+                        "icon": "workspace_premium",
+                        "link": reverse_lazy("admin:certificates_certificate_changelist"),
+                    },
+                ],
+            },
+            {
+                "title": "Finance",
+                "items": [
+                    {
+                        "title": "Payments",
+                        "icon": "payments",
+                        "link": reverse_lazy("admin:payments_payment_changelist"),
+                    },
+                    {
+                        "title": "SAP Sync Log",
+                        "icon": "sync",
+                        "link": reverse_lazy("admin:payments_sapsynclog_changelist"),
+                    },
+                ],
+            },
+            {
+                "title": "People & Access",
+                "items": [
+                    {
+                        "title": "Users",
+                        "icon": "group",
+                        "link": reverse_lazy("admin:accounts_user_changelist"),
+                    },
+                    {
+                        "title": "Training Centres",
+                        "icon": "apartment",
+                        "link": reverse_lazy("admin:centres_centre_changelist"),
+                    },
+                    {
+                        "title": "Notifications",
+                        "icon": "notifications",
+                        "link": reverse_lazy("admin:workflows_notification_changelist"),
+                    },
+                ],
+            },
+        ],
+    },
 }
 
 MOODLE_BASE_URL = config("MOODLE_BASE_URL", default="")

@@ -104,10 +104,11 @@ export default function AdminCoursesPage() {
       </Card>
 
       <p className="mt-4 text-xs text-gray-400 text-center">
-        To add or edit courses, use the{' '}
+        To add, edit, or delete courses, categories, or schedules, use the{' '}
         <Link href="/django-admin/courses/course/" className="text-primary hover:underline" target="_blank">
           Django admin
-        </Link>.
+        </Link>{' '}
+        (also in the sidebar under "Manage").
       </p>
     </AdminLayout>
   )

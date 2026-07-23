@@ -5,6 +5,7 @@ import Link from 'next/link'
 import { usePathname, useRouter } from 'next/navigation'
 import {
   LayoutDashboard, FileText, GraduationCap, BookOpen, Users, BarChart2, Menu, X, LogOut, User,
+  Tags, CalendarDays, Award, HelpCircle, ExternalLink,
 } from 'lucide-react'
 import { clsx } from 'clsx'
 import { useAuth } from '@/hooks/useAuth'
@@ -18,6 +19,16 @@ const nav = [
   { href: '/admin/courses',      label: 'Courses',           icon: BookOpen },
   { href: '/admin/users',        label: 'Users',             icon: Users },
   { href: '/admin/reports',      label: 'Reports',           icon: BarChart2 },
+]
+
+// Full add/edit/delete management for these lives in the Django admin
+// (django-unfold themed) — there's no in-app CRUD UI for them, so link
+// straight into the relevant changelist instead of duplicating it.
+const managementNav = [
+  { href: '/django-admin/courses/coursecategory/', label: 'Categories',           icon: Tags },
+  { href: '/django-admin/courses/courseschedule/',  label: 'Schedules / Calendar', icon: CalendarDays },
+  { href: '/django-admin/certificates/certificate/', label: 'Certificates',        icon: Award },
+  { href: '/django-admin/courses/enquiry/',          label: 'Enquiries',           icon: HelpCircle },
 ]
 
 const roleColor: Record<string, string> = {
@@ -74,6 +85,23 @@ function AdminContent({ children }: { children: ReactNode }) {
               <Icon className="h-5 w-5 shrink-0" />
               {label}
             </Link>
+          ))}
+
+          <p className="mt-4 px-6 pb-2 text-xs font-semibold uppercase tracking-wide text-white/40">
+            Manage
+          </p>
+          {managementNav.map(({ href, label, icon: Icon }) => (
+            <a
+              key={href}
+              href={href}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex items-center gap-3 px-6 py-3 text-sm font-medium text-white/70 transition-colors hover:bg-white/10 hover:text-white"
+            >
+              <Icon className="h-5 w-5 shrink-0" />
+              {label}
+              <ExternalLink className="ml-auto h-3.5 w-3.5 shrink-0 text-white/40" />
+            </a>
           ))}
         </nav>
       </aside>
