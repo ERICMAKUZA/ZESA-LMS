@@ -16,12 +16,16 @@ import Input from '@/components/ui/Input'
 import Modal from '@/components/ui/Modal'
 import Spinner from '@/components/ui/Spinner'
 import { useToast } from '@/components/ui/Toast'
+import { useAuth } from '@/hooks/useAuth'
 import {
   useAdminApplication, useStartReview, useReviewAction,
   useConfirmPayment, useRetryMoodleSync, useIssueCertificate,
+  useDeEnrolStudent,
 } from '@/hooks/useApplications'
 import api from '@/lib/api'
 import type { ApplicationStatus, Centre } from '@/types'
+
+const DE_ENROL_REASON_MIN = 20
 
 type ReviewAction = 'approve' | 'reject' | 'request_more_info'
 
@@ -60,7 +64,9 @@ export default function AdminApplicationDetailPage({ params }: { params: { id: s
   const confirmPayment = useConfirmPayment(params.id)
   const retryMoodleSync = useRetryMoodleSync(params.id)
   const issueCertificate = useIssueCertificate(params.id)
+  const deEnrolStudent = useDeEnrolStudent(params.id)
   const { toast } = useToast()
+  const { user } = useAuth()
 
   const [modalAction, setModalAction] = useState<ReviewAction | null>(null)
   const [notes, setNotes] = useState('')
@@ -69,6 +75,9 @@ export default function AdminApplicationDetailPage({ params }: { params: { id: s
   const [approveSubmitted, setApproveSubmitted] = useState(false)
   const [confirmPaymentOpen, setConfirmPaymentOpen] = useState(false)
   const [issueCertOpen, setIssueCertOpen] = useState(false)
+  const [deEnrolOpen, setDeEnrolOpen] = useState(false)
+  const [deEnrolType, setDeEnrolType] = useState<'VOLUNTARY' | 'MANDATORY'>('MANDATORY')
+  const [deEnrolReason, setDeEnrolReason] = useState('')
 
   const {
     register: registerPayment,
@@ -116,6 +125,27 @@ export default function AdminApplicationDetailPage({ params }: { params: { id: s
     } catch (err: unknown) {
       const msg = (err as { response?: { data?: { detail?: string } } })?.response?.data?.detail
       toast({ variant: 'error', title: 'Failed to issue certificate', description: msg })
+    }
+  }
+
+  const closeDeEnrolModal = () => {
+    setDeEnrolOpen(false)
+    setDeEnrolType('MANDATORY')
+    setDeEnrolReason('')
+  }
+
+  const handleDeEnrol = async () => {
+    try {
+      await deEnrolStudent.mutateAsync({ type: deEnrolType, reason: deEnrolReason })
+      toast({
+        variant: 'success',
+        title: 'De-enrolment queued',
+        description: 'The student will be unenrolled from Moodle and notified by email shortly.',
+      })
+      closeDeEnrolModal()
+    } catch (err: unknown) {
+      const msg = (err as { response?: { data?: { detail?: string } } })?.response?.data?.detail
+      toast({ variant: 'error', title: 'Failed to de-enrol student', description: msg })
     }
   }
 
@@ -223,6 +253,23 @@ export default function AdminApplicationDetailPage({ params }: { params: { id: s
           >
             Issue Certificate
           </Button>
+        </div>
+      )}
+
+      {app.status === 'ENROLLED' && user && ['ADMIN', 'REVIEWER'].includes(user.role) && (
+        <div className="rounded-xl border border-red-200 bg-red-50 px-5 py-4 mb-6 flex items-start justify-between gap-4">
+          <div>
+            <p className="font-semibold text-red-800">De-enrolment</p>
+            <p className="text-sm text-red-700 mt-1">
+              Remove this student from active enrolment — mandatory (admin-initiated) or voluntary (student-requested).
+            </p>
+          </div>
+          <button
+            onClick={() => setDeEnrolOpen(true)}
+            className="flex-shrink-0 text-sm text-red-600 border border-red-300 px-4 py-2 rounded-lg hover:bg-red-100"
+          >
+            De-enrol Student
+          </button>
         </div>
       )}
 
@@ -656,6 +703,71 @@ export default function AdminApplicationDetailPage({ params }: { params: { id: s
         <p className="text-xs text-amber-700 bg-amber-50 border border-amber-200 rounded px-3 py-2">
           This action cannot be undone. A PDF certificate will be generated and emailed to the student automatically.
         </p>
+      </Modal>
+
+      {/* De-enrolment modal */}
+      <Modal
+        open={deEnrolOpen}
+        onOpenChange={(open) => { if (!open) closeDeEnrolModal() }}
+        title="De-enrol Student"
+        footer={
+          <>
+            <Button variant="ghost" onClick={closeDeEnrolModal}>Cancel</Button>
+            <Button
+              variant="danger"
+              loading={deEnrolStudent.isPending}
+              disabled={deEnrolReason.trim().length < DE_ENROL_REASON_MIN}
+              onClick={handleDeEnrol}
+            >
+              Confirm De-enrolment
+            </Button>
+          </>
+        }
+      >
+        <div className="space-y-4">
+          <div>
+            <label className="mb-2 block text-sm font-medium text-gray-700">De-enrolment type</label>
+            <div className="flex flex-col gap-2">
+              <label className="flex items-center gap-2 cursor-pointer">
+                <input
+                  type="radio"
+                  name="de-enrol-type"
+                  checked={deEnrolType === 'VOLUNTARY'}
+                  onChange={() => setDeEnrolType('VOLUNTARY')}
+                  className="accent-primary"
+                />
+                <span className="text-sm text-gray-700">Voluntary (student requested)</span>
+              </label>
+              <label className="flex items-center gap-2 cursor-pointer">
+                <input
+                  type="radio"
+                  name="de-enrol-type"
+                  checked={deEnrolType === 'MANDATORY'}
+                  onChange={() => setDeEnrolType('MANDATORY')}
+                  className="accent-primary"
+                />
+                <span className="text-sm text-gray-700">Mandatory (admin initiated)</span>
+              </label>
+            </div>
+          </div>
+
+          <div>
+            <label className="mb-1 block text-sm font-medium text-gray-700">Reason</label>
+            <textarea
+              value={deEnrolReason}
+              onChange={(e) => setDeEnrolReason(e.target.value)}
+              rows={3}
+              className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
+              placeholder={`Required, at least ${DE_ENROL_REASON_MIN} characters`}
+            />
+            <p className="mt-1 text-xs text-gray-400">{deEnrolReason.trim().length}/{DE_ENROL_REASON_MIN} characters minimum</p>
+          </div>
+
+          <div className="flex items-start gap-2 rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-700">
+            <span>⚠</span>
+            <p>This action will remove the student from active enrolment. A notification will be sent to the student.</p>
+          </div>
+        </div>
       </Modal>
     </AdminLayout>
   )

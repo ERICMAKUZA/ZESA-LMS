@@ -11,8 +11,9 @@ import Card from '@/components/ui/Card'
 import Badge from '@/components/ui/Badge'
 import Button from '@/components/ui/Button'
 import Input from '@/components/ui/Input'
+import Modal from '@/components/ui/Modal'
 import Spinner from '@/components/ui/Spinner'
-import { useApplication, useSubmitForReview, useUpdateApplication } from '@/hooks/useApplications'
+import { useApplication, useSubmitForReview, useUpdateApplication, useRequestWithdrawal } from '@/hooks/useApplications'
 import type { EditableApplicationFields } from '@/hooks/useApplications'
 import { useToast } from '@/components/ui/Toast'
 import api from '@/lib/api'
@@ -24,6 +25,9 @@ const timelineStatuses: ApplicationStatus[] = [
 
 // Kept in sync with StudentApplicationViewSet.perform_update on the backend.
 const EDITABLE_STATUSES: ApplicationStatus[] = ['DRAFT', 'SUBMITTED', 'MORE_INFO_REQUESTED']
+
+// Kept in sync with StudentApplicationViewSet.request_withdrawal on the backend.
+const WITHDRAWAL_REASON_MIN = 20
 
 function toEditableFields(app: Application): EditableApplicationFields {
   return {
@@ -42,12 +46,15 @@ export default function ApplicationDetailPage({ params }: { params: { id: string
   const { data: app, isLoading } = useApplication(params.id)
   const submitMutation = useSubmitForReview(params.id)
   const updateMutation = useUpdateApplication(params.id)
+  const withdrawMutation = useRequestWithdrawal(params.id)
   const { toast } = useToast()
   const queryClient = useQueryClient()
   const router = useRouter()
   const [cocChecked, setCocChecked] = useState(false)
   const [editMode, setEditMode] = useState(false)
   const [form, setForm] = useState<EditableApplicationFields | null>(null)
+  const [withdrawOpen, setWithdrawOpen] = useState(false)
+  const [withdrawReason, setWithdrawReason] = useState('')
 
   const startEdit = () => {
     if (!app) return
@@ -70,6 +77,26 @@ export default function ApplicationDetailPage({ params }: { params: { id: string
     } catch (err: unknown) {
       const msg = (err as { response?: { data?: { detail?: string } } })?.response?.data?.detail
       toast({ variant: 'error', title: 'Update failed', description: msg })
+    }
+  }
+
+  const closeWithdrawModal = () => {
+    setWithdrawOpen(false)
+    setWithdrawReason('')
+  }
+
+  const handleWithdraw = async () => {
+    try {
+      await withdrawMutation.mutateAsync({ reason: withdrawReason })
+      toast({
+        variant: 'success',
+        title: 'Withdrawal requested',
+        description: 'Your withdrawal is being processed. You will receive a confirmation email shortly.',
+      })
+      closeWithdrawModal()
+    } catch (err: unknown) {
+      const msg = (err as { response?: { data?: { detail?: string } } })?.response?.data?.detail
+      toast({ variant: 'error', title: 'Failed to request withdrawal', description: msg })
     }
   }
 
@@ -283,6 +310,12 @@ export default function ApplicationDetailPage({ params }: { params: { id: string
                   Go to your course <ExternalLink className="h-4 w-4" />
                 </a>
               </div>
+              <button
+                onClick={() => setWithdrawOpen(true)}
+                className="text-xs text-gray-400 hover:text-red-600 underline mt-2"
+              >
+                Request withdrawal from this course
+              </button>
             </Card>
           )}
 
@@ -574,6 +607,50 @@ export default function ApplicationDetailPage({ params }: { params: { id: string
           )}
         </div>
       </div>
+
+      {/* Withdrawal request modal */}
+      <Modal
+        open={withdrawOpen}
+        onOpenChange={(open) => { if (!open) closeWithdrawModal() }}
+        title="Request Withdrawal"
+        footer={
+          <>
+            <Button variant="ghost" onClick={closeWithdrawModal}>Cancel</Button>
+            <Button
+              variant="danger"
+              loading={withdrawMutation.isPending}
+              disabled={withdrawReason.trim().length < WITHDRAWAL_REASON_MIN}
+              onClick={handleWithdraw}
+            >
+              Confirm Withdrawal
+            </Button>
+          </>
+        }
+      >
+        <div className="space-y-4">
+          <p className="text-sm text-gray-600">
+            You are requesting to voluntarily withdraw from{' '}
+            <span className="font-medium text-gray-900">{app.course_name}</span>.
+          </p>
+          <div>
+            <label className="mb-1 block text-sm font-medium text-gray-700">Reason</label>
+            <textarea
+              value={withdrawReason}
+              onChange={(e) => setWithdrawReason(e.target.value)}
+              rows={3}
+              className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
+              placeholder={`Required, at least ${WITHDRAWAL_REASON_MIN} characters`}
+            />
+            <p className="mt-1 text-xs text-gray-400">
+              {withdrawReason.trim().length}/{WITHDRAWAL_REASON_MIN} characters minimum
+            </p>
+          </div>
+          <div className="flex items-start gap-2 rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-700">
+            <span>⚠</span>
+            <p>This will remove you from active enrolment and cannot be undone. You will receive a confirmation email.</p>
+          </div>
+        </div>
+      </Modal>
     </StudentLayout>
   )
 }

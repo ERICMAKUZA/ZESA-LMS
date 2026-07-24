@@ -193,6 +193,48 @@ export function useIssueCertificate(id: string) {
   })
 }
 
+interface DeEnrolPayload {
+  type: 'MANDATORY' | 'VOLUNTARY'
+  reason: string
+}
+
+// De-enrolment is processed asynchronously (queued as a Celery task that
+// unenrols from Moodle before flipping the application status), so the
+// status won't have changed yet when this resolves. Re-invalidate a couple
+// of times shortly after to pick up the eventual DE_ENROLLED transition
+// without a persistent poll.
+function invalidateApplicationSoon(queryClient: ReturnType<typeof useQueryClient>, keys: string[][]) {
+  const invalidate = () => keys.forEach((key) => queryClient.invalidateQueries({ queryKey: key }))
+  invalidate()
+  ;[2000, 5000, 10000].forEach((delay) => setTimeout(invalidate, delay))
+}
+
+export function useDeEnrolStudent(id: string) {
+  const queryClient = useQueryClient()
+  return useMutation<{ status: string }, Error, DeEnrolPayload>({
+    mutationFn: async (payload) => {
+      const { data } = await api.post(`/admin/applications/${id}/de-enrol/`, payload)
+      return data
+    },
+    onSuccess: () => {
+      invalidateApplicationSoon(queryClient, [['admin-applications'], ['admin-applications', id]])
+    },
+  })
+}
+
+export function useRequestWithdrawal(id: string) {
+  const queryClient = useQueryClient()
+  return useMutation<{ status: string }, Error, { reason: string }>({
+    mutationFn: async (payload) => {
+      const { data } = await api.post(`/my-applications/${id}/request-withdrawal/`, payload)
+      return data
+    },
+    onSuccess: () => {
+      invalidateApplicationSoon(queryClient, [['my-applications'], ['my-applications', id]])
+    },
+  })
+}
+
 export function useConfirmPayment(id: string) {
   const queryClient = useQueryClient()
   return useMutation<ConfirmPaymentResponse, Error, ConfirmPaymentData>({

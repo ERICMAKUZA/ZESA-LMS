@@ -112,6 +112,38 @@ class StudentApplicationViewSet(viewsets.ModelViewSet):
         notify_application_submitted.delay(str(application.id))
         return Response(ApplicationDetailSerializer(application, context={"request": request}).data)
 
+    @action(detail=True, methods=["post"], url_path="request-withdrawal")
+    def request_withdrawal(self, request, pk=None):
+        """
+        Student-initiated voluntary de-enrolment (FRS: "voluntary
+        de-enrolment"). Deliberately a separate, narrowly-scoped endpoint
+        from the admin de_enrol_student view below rather than widening that
+        view's IsAdminOrReviewer permission — students may only withdraw
+        themselves, only voluntarily, from their own ENROLLED application.
+        """
+        application = self.get_object()
+        if application.status != ApplicationStatus.ENROLLED:
+            return Response(
+                {"detail": f"Cannot request withdrawal: application is {application.status}."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        reason = request.data.get("reason", "").strip()
+        if len(reason) < 20:
+            return Response(
+                {"detail": "Please provide a reason of at least 20 characters."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        try:
+            enrollment = application.enrollment
+        except Enrollment.DoesNotExist:
+            return Response(
+                {"detail": "No enrollment found for this application."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        from apps.enrollments.tasks import unenrol_from_moodle
+        unenrol_from_moodle.delay(str(enrollment.pk), "VOLUNTARY", reason)
+        return Response({"status": "withdrawal_requested"})
+
 
 class AdminApplicationViewSet(viewsets.ModelViewSet):
     permission_classes = [IsAdminOrReviewer]
@@ -351,6 +383,11 @@ def de_enrol_student(request, pk):
         app = Application.objects.get(pk=pk)
     except Application.DoesNotExist:
         return Response({'detail': 'Not found.'}, status=http_status.HTTP_404_NOT_FOUND)
+    if app.status != ApplicationStatus.ENROLLED:
+        return Response(
+            {'detail': f"Cannot de-enrol: application is {app.status}."},
+            status=http_status.HTTP_400_BAD_REQUEST,
+        )
     de_type = request.data.get('type', 'MANDATORY')
     reason = request.data.get('reason', '')
     if not reason:
