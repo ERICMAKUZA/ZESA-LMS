@@ -3,11 +3,13 @@ from django.http import HttpResponse, HttpResponseNotFound
 from django.urls import path, reverse
 from django.utils.html import format_html
 
+from apps.core.admin_mixins import AuditActorAdminMixin
+
 from .models import Certificate
 
 
 @admin.register(Certificate)
-class CertificateAdmin(admin.ModelAdmin):
+class CertificateAdmin(AuditActorAdminMixin, admin.ModelAdmin):
     list_display = (
         "certificate_number", "user", "course", "issued_at",
         "issued_by", "is_revoked", "print_duplicate_link",

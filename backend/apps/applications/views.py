@@ -428,17 +428,21 @@ def create_walkin_application(request):
     except Course.DoesNotExist:
         return Response({'detail': 'Course not found.'}, status=http_status.HTTP_400_BAD_REQUEST)
 
-    student, created = User.objects.get_or_create(
-        email=email,
-        defaults={
-            'first_name': request.data.get('student_first_name', ''),
-            'last_name': request.data.get('student_last_name', ''),
-            'phone': request.data.get('student_phone', ''),
-            'role': 'STUDENT',
-            'is_active': True,
-        }
-    )
-    if created:
+    try:
+        student = User.objects.get(email=email)
+    except User.DoesNotExist:
+        student = User(
+            email=email,
+            first_name=request.data.get('student_first_name', ''),
+            last_name=request.data.get('student_last_name', ''),
+            phone=request.data.get('student_phone', ''),
+            role='STUDENT',
+            is_active=True,
+        )
+        # Set before the first save so the CREATE audit log entry
+        # (apps.core.signals) attributes it to the staff member capturing
+        # this walk-in, not "System".
+        student._audit_actor = request.user
         student.set_unusable_password()
         student.save()
 

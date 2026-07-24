@@ -54,3 +54,16 @@ class TokenObtainPairSerializer(BaseTokenObtainPairSerializer):
         token["employee_id"] = user.employee_id or ""
         token["ec_number"] = user.ec_number or ""
         return token
+
+    def validate(self, attrs):
+        # SimpleJWT is stateless and never calls django.contrib.auth.login(),
+        # so django.contrib.auth.signals.user_logged_in never fires here —
+        # this is the actual point a login succeeds, hooked explicitly.
+        data = super().validate(attrs)
+        from apps.core.models import AuditLog
+        AuditLog.log(
+            actor=self.user, action=AuditLog.Action.LOGIN, instance=self.user,
+            request=self.context.get("request"),
+            notes=f"User logged in: {self.user.email} (role={self.user.role})",
+        )
+        return data

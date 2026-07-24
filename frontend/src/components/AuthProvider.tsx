@@ -39,6 +39,10 @@ export default function AuthProvider({ children }: { children: ReactNode }) {
   }, [queryClient, router])
 
   const logout = useCallback(() => {
+    // Fire-and-forget audit hook — tokens are stateless, so logout is
+    // really just discarding them client-side; this only records that it
+    // happened. Must fire before clearTokens() so the JWT is still attached.
+    api.post('/auth/logout/').catch(() => {})
     clearTokens()
     flushSync(() => {
       setUser(null)

@@ -1,11 +1,13 @@
 from django.contrib import admin
 from django.contrib.auth.admin import UserAdmin as BaseUserAdmin
 
+from apps.core.admin_mixins import AuditActorAdminMixin
+
 from .models import User
 
 
 @admin.register(User)
-class UserAdmin(BaseUserAdmin):
+class UserAdmin(AuditActorAdminMixin, BaseUserAdmin):
     list_display = ("email", "full_name", "role", "ec_number", "department", "is_active", "is_staff", "date_joined")
     list_filter = ("role", "is_active", "is_staff", "department")
     search_fields = ("email", "first_name", "last_name", "employee_id", "ec_number")

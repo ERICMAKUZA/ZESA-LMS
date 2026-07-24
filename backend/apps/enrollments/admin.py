@@ -1,11 +1,13 @@
 from django.contrib import admin
 from django.utils.html import format_html
 
+from apps.core.admin_mixins import AuditActorAdminMixin
+
 from .models import Enrollment
 
 
 @admin.register(Enrollment)
-class EnrollmentAdmin(admin.ModelAdmin):
+class EnrollmentAdmin(AuditActorAdminMixin, admin.ModelAdmin):
     list_display = (
         "id", "application_link", "status", "is_suspended",
         "start_date", "end_date", "moodle_user_id",

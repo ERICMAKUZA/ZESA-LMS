@@ -32,6 +32,24 @@ class CustomTokenObtainPairView(TokenObtainPairView):
     serializer_class = TokenObtainPairSerializer
 
 
+class LogoutView(APIView):
+    """
+    POST /api/auth/logout/
+    Purely an audit hook — tokens are stateless (no blacklist configured),
+    so "logging out" is really the client discarding its tokens. This just
+    records that it happened before the frontend clears localStorage.
+    """
+    permission_classes = [permissions.IsAuthenticated]
+
+    def post(self, request):
+        from apps.core.models import AuditLog
+        AuditLog.log(
+            actor=request.user, action=AuditLog.Action.LOGOUT, instance=request.user,
+            request=request, notes=f"User logged out: {request.user.email}",
+        )
+        return Response(status=status.HTTP_204_NO_CONTENT)
+
+
 class AdminUserListView(generics.ListAPIView):
     queryset = User.objects.all().order_by("last_name", "first_name")
     serializer_class = UserSerializer

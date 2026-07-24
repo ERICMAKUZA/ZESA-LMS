@@ -32,6 +32,7 @@ THIRD_PARTY_APPS = [
 ]
 
 LOCAL_APPS = [
+    "apps.core",
     "apps.accounts",
     "apps.courses",
     "apps.applications",
@@ -308,6 +309,16 @@ UNFOLD = {
                         "title": "Notifications",
                         "icon": "notifications",
                         "link": reverse_lazy("admin:workflows_notification_changelist"),
+                    },
+                ],
+            },
+            {
+                "title": "Audit & Compliance",
+                "items": [
+                    {
+                        "title": "Audit Log",
+                        "icon": "fact_check",
+                        "link": reverse_lazy("admin:core_auditlog_changelist"),
                     },
                 ],
             },
