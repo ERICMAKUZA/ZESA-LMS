@@ -7,6 +7,7 @@ from django.utils import timezone
 from rest_framework import permissions, status, viewsets
 from rest_framework import status as http_status
 from rest_framework.decorators import action, api_view, permission_classes
+from rest_framework.exceptions import ValidationError
 from rest_framework.parsers import FormParser, JSONParser, MultiPartParser
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
@@ -56,6 +57,40 @@ class StudentApplicationViewSet(viewsets.ModelViewSet):
             serializer.save(staff_captured_by=self.request.user)
         else:
             serializer.save()
+
+    def perform_update(self, serializer):
+        # FRS §3.1: students may edit their own submitted information up
+        # until a reviewer claims it. MORE_INFO_REQUESTED is included even
+        # though it comes after UNDER_REVIEW in the state machine, since
+        # that status exists specifically so the student can act on
+        # reviewer feedback and resubmit — locking it would make the
+        # existing "Resubmit Application" flow a dead end.
+        instance = serializer.instance
+        editable_statuses = (
+            ApplicationStatus.DRAFT,
+            ApplicationStatus.SUBMITTED,
+            ApplicationStatus.MORE_INFO_REQUESTED,
+        )
+        if instance.status not in editable_statuses:
+            raise ValidationError({
+                "detail": (
+                    f"Application cannot be edited in status '{instance.status}'. "
+                    f"Contact training@zntc.ac.zw to request changes."
+                )
+            })
+        if instance.status != ApplicationStatus.DRAFT and "course" in serializer.validated_data:
+            raise ValidationError({"course": "Course cannot be changed after submission."})
+        serializer.save()
+        changed_fields = sorted(k for k in serializer.validated_data if k != "applicant")
+        if changed_fields:
+            instance._record_transition(
+                instance.status,
+                changed_by=self.request.user,
+                notes=(
+                    f"Application edited by {self.request.user.full_name}. "
+                    f"Fields changed: {', '.join(changed_fields)}."
+                ),
+            )
 
     @action(detail=True, methods=["post"])
     def submit(self, request, pk=None):

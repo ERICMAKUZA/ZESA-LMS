@@ -62,7 +62,10 @@ class ApplicationCreateSerializer(serializers.ModelSerializer):
         course = attrs.get("course")
         if course is None:
             return attrs
-        applicant = attrs["applicant"]
+        # applicant is a HiddenField, so on a partial update where it isn't
+        # in the payload DRF skips it entirely rather than applying its
+        # CurrentUserDefault — fall back to the existing instance's owner.
+        applicant = attrs.get("applicant") or (self.instance.applicant if self.instance else None)
         conflict = (
             Application.objects.filter(applicant=applicant, course=course)
             .exclude(status=ApplicationStatus.REJECTED)

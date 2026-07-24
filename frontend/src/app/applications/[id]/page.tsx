@@ -1,6 +1,6 @@
 'use client'
 
-import { ArrowLeft, CheckCircle, Clock, ExternalLink } from 'lucide-react'
+import { ArrowLeft, CheckCircle, Clock, ExternalLink, Pencil } from 'lucide-react'
 import Link from 'next/link'
 import { format } from 'date-fns'
 import { useState } from 'react'
@@ -10,23 +10,68 @@ import StudentLayout from '@/components/layout/StudentLayout'
 import Card from '@/components/ui/Card'
 import Badge from '@/components/ui/Badge'
 import Button from '@/components/ui/Button'
+import Input from '@/components/ui/Input'
 import Spinner from '@/components/ui/Spinner'
-import { useApplication, useSubmitForReview } from '@/hooks/useApplications'
+import { useApplication, useSubmitForReview, useUpdateApplication } from '@/hooks/useApplications'
+import type { EditableApplicationFields } from '@/hooks/useApplications'
 import { useToast } from '@/components/ui/Toast'
 import api from '@/lib/api'
-import type { ApplicationStatus, User } from '@/types'
+import type { Application, ApplicationStatus, User } from '@/types'
 
 const timelineStatuses: ApplicationStatus[] = [
   'SUBMITTED', 'UNDER_REVIEW', 'APPROVED', 'PAYMENT_PENDING', 'PAYMENT_CONFIRMED', 'ENROLLED', 'CERTIFIED',
 ]
 
+// Kept in sync with StudentApplicationViewSet.perform_update on the backend.
+const EDITABLE_STATUSES: ApplicationStatus[] = ['DRAFT', 'SUBMITTED', 'MORE_INFO_REQUESTED']
+
+function toEditableFields(app: Application): EditableApplicationFields {
+  return {
+    motivation: app.motivation ?? '',
+    is_resident: app.is_resident,
+    hostel_name: app.hostel_name ?? '',
+    room_number: app.room_number ?? '',
+    guardian_name: app.guardian_name ?? '',
+    guardian_contact: app.guardian_contact ?? '',
+    guardian_email: app.guardian_email ?? '',
+    responsible_party: app.responsible_party ?? '',
+  }
+}
+
 export default function ApplicationDetailPage({ params }: { params: { id: string } }) {
   const { data: app, isLoading } = useApplication(params.id)
   const submitMutation = useSubmitForReview(params.id)
+  const updateMutation = useUpdateApplication(params.id)
   const { toast } = useToast()
   const queryClient = useQueryClient()
   const router = useRouter()
   const [cocChecked, setCocChecked] = useState(false)
+  const [editMode, setEditMode] = useState(false)
+  const [form, setForm] = useState<EditableApplicationFields | null>(null)
+
+  const startEdit = () => {
+    if (!app) return
+    setForm(toEditableFields(app))
+    setEditMode(true)
+  }
+
+  const cancelEdit = () => {
+    setEditMode(false)
+    setForm(null)
+  }
+
+  const handleSaveEdit = async () => {
+    if (!form) return
+    try {
+      await updateMutation.mutateAsync(form)
+      setEditMode(false)
+      setForm(null)
+      toast({ variant: 'success', title: 'Application updated.' })
+    } catch (err: unknown) {
+      const msg = (err as { response?: { data?: { detail?: string } } })?.response?.data?.detail
+      toast({ variant: 'error', title: 'Update failed', description: msg })
+    }
+  }
 
   const cocMutation = useMutation({
     mutationFn: async () => {
@@ -163,6 +208,34 @@ export default function ApplicationDetailPage({ params }: { params: { id: string
               </div>
             )}
 
+            {EDITABLE_STATUSES.includes(app.status) && (
+              <div className="mt-4 flex items-center gap-3">
+                {!editMode ? (
+                  <button
+                    onClick={startEdit}
+                    className="inline-flex items-center gap-2 rounded-lg border border-green-300 px-4 py-2 text-sm text-green-700 hover:bg-green-50"
+                  >
+                    <Pencil className="h-4 w-4" /> Edit Application
+                  </button>
+                ) : (
+                  <>
+                    <Button onClick={handleSaveEdit} loading={updateMutation.isPending}>
+                      Save Changes
+                    </Button>
+                    <Button variant="ghost" onClick={cancelEdit} disabled={updateMutation.isPending}>
+                      Cancel
+                    </Button>
+                  </>
+                )}
+              </div>
+            )}
+
+            {!EDITABLE_STATUSES.includes(app.status) && (
+              <p className="mt-2 text-xs text-gray-400">
+                Application is under review — editing is locked. Contact training@zntc.ac.zw to request changes.
+              </p>
+            )}
+
             {app.status === 'APPROVED' && (
               <div className="mt-4 rounded-md bg-green-50 border border-green-200 p-4">
                 <p className="text-sm font-semibold text-green-800">Your application has been approved!</p>
@@ -278,7 +351,11 @@ export default function ApplicationDetailPage({ params }: { params: { id: string
               {timelineStatuses.map((s, i) => {
                 const past = i <= currentIdx
                 const current = i === currentIdx
-                const entry = app.recent_history.find((h) => h.to_status === s)
+                // recent_history is newest-first; prefer a genuine transition
+                // into this status (from_status !== to_status) over a later
+                // same-status log entry (e.g. an edit or lecturer sign-off),
+                // by scanning from the oldest entry first.
+                const entry = [...app.recent_history].reverse().find((h) => h.to_status === s)
                 return (
                   <li key={s} className="mb-6 ml-5 last:mb-0">
                     <span className={`absolute -left-2.5 flex h-5 w-5 items-center justify-center rounded-full ${past ? 'bg-primary' : 'bg-gray-200'}`}>
@@ -342,7 +419,15 @@ export default function ApplicationDetailPage({ params }: { params: { id: string
               <div><dt className="text-xs text-gray-500">Department</dt><dd className="text-gray-800">{app.department || '—'}</dd></div>
               <div><dt className="text-xs text-gray-500">Employee ID</dt><dd className="text-gray-800">{app.employee_id || '—'}</dd></div>
               <div><dt className="text-xs text-gray-500">Line Manager</dt><dd className="text-gray-800">{app.line_manager_email || '—'}</dd></div>
-              {app.responsible_party && (
+              {editMode && form ? (
+                <div>
+                  <Input
+                    label="Responsible Party"
+                    value={form.responsible_party}
+                    onChange={(e) => setForm({ ...form, responsible_party: e.target.value })}
+                  />
+                </div>
+              ) : app.responsible_party && (
                 <div><dt className="text-xs text-gray-500">Responsible Party</dt><dd className="text-gray-800">{app.responsible_party}</dd></div>
               )}
             </dl>
@@ -350,31 +435,89 @@ export default function ApplicationDetailPage({ params }: { params: { id: string
 
           {/* Accommodation */}
           <Card header={<h2 className="font-semibold text-gray-900">Accommodation</h2>}>
-            <dl className="flex flex-col gap-3 text-sm">
-              <div><dt className="text-xs text-gray-500">Residential</dt><dd className="text-gray-800 font-medium">{app.is_resident ? 'Yes' : 'No'}</dd></div>
-              {app.is_resident && (
-                <>
-                  <div><dt className="text-xs text-gray-500">Hostel</dt><dd className="text-gray-800">{app.hostel_name || '—'}</dd></div>
-                  <div><dt className="text-xs text-gray-500">Room</dt><dd className="text-gray-800">{app.room_number || '—'}</dd></div>
-                </>
-              )}
-            </dl>
+            {editMode && form ? (
+              <div className="flex flex-col gap-3 text-sm">
+                <label className="flex items-center gap-2 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={form.is_resident}
+                    onChange={(e) => setForm({ ...form, is_resident: e.target.checked })}
+                    className="w-4 h-4 accent-primary"
+                  />
+                  <span className="text-gray-700">Residential student</span>
+                </label>
+                {form.is_resident && (
+                  <>
+                    <Input
+                      label="Hostel"
+                      value={form.hostel_name}
+                      onChange={(e) => setForm({ ...form, hostel_name: e.target.value })}
+                    />
+                    <Input
+                      label="Room"
+                      value={form.room_number}
+                      onChange={(e) => setForm({ ...form, room_number: e.target.value })}
+                    />
+                  </>
+                )}
+              </div>
+            ) : (
+              <dl className="flex flex-col gap-3 text-sm">
+                <div><dt className="text-xs text-gray-500">Residential</dt><dd className="text-gray-800 font-medium">{app.is_resident ? 'Yes' : 'No'}</dd></div>
+                {app.is_resident && (
+                  <>
+                    <div><dt className="text-xs text-gray-500">Hostel</dt><dd className="text-gray-800">{app.hostel_name || '—'}</dd></div>
+                    <div><dt className="text-xs text-gray-500">Room</dt><dd className="text-gray-800">{app.room_number || '—'}</dd></div>
+                  </>
+                )}
+              </dl>
+            )}
           </Card>
 
           {/* Guardian */}
           <Card header={<h2 className="font-semibold text-gray-900">Guardian / Next of Kin</h2>}>
-            <dl className="flex flex-col gap-3 text-sm">
-              <div><dt className="text-xs text-gray-500">Name</dt><dd className="text-gray-800">{app.guardian_name || '—'}</dd></div>
-              <div><dt className="text-xs text-gray-500">Contact</dt><dd className="text-gray-800">{app.guardian_contact || '—'}</dd></div>
-              {app.guardian_email && (
-                <div><dt className="text-xs text-gray-500">Email</dt><dd className="text-gray-800">{app.guardian_email}</dd></div>
-              )}
-            </dl>
+            {editMode && form ? (
+              <div className="flex flex-col gap-3 text-sm">
+                <Input
+                  label="Name"
+                  value={form.guardian_name}
+                  onChange={(e) => setForm({ ...form, guardian_name: e.target.value })}
+                />
+                <Input
+                  label="Contact"
+                  value={form.guardian_contact}
+                  onChange={(e) => setForm({ ...form, guardian_contact: e.target.value })}
+                />
+                <Input
+                  label="Email"
+                  type="email"
+                  value={form.guardian_email}
+                  onChange={(e) => setForm({ ...form, guardian_email: e.target.value })}
+                />
+              </div>
+            ) : (
+              <dl className="flex flex-col gap-3 text-sm">
+                <div><dt className="text-xs text-gray-500">Name</dt><dd className="text-gray-800">{app.guardian_name || '—'}</dd></div>
+                <div><dt className="text-xs text-gray-500">Contact</dt><dd className="text-gray-800">{app.guardian_contact || '—'}</dd></div>
+                {app.guardian_email && (
+                  <div><dt className="text-xs text-gray-500">Email</dt><dd className="text-gray-800">{app.guardian_email}</dd></div>
+                )}
+              </dl>
+            )}
           </Card>
 
           {/* Motivation */}
           <Card header={<h2 className="font-semibold text-gray-900">Motivation</h2>}>
-            <p className="text-sm text-gray-700 whitespace-pre-line leading-relaxed">{app.motivation || '—'}</p>
+            {editMode && form ? (
+              <textarea
+                value={form.motivation}
+                onChange={(e) => setForm({ ...form, motivation: e.target.value })}
+                rows={5}
+                className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
+              />
+            ) : (
+              <p className="text-sm text-gray-700 whitespace-pre-line leading-relaxed">{app.motivation || '—'}</p>
+            )}
           </Card>
 
           {/* Documents */}

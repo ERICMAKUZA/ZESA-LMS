@@ -87,6 +87,30 @@ export function useUpdatePhoto(id: string) {
   })
 }
 
+export interface EditableApplicationFields {
+  motivation: string
+  is_resident: boolean
+  hostel_name: string
+  room_number: string
+  guardian_name: string
+  guardian_contact: string
+  guardian_email: string
+  responsible_party: string
+}
+
+export function useUpdateApplication(id: string) {
+  const queryClient = useQueryClient()
+  return useMutation<Application, Error, Partial<EditableApplicationFields>>({
+    mutationFn: async (payload) => {
+      const { data } = await api.patch(`/my-applications/${id}/`, payload)
+      return data
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['my-applications'] })
+    },
+  })
+}
+
 export function useSubmitForReview(id: string) {
   const queryClient = useQueryClient()
   return useMutation<Application, Error, void>({
