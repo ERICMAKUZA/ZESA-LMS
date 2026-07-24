@@ -46,6 +46,29 @@ class CertificateViewSet(viewsets.ReadOnlyModelViewSet):
 
         return Response(CertificatePublicSerializer(cert).data)
 
+    @action(detail=True, methods=["get"], url_path="download")
+    def download(self, request, pk=None):
+        """
+        GET /api/certs/<pk>/download/               — original PDF
+        GET /api/certs/<pk>/download/?duplicate=true — DUPLICATE-watermarked copy
+
+        Ownership is enforced by get_queryset() (as with every other action
+        on this viewset): students only ever resolve their own certificates
+        here, admins/superadmins resolve any.
+        """
+        from django.http import HttpResponse
+
+        from .pdf_generator import generate_certificate_pdf
+
+        cert = self.get_object()
+        is_duplicate = request.query_params.get("duplicate") == "true"
+        pdf_bytes = generate_certificate_pdf(cert, is_duplicate=is_duplicate)
+
+        filename = f"{cert.certificate_number}{'_DUPLICATE' if is_duplicate else ''}.pdf"
+        response = HttpResponse(pdf_bytes, content_type="application/pdf")
+        response["Content-Disposition"] = f'attachment; filename="{filename}"'
+        return response
+
     @action(detail=True, methods=["post"], permission_classes=[IsAdmin])
     def revoke(self, request, pk=None):
         cert = self.get_object()

@@ -110,7 +110,10 @@ class Certificate(models.Model):
                 .last()
             )
             last_seq = int(last.split("-")[-1]) if last else 0
-            return f"{prefix}{str(last_seq + 1).zfill(4)}"
+            # 6-digit zero-padded (supports up to 999,999 per year). Existing
+            # 4-digit certificate numbers remain valid — the format is
+            # self-describing and verification works by exact string match.
+            return f"{prefix}{str(last_seq + 1).zfill(6)}"
 
     # ── Issue certificate from an enrollment ────────────────────────────────
     @classmethod

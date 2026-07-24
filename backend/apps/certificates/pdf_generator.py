@@ -35,7 +35,7 @@ def _make_qr_image(data: str) -> ImageReader:
     return ImageReader(buf)
 
 
-def generate_certificate_pdf(certificate) -> bytes:
+def generate_certificate_pdf(certificate, is_duplicate: bool = False) -> bytes:
     """
     Generate a PDF certificate for the given Certificate instance.
     Returns raw PDF bytes.
@@ -57,6 +57,22 @@ def generate_certificate_pdf(certificate) -> bytes:
     c.setStrokeColor(ZNTC_GOLD)
     c.setLineWidth(1.5)
     c.rect(13*mm, 11*mm, W - 26*mm, H - 22*mm, fill=0, stroke=1)
+
+    # ── DUPLICATE watermark ─────────────────────────────────────────────
+    # Large diagonal watermark drawn now (semi-transparent, so it reads
+    # fine even where later opaque elements like the header/footer bands
+    # sit on top of it). The small footer stamp is deferred until after
+    # the footer band is painted below, otherwise that band's opaque fill
+    # would hide it.
+    if is_duplicate:
+        c.saveState()
+        c.setFillColor(HexColor('#FF0000'))
+        c.setFillAlpha(0.15)
+        c.setFont('Helvetica-Bold', 80)
+        c.translate(W / 2, H / 2)
+        c.rotate(45)
+        c.drawCentredString(0, 0, 'DUPLICATE')
+        c.restoreState()
 
     # Green header band
     c.setFillColor(ZNTC_GREEN)
@@ -165,6 +181,11 @@ def generate_certificate_pdf(certificate) -> bytes:
         f'Issued: {certificate.issue_date.strftime("%d %B %Y")}   |   '
         f'Verify at: {certificate.verification_url}'
     )
+
+    if is_duplicate:
+        c.setFillColor(HexColor('#FF0000'))
+        c.setFont('Helvetica-Bold', 9)
+        c.drawString(16*mm, 19*mm, 'DUPLICATE COPY')
 
     # ── QR Code ─────────────────────────────────────────────────────────
     qr_img = _make_qr_image(certificate.verification_url)
