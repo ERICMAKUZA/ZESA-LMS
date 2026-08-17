@@ -49,6 +49,26 @@ class AdminCourseViewSet(viewsets.ModelViewSet):
     queryset = Course.objects.all().select_related("category")
     serializer_class = CourseSerializer
     permission_classes = [IsAdmin]
+
+    def perform_create(self, serializer):
+        course = serializer.save()
+        if not course.is_active:
+            return
+
+        from apps.accounts.models import User
+        from apps.workflows.services import queue_notifications
+
+        queue_notifications(
+            recipients=User.objects.filter(role=User.Role.STUDENT, is_active=True),
+            subject=f"New course available: {course.fullname}",
+            message=(
+                f"A new ZNTC course is now available: {course.fullname}.\n\n"
+                f"Course code: {course.shortname}\n"
+                "Log in to the ZESA training portal to view details and apply."
+            ),
+            action_url=f"/courses/{course.id}",
+        )
+
     filterset_fields = ["is_active", "category", "requires_approval"]
     search_fields = ["fullname", "shortname"]
     ordering_fields = ["fullname", "price", "enrolled_count"]

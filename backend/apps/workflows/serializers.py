@@ -1,6 +1,20 @@
 from rest_framework import serializers
 
-from .models import ApprovalStep
+from .models import ApprovalStep, Notification
+
+
+class NotificationSerializer(serializers.ModelSerializer):
+    application_ref = serializers.CharField(source="application.ref", read_only=True)
+
+    class Meta:
+        model = Notification
+        fields = (
+            "id", "recipient", "application", "application_ref",
+            "subject", "message", "channel", "action_url",
+            "is_sent", "sent_at", "error_message",
+            "is_read", "read_at", "created_at",
+        )
+        read_only_fields = fields
 
 
 class ApprovalStepSerializer(serializers.ModelSerializer):

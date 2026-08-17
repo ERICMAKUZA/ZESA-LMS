@@ -23,9 +23,12 @@ class Notification(models.Model):
     subject = models.CharField(max_length=255)
     message = models.TextField()
     channel = models.CharField(max_length=10, choices=Channel.choices, default=Channel.EMAIL)
+    action_url = models.CharField(max_length=500, blank=True, default="")
     is_sent = models.BooleanField(default=False)
     sent_at = models.DateTimeField(null=True, blank=True)
     error_message = models.TextField(blank=True)
+    is_read = models.BooleanField(default=False)
+    read_at = models.DateTimeField(null=True, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:
@@ -35,6 +38,15 @@ class Notification(models.Model):
 
     def __str__(self):
         return f"[{self.channel}] {self.subject} → {self.recipient.email}"
+
+    def mark_read(self):
+        from django.utils import timezone
+
+        if self.is_read:
+            return
+        self.is_read = True
+        self.read_at = timezone.now()
+        self.save(update_fields=["is_read", "read_at"])
 
 
 class ApprovalStep(models.Model):

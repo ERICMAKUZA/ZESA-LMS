@@ -11,6 +11,7 @@ import { clsx } from 'clsx'
 import { useAuth } from '@/hooks/useAuth'
 import AuthGuard from '@/components/AuthGuard'
 import { useToast } from '@/components/ui/Toast'
+import NotificationBell from '@/components/NotificationBell'
 import BrandLogo from './BrandLogo'
 
 const nav = [
@@ -134,6 +135,7 @@ function AdminContent({ children }: { children: ReactNode }) {
           </button>
           <div className="flex-1" />
           <div className="flex items-center gap-3">
+            <NotificationBell />
             {user?.role && (
               <span className={clsx('rounded-full px-2 py-0.5 text-xs font-semibold', roleColor[user.role] ?? 'bg-gray-100 text-gray-700')}>
                 {user.role}

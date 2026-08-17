@@ -9,6 +9,7 @@ import {
 import { clsx } from 'clsx'
 import { useAuth } from '@/hooks/useAuth'
 import AuthGuard from '@/components/AuthGuard'
+import NotificationBell from '@/components/NotificationBell'
 import BrandLogo from './BrandLogo'
 
 const nav = [
@@ -73,6 +74,7 @@ function StudentLayoutInner({ children }: { children: ReactNode }) {
           </button>
           <div className="flex-1" />
           <div className="flex items-center gap-3">
+            <NotificationBell />
             <User className="h-5 w-5 text-gray-400" />
             <span className="text-sm font-medium text-gray-700">{user?.full_name}</span>
             <button onClick={logout} title="Logout" className="rounded p-1.5 hover:bg-gray-100">

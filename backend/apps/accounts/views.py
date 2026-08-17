@@ -15,6 +15,21 @@ class RegisterView(generics.CreateAPIView):
     serializer_class = UserCreateSerializer
     permission_classes = [permissions.AllowAny]
 
+    def perform_create(self, serializer):
+        user = serializer.save()
+        from apps.workflows.services import queue_notification
+
+        queue_notification(
+            recipient=user,
+            subject="Welcome to ZESA National Training Centre",
+            message=(
+                f"Hi {user.first_name},\n\n"
+                "Your ZESA National Training Centre student account has been created.\n\n"
+                "You can now browse courses, submit applications, and track your enrolment from the portal."
+            ),
+            action_url="/courses",
+        )
+
 
 class MeView(generics.RetrieveUpdateAPIView):
     permission_classes = [permissions.IsAuthenticated]

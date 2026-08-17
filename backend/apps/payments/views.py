@@ -132,6 +132,8 @@ class DemoConfirmPaymentView(APIView):
             )
 
         payment.confirm()
+        from .tasks import notify_payment_confirmed
+        notify_payment_confirmed(payment)
 
         try:
             from apps.enrollments.tasks import enroll_student_in_moodle
@@ -214,6 +216,9 @@ class ConfirmManualPaymentView(APIView):
             payment.confirm_manual(confirmed_by=request.user, method=method, reference=reference)
         except ValueError as exc:
             return Response({"detail": str(exc)}, status=status.HTTP_400_BAD_REQUEST)
+
+        from .tasks import notify_payment_confirmed
+        notify_payment_confirmed(payment)
 
         from apps.enrollments.tasks import enroll_student_in_moodle
         enroll_student_in_moodle.delay(str(application.id))

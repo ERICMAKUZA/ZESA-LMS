@@ -76,6 +76,7 @@ def sync_to_moodle(self, enrollment_pk):
         logger.info("sync_to_moodle: %s already synced, skipping", enrollment_pk)
         return
 
+    was_enrolling = enrollment.status == 'ENROLLING'
     enrollment.status = 'ENROLLING'
     enrollment.save(update_fields=['status'])
 
@@ -83,6 +84,21 @@ def sync_to_moodle(self, enrollment_pk):
     course = enrollment.application.course
     centre = enrollment.application.assigned_centre
     client = MoodleClient()
+
+    if not was_enrolling:
+        from apps.workflows.services import queue_notification
+
+        queue_notification(
+            recipient=applicant,
+            subject=f"Enrolment setup started: {course.fullname}",
+            message=(
+                f"Hi {applicant.first_name},\n\n"
+                f"We are setting up your Moodle access for {course.fullname}.\n\n"
+                "You will receive your learning portal details once setup is complete."
+            ),
+            application=enrollment.application,
+            action_url=f"/applications/{enrollment.application_id}",
+        )
 
     zntc_email = _ensure_zntc_email(applicant)
 
@@ -129,12 +145,15 @@ def sync_to_moodle(self, enrollment_pk):
             'status', 'moodle_user_id', 'moodle_temp_password', 'enrolled_at',
         ])
         dispatch_credentials_email.delay(str(enrollment.pk))
+        _notify_lecturer_enrolled(enrollment)
 
     except Exception as exc:
         logger.exception("sync_to_moodle: failed for enrollment %s: %s", enrollment_pk, exc)
         enrollment.status = 'FAILED'
         enrollment.error_message = str(exc)[:500]
         enrollment.save(update_fields=['status', 'error_message'])
+        if self.request.retries >= self.max_retries - 1:
+            _notify_enrollment_failed(enrollment)
         raise self.retry(exc=exc)
 
 
@@ -143,7 +162,6 @@ def sync_to_moodle(self, enrollment_pk):
     max_retries=3, default_retry_delay=60,
 )
 def dispatch_credentials_email(enrollment_pk):
-    from django.core.mail import send_mail
     from .models import Enrollment
 
     try:
@@ -194,18 +212,19 @@ Regards,
 ZESA National Training Centre
 Ganges Road, Workington, Harare""".strip()
 
-    send_mail(
+    from apps.workflows.services import queue_notification
+
+    queue_notification(
+        recipient=applicant,
         subject=subject,
         message=message,
-        from_email=settings.DEFAULT_FROM_EMAIL,
-        recipient_list=[applicant.email],
-        fail_silently=False,
+        application=enrollment.application,
+        action_url="/dashboard",
     )
 
 
 @shared_task(name='enrollments.unenrol_from_moodle')
 def unenrol_from_moodle(enrollment_pk, de_enrolment_type, reason):
-    from django.core.mail import send_mail
     from django.utils import timezone as tz
     from .models import Enrollment
     from .moodle_client import MoodleClient
@@ -243,7 +262,10 @@ def unenrol_from_moodle(enrollment_pk, de_enrolment_type, reason):
 
     applicant = enrollment.application.applicant
     verb = 'withdrawn' if de_enrolment_type == 'VOLUNTARY' else 'terminated'
-    send_mail(
+    from apps.workflows.services import queue_notification
+
+    queue_notification(
+        recipient=applicant,
         subject=f"Your ZNTC enrolment status has changed — {enrollment.application.ref}",
         message=(
             f"Dear {applicant.first_name},\n\n"
@@ -252,9 +274,59 @@ def unenrol_from_moodle(enrollment_pk, de_enrolment_type, reason):
             f"Please contact us at training@zntc.ac.zw if you have questions.\n\n"
             f"Regards,\nZESA National Training Centre"
         ),
-        from_email=settings.DEFAULT_FROM_EMAIL,
-        recipient_list=[applicant.email],
-        fail_silently=True,
+        application=enrollment.application,
+        action_url=f"/applications/{enrollment.application_id}",
+    )
+
+
+def _notify_enrollment_failed(enrollment):
+    from apps.workflows.services import queue_notification, queue_notifications, staff_recipients
+
+    app = enrollment.application
+    queue_notification(
+        recipient=app.applicant,
+        subject=f"Moodle enrolment needs attention: {app.course.fullname}",
+        message=(
+            f"Hi {app.applicant.first_name},\n\n"
+            f"Your application for {app.course.fullname} was approved, but Moodle access could not be completed automatically.\n\n"
+            "The training team has been notified and will resolve it."
+        ),
+        application=app,
+        action_url=f"/applications/{app.id}",
+    )
+    queue_notifications(
+        recipients=staff_recipients("ADMIN", "SUPERADMIN"),
+        subject=f"Moodle enrolment failed: {app.ref}",
+        message=(
+            f"Moodle enrolment failed for {app.applicant.full_name} ({app.applicant.email}).\n\n"
+            f"Course: {app.course.fullname}\n"
+            f"Error: {enrollment.error_message or 'Unknown error'}"
+        ),
+        application=app,
+        action_url=f"/admin/applications/{app.id}",
+    )
+
+
+def _notify_lecturer_enrolled(enrollment):
+    schedule = enrollment.schedule
+    lecturer = getattr(schedule, "lecturer", None)
+    if not lecturer:
+        return
+
+    from apps.workflows.services import queue_notification
+
+    app = enrollment.application
+    queue_notification(
+        recipient=lecturer,
+        subject=f"Student enrolled: {app.applicant.full_name}",
+        message=(
+            f"{app.applicant.full_name} has been enrolled in {app.course.fullname}.\n\n"
+            f"Student ID: {app.applicant.student_id or 'Pending'}\n"
+            f"Email: {app.applicant.email}\n\n"
+            "Open My Courses to manage attendance, notices, timetable, and course operations."
+        ),
+        application=app,
+        action_url="/lecturer/courses",
     )
 
 

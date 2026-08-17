@@ -274,12 +274,16 @@ export interface Notification {
   id: number
   recipient: number
   application: string | null
+  application_ref: string | null
   subject: string
   message: string
   channel: 'EMAIL' | 'SMS' | 'WHATSAPP'
+  action_url: string
   is_sent: boolean
   sent_at: string | null
   error_message: string
+  is_read: boolean
+  read_at: string | null
   created_at: string
 }
 

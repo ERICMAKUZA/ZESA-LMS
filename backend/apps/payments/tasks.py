@@ -41,11 +41,10 @@ def process_confirmed_payment(self, payment_id: str):
         logger.exception("process_confirmed_payment: confirm() failed for %s: %s", payment_id, exc)
         raise self.retry(exc=exc, countdown=60)
 
+    notify_payment_confirmed(payment)
+
     from apps.enrollments.tasks import enroll_student_in_moodle
     enroll_student_in_moodle.apply_async([str(payment.application_id)])
-
-    from apps.applications.tasks import notify_enrolled
-    notify_enrolled.apply_async([str(payment.application_id)])
 
 
 @shared_task(bind=True, max_retries=3)
@@ -82,12 +81,10 @@ def sync_sap_payments(self):
             )
             payment.confirm()
             matched += 1
+            notify_payment_confirmed(payment)
 
             from apps.enrollments.tasks import enroll_student_in_moodle
             enroll_student_in_moodle.delay(str(application.id))
-
-            from apps.applications.tasks import notify_enrolled
-            notify_enrolled.delay(str(application.id))
 
         except Exception as exc:
             logger.exception("sync_sap_payments: error processing record %s: %s", record, exc)
@@ -102,4 +99,21 @@ def sync_sap_payments(self):
     logger.info(
         "sync_sap_payments: processed=%d matched=%d errors=%d",
         processed, matched, len(errors),
+    )
+
+
+def notify_payment_confirmed(payment):
+    from apps.workflows.services import queue_notification
+
+    app = payment.application
+    queue_notification(
+        recipient=app.applicant,
+        subject=f"Payment confirmed: {app.course.fullname}",
+        message=(
+            f"Hi {app.applicant.first_name},\n\n"
+            f"Your payment for {app.course.fullname} has been confirmed.\n\n"
+            "Your Moodle enrolment is now being prepared. You will receive another notification once access is ready."
+        ),
+        application=app,
+        action_url=f"/applications/{app.id}",
     )

@@ -3,10 +3,17 @@ import logging
 from celery import shared_task
 from django.conf import settings
 from django.contrib.auth import get_user_model
-from django.core.mail import send_mail
 from django.utils import timezone
 
 logger = logging.getLogger(__name__)
+
+
+def _student_application_url(app):
+    return f"/applications/{app.id}"
+
+
+def _admin_application_url(app):
+    return f"/admin/applications/{app.id}"
 
 
 @shared_task(bind=True, max_retries=3)
@@ -19,16 +26,11 @@ def notify_application_submitted(self, application_id):
         logger.error("notify_application_submitted: application %s not found", application_id)
         return
 
-    User = get_user_model()
-    recipients = list(
-        User.objects.filter(
-            role__in=("REVIEWER", "ADMIN", "SUPERADMIN"),
-            is_active=True,
-        ).values_list("email", flat=True)
-    )
-    if not recipients:
+    from apps.workflows.services import queue_notification, queue_notifications, staff_recipients
+
+    reviewers = staff_recipients("REVIEWER", "ADMIN", "SUPERADMIN")
+    if not reviewers.exists():
         logger.warning("notify_application_submitted: no reviewer/admin users found")
-        return
 
     subject = f"New application: {app.applicant.full_name} for {app.course.fullname}"
     message = (
@@ -39,11 +41,24 @@ def notify_application_submitted(self, application_id):
         f"Employee  : {app.employee_id or 'N/A'}\n\n"
         f"Log in to the NTC admin portal to review this application."
     )
-    try:
-        send_mail(subject, message, settings.DEFAULT_FROM_EMAIL, recipients)
-    except Exception as exc:
-        logger.exception("notify_application_submitted: send failed: %s", exc)
-        raise self.retry(exc=exc, countdown=60)
+    queue_notifications(
+        recipients=reviewers,
+        subject=subject,
+        message=message,
+        application=app,
+        action_url=_admin_application_url(app),
+    )
+    queue_notification(
+        recipient=app.applicant,
+        subject=f"Application submitted: {app.course.fullname}",
+        message=(
+            f"Hi {app.applicant.first_name},\n\n"
+            f"We received your application for {app.course.fullname}.\n\n"
+            "The admissions team will review it and you will be notified at each stage."
+        ),
+        application=app,
+        action_url=_student_application_url(app),
+    )
 
 
 @shared_task(bind=True, max_retries=3)
@@ -93,11 +108,15 @@ def notify_application_reviewed(self, application_id):
         ),
     )
 
-    try:
-        send_mail(subject, message, settings.DEFAULT_FROM_EMAIL, [app.applicant.email])
-    except Exception as exc:
-        logger.exception("notify_application_reviewed: send failed: %s", exc)
-        raise self.retry(exc=exc, countdown=60)
+    from apps.workflows.services import queue_notification
+
+    queue_notification(
+        recipient=app.applicant,
+        subject=subject,
+        message=message,
+        application=app,
+        action_url=_student_application_url(app),
+    )
 
 
 @shared_task(bind=True, max_retries=3)
@@ -119,11 +138,15 @@ def notify_payment_required(self, application_id):
         f"Log in to the NTC portal and go to My Applications to complete payment via Paynow.\n"
         f"Enrolment is activated automatically once payment is confirmed."
     )
-    try:
-        send_mail(subject, message, settings.DEFAULT_FROM_EMAIL, [app.applicant.email])
-    except Exception as exc:
-        logger.exception("notify_payment_required: send failed: %s", exc)
-        raise self.retry(exc=exc, countdown=60)
+    from apps.workflows.services import queue_notification
+
+    queue_notification(
+        recipient=app.applicant,
+        subject=subject,
+        message=message,
+        application=app,
+        action_url=_student_application_url(app),
+    )
 
 
 @shared_task(name='applications.escalate_stale_applications')
@@ -156,18 +179,19 @@ def notify_escalation(application_pk):
         return
     User = get_user_model()
     if app.reviewer:
-        recipients = [app.reviewer.email]
+        recipients = [app.reviewer]
     else:
-        recipients = list(
-            User.objects.filter(
-                role__in=['REVIEWER', 'ADMIN', 'SUPERADMIN'],
-                is_active=True,
-            ).values_list('email', flat=True)
+        recipients = User.objects.filter(
+            role__in=['REVIEWER', 'ADMIN', 'SUPERADMIN'],
+            is_active=True,
         )
     if not recipients:
         return
     threshold_days = getattr(settings, 'ESCALATION_DAYS_THRESHOLD', 3)
-    send_mail(
+    from apps.workflows.services import queue_notifications
+
+    queue_notifications(
+        recipients=recipients,
         subject=f"[ESCALATED] Application {app.ref} needs attention",
         message=(
             f"Application {app.ref} for "
@@ -175,9 +199,8 @@ def notify_escalation(application_pk):
             f"has been waiting for review for more than {threshold_days} days.\n\n"
             f"Please review it at your earliest convenience."
         ),
-        from_email=settings.DEFAULT_FROM_EMAIL,
-        recipient_list=recipients,
-        fail_silently=True,
+        application=app,
+        action_url=_admin_application_url(app),
     )
 
 
@@ -199,8 +222,12 @@ def notify_enrolled(self, application_id):
         f"Access your course: {moodle_url}\n\n"
         f"If you have questions, contact the ZESA training department."
     )
-    try:
-        send_mail(subject, message, settings.DEFAULT_FROM_EMAIL, [app.applicant.email])
-    except Exception as exc:
-        logger.exception("notify_enrolled: send failed: %s", exc)
-        raise self.retry(exc=exc, countdown=60)
+    from apps.workflows.services import queue_notification
+
+    queue_notification(
+        recipient=app.applicant,
+        subject=subject,
+        message=message,
+        application=app,
+        action_url="/dashboard",
+    )

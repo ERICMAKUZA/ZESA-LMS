@@ -42,15 +42,16 @@ def generate_certificate_pdf(self, certificate_id: str):
 
 
 def _send_certificate_email(cert):
-    from django.core.mail import EmailMessage
     from django.conf import settings
+    from apps.workflows.services import queue_notification
 
     portal_url = getattr(settings, "PORTAL_BASE_URL", "http://localhost:3000")
     verify_url = cert.verification_url
 
-    email = EmailMessage(
+    queue_notification(
+        recipient=cert.user,
         subject=f"Your ZNTC Certificate — {cert.course.fullname}",
-        body=(
+        message=(
             f"Dear {cert.user.full_name},\n\n"
             f"Congratulations on successfully completing your programme!\n\n"
             f"Your certificate details:\n"
@@ -67,20 +68,6 @@ def _send_certificate_email(cert):
             f"ZESA National Training Centre\n"
             f"Ganges Road, Workington, Harare"
         ),
-        from_email=settings.DEFAULT_FROM_EMAIL,
-        to=[cert.user.email],
+        application=cert.enrollment.application,
+        action_url="/certificates",
     )
-
-    if cert.pdf_file:
-        try:
-            cert.pdf_file.open("rb")
-            email.attach(
-                f"{cert.certificate_number}.pdf",
-                cert.pdf_file.read(),
-                "application/pdf",
-            )
-            cert.pdf_file.close()
-        except Exception:
-            pass  # Send without attachment if file read fails
-
-    email.send(fail_silently=True)
