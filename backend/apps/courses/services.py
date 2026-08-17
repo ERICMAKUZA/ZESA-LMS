@@ -10,9 +10,11 @@ logger = logging.getLogger(__name__)
 
 class MoodleClient:
     def __init__(self):
-        self.base_url = settings.MOODLE_BASE_URL
+        self.base_url = getattr(settings, "MOODLE_API_BASE_URL", settings.MOODLE_BASE_URL).rstrip("/")
         self.wstoken = settings.MOODLE_WSTOKEN
         self._endpoint = f"{self.base_url}/webservice/rest/server.php"
+        host_header = getattr(settings, "MOODLE_API_HOST_HEADER", "")
+        self._headers = {"Host": host_header} if host_header else None
 
     def _call(self, wsfunction: str, **params) -> dict | list:
         payload = {
@@ -22,7 +24,7 @@ class MoodleClient:
             **params,
         }
         with httpx.Client(timeout=30) as client:
-            response = client.post(self._endpoint, data=payload)
+            response = client.post(self._endpoint, data=payload, headers=self._headers)
         response.raise_for_status()
         data = response.json()
         if isinstance(data, dict) and "exception" in data:

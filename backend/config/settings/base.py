@@ -327,6 +327,8 @@ UNFOLD = {
 }
 
 MOODLE_BASE_URL = config("MOODLE_BASE_URL", default="")
+MOODLE_API_BASE_URL = config("MOODLE_API_BASE_URL", default=MOODLE_BASE_URL)
+MOODLE_API_HOST_HEADER = config("MOODLE_API_HOST_HEADER", default="")
 MOODLE_WSTOKEN = config("MOODLE_WSTOKEN", default="")
 PORTAL_BASE_URL = config("PORTAL_BASE_URL", default="http://localhost:3000")
 MOODLE_CENTRE_COHORT_IDS = {

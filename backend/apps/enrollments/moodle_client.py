@@ -8,10 +8,12 @@ logger = logging.getLogger(__name__)
 
 class MoodleClient:
     def __init__(self):
-        self.base_url = settings.MOODLE_BASE_URL.rstrip('/')
+        self.base_url = getattr(settings, 'MOODLE_API_BASE_URL', settings.MOODLE_BASE_URL).rstrip('/')
         self.token = settings.MOODLE_WSTOKEN
         self.api_url = f"{self.base_url}/webservice/rest/server.php"
         self.demo_mode = getattr(settings, 'DEMO_MODE', False)
+        host_header = getattr(settings, 'MOODLE_API_HOST_HEADER', '')
+        self.headers = {'Host': host_header} if host_header else None
 
     def _call(self, function, **params):
         if self.demo_mode or not self.token:
@@ -23,7 +25,7 @@ class MoodleClient:
             'moodlewsrestformat': 'json',
             **params,
         }
-        response = requests.post(self.api_url, data=data, timeout=30)
+        response = requests.post(self.api_url, data=data, headers=self.headers, timeout=30)
         response.raise_for_status()
         result = response.json()
         if isinstance(result, dict) and result.get('exception'):

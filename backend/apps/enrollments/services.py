@@ -19,9 +19,11 @@ class MoodleAPIError(Exception):
 
 class MoodleEnrollmentService:
     def __init__(self):
-        self.base_url = settings.MOODLE_BASE_URL.rstrip("/")
+        self.base_url = getattr(settings, "MOODLE_API_BASE_URL", settings.MOODLE_BASE_URL).rstrip("/")
         self.wstoken = settings.MOODLE_WSTOKEN
         self._endpoint = f"{self.base_url}/webservice/rest/server.php"
+        host_header = getattr(settings, "MOODLE_API_HOST_HEADER", "")
+        self._headers = {"Host": host_header} if host_header else None
 
     def _call(self, wsfunction: str, params: dict) -> Union[dict, list]:
         payload = {
@@ -31,7 +33,7 @@ class MoodleEnrollmentService:
             **params,
         }
         try:
-            response = requests.post(self._endpoint, data=payload, timeout=30)
+            response = requests.post(self._endpoint, data=payload, headers=self._headers, timeout=30)
             response.raise_for_status()
         except requests.RequestException as exc:
             raise MoodleAPIError(f"HTTP error calling {wsfunction}: {exc}") from exc
