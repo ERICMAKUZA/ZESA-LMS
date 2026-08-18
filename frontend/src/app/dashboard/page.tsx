@@ -1,5 +1,6 @@
 'use client'
 
+import { useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { Award } from 'lucide-react'
 import StudentLayout from '@/components/layout/StudentLayout'
@@ -11,6 +12,7 @@ import { useAuth } from '@/hooks/useAuth'
 import { useMyApplications } from '@/hooks/useApplications'
 import { useMyCertificates } from '@/hooks/useCertificates'
 import api from '@/lib/api'
+import { useToast } from '@/components/ui/Toast'
 import { format } from 'date-fns'
 import type { ApplicationStatus, User, StudentEnrollment } from '@/types'
 
@@ -24,6 +26,8 @@ const statLabel: Partial<Record<ApplicationStatus, string>> = {
 
 export default function DashboardPage() {
   const { user } = useAuth()
+  const { toast } = useToast()
+  const [isOpeningMoodle, setIsOpeningMoodle] = useState(false)
   const { data, isLoading } = useMyApplications()
   const applications = data?.results ?? []
 
@@ -44,6 +48,21 @@ export default function DashboardPage() {
     applications.filter((a) => a.status === status).length
 
   const activeEnrollments = enrollments.filter(e => e.status !== 'UNENROLLED')
+
+  const openMoodle = async () => {
+    setIsOpeningMoodle(true)
+    try {
+      const { data } = await api.post<{ url: string }>('/auth/moodle-sso/')
+      window.location.assign(data.url)
+    } catch {
+      toast({
+        variant: 'error',
+        title: 'Unable to open Moodle',
+        description: 'Please try again. If the problem continues, contact the training administrator.',
+      })
+      setIsOpeningMoodle(false)
+    }
+  }
 
   return (
     <StudentLayout>
@@ -69,14 +88,14 @@ export default function DashboardPage() {
           <div className="text-right">
             <p className="text-green-200 text-xs mb-2">Learning Portal</p>
             {process.env.NEXT_PUBLIC_MOODLE_URL ? (
-              <a
-                href={process.env.NEXT_PUBLIC_MOODLE_URL}
-                target="_blank"
-                rel="noopener noreferrer"
+              <button
+                type="button"
+                onClick={openMoodle}
+                disabled={isOpeningMoodle}
                 className="inline-block bg-white text-green-800 font-semibold text-sm px-4 py-2 rounded-lg hover:bg-green-50 transition-colors"
               >
-                Go to Moodle →
-              </a>
+                {isOpeningMoodle ? 'Opening Moodle…' : 'Go to Moodle →'}
+              </button>
             ) : (
               <span className="text-xs text-green-200">Moodle not configured</span>
             )}

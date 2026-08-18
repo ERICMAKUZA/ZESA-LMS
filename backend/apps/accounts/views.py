@@ -1,3 +1,5 @@
+import hmac
+
 from django.conf import settings
 from rest_framework import generics, permissions, status
 from rest_framework.response import Response
@@ -7,6 +9,12 @@ from rest_framework_simplejwt.views import TokenObtainPairView
 from apps.accounts.permissions import IsAdmin
 
 from .models import User
+from .moodle_sso import (
+    MoodleSsoNotConfigured,
+    build_moodle_sso_url,
+    consume_moodle_sso_code,
+    issue_moodle_sso_code,
+)
 from .serializers import TokenObtainPairSerializer, UserCreateSerializer, UserSerializer, UserUpdateSerializer
 
 
@@ -63,6 +71,47 @@ class LogoutView(APIView):
             request=request, notes=f"User logged out: {request.user.email}",
         )
         return Response(status=status.HTTP_204_NO_CONTENT)
+
+
+class MoodleSsoStartView(APIView):
+    """Issue an opaque code for the logged-in portal user to enter Moodle."""
+
+    permission_classes = [permissions.IsAuthenticated]
+
+    def post(self, request):
+        try:
+            code = issue_moodle_sso_code(request.user)
+        except MoodleSsoNotConfigured:
+            return Response(
+                {"detail": "Moodle single sign-on is not configured."},
+                status=status.HTTP_503_SERVICE_UNAVAILABLE,
+            )
+        except RuntimeError:
+            return Response(
+                {"detail": "Unable to start Moodle single sign-on. Please try again."},
+                status=status.HTTP_503_SERVICE_UNAVAILABLE,
+            )
+
+        return Response({"url": build_moodle_sso_url(code)})
+
+
+class MoodleSsoConsumeView(APIView):
+    """Allow Moodle to redeem an SSO code over the internal cluster network."""
+
+    authentication_classes = []
+    permission_classes = [permissions.AllowAny]
+
+    def post(self, request):
+        shared_secret = settings.MOODLE_SSO_SHARED_SECRET
+        presented_secret = request.headers.get("X-ZESA-SSO-Secret", "")
+        if not shared_secret or not hmac.compare_digest(presented_secret, shared_secret):
+            return Response({"detail": "Forbidden."}, status=status.HTTP_403_FORBIDDEN)
+
+        payload = consume_moodle_sso_code(request.data.get("code", ""))
+        if payload is None:
+            return Response({"detail": "This Moodle sign-on link is invalid or has expired."}, status=status.HTTP_401_UNAUTHORIZED)
+
+        return Response(payload)
 
 
 class AdminUserListView(generics.ListAPIView):
