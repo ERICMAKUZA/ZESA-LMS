@@ -80,7 +80,12 @@ class MoodleSsoStartView(APIView):
 
     def post(self, request):
         try:
-            code = issue_moodle_sso_code(request.user)
+            code = issue_moodle_sso_code(
+                request.user,
+                request.data.get("return_path", ""),
+            )
+        except ValueError as exc:
+            return Response({"detail": str(exc)}, status=status.HTTP_400_BAD_REQUEST)
         except MoodleSsoNotConfigured:
             return Response(
                 {"detail": "Moodle single sign-on is not configured."},

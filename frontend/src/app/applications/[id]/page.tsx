@@ -55,6 +55,24 @@ export default function ApplicationDetailPage({ params }: { params: { id: string
   const [form, setForm] = useState<EditableApplicationFields | null>(null)
   const [withdrawOpen, setWithdrawOpen] = useState(false)
   const [withdrawReason, setWithdrawReason] = useState('')
+  const [isOpeningMoodle, setIsOpeningMoodle] = useState(false)
+
+  const openMoodle = async (returnPath?: string | null) => {
+    setIsOpeningMoodle(true)
+    try {
+      const { data } = await api.post<{ url: string }>('/auth/moodle-sso/', {
+        return_path: returnPath ?? '',
+      })
+      window.location.assign(data.url)
+    } catch {
+      toast({
+        variant: 'error',
+        title: 'Unable to open Moodle',
+        description: 'Please try again. If the problem continues, contact the training administrator.',
+      })
+      setIsOpeningMoodle(false)
+    }
+  }
 
   const startEdit = () => {
     if (!app) return
@@ -301,14 +319,14 @@ export default function ApplicationDetailPage({ params }: { params: { id: string
                 </div>
               </div>
               <div className="mt-4">
-                <a
-                  href={app.enrollment.moodle_course_url}
-                  target="_blank"
-                  rel="noreferrer"
+                <button
+                  type="button"
+                  onClick={() => openMoodle(app.enrollment?.moodle_course_url)}
+                  disabled={isOpeningMoodle}
                   className="inline-flex items-center gap-2 rounded-md bg-primary px-4 py-2 text-sm font-medium text-white hover:bg-primary/90"
                 >
-                  Go to your course <ExternalLink className="h-4 w-4" />
-                </a>
+                  {isOpeningMoodle ? 'Opening Moodle…' : 'Go to your course'} <ExternalLink className="h-4 w-4" />
+                </button>
               </div>
               <button
                 onClick={() => setWithdrawOpen(true)}
@@ -428,14 +446,14 @@ export default function ApplicationDetailPage({ params }: { params: { id: string
                   </div>
                 )}
                 <div className="pt-2">
-                  <a
-                    href={process.env.NEXT_PUBLIC_MOODLE_URL}
-                    target="_blank"
-                    rel="noopener noreferrer"
+                  <button
+                    type="button"
+                    onClick={() => openMoodle()}
+                    disabled={isOpeningMoodle}
                     className="block text-center bg-green-700 text-white text-sm font-medium px-4 py-2 rounded-lg hover:bg-green-800 transition-colors"
                   >
-                    Access Learning Portal (Moodle) →
-                  </a>
+                    {isOpeningMoodle ? 'Opening Moodle…' : 'Access Learning Portal (Moodle) →'}
+                  </button>
                 </div>
               </div>
             </div>

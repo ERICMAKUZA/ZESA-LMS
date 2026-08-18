@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import hashlib
 import secrets
-from urllib.parse import urlencode
+from urllib.parse import urlencode, urlparse
 
 from django.conf import settings
 from django.core.cache import cache
@@ -41,7 +41,29 @@ def _active_course_ids(user) -> list[int]:
     )
 
 
-def issue_moodle_sso_code(user) -> str:
+def normalize_moodle_return_path(value: object) -> str:
+    """Accept only local paths or URLs belonging to the configured Moodle site."""
+    if not value:
+        return ""
+    if not isinstance(value, str):
+        raise ValueError("The Moodle return path must be a string.")
+
+    parsed = urlparse(value)
+    if parsed.scheme or parsed.netloc:
+        moodle_url = urlparse(settings.MOODLE_BASE_URL)
+        if (
+            parsed.scheme != moodle_url.scheme
+            or parsed.netloc != moodle_url.netloc
+        ):
+            raise ValueError("The Moodle return URL must belong to this Moodle site.")
+
+    if not parsed.path.startswith("/") or parsed.path.startswith("//"):
+        raise ValueError("The Moodle return path must be local to Moodle.")
+
+    return f"{parsed.path}?{parsed.query}" if parsed.query else parsed.path
+
+
+def issue_moodle_sso_code(user, return_path: object = "") -> str:
     """Store the authenticated learner's Moodle identity outside the browser."""
     if not settings.MOODLE_SSO_SHARED_SECRET or not settings.MOODLE_BASE_URL:
         raise MoodleSsoNotConfigured
@@ -55,6 +77,7 @@ def issue_moodle_sso_code(user) -> str:
             "lastname": user.last_name,
         },
         "course_ids": _active_course_ids(user),
+        "return_path": normalize_moodle_return_path(return_path),
     }
     ttl = settings.MOODLE_SSO_CODE_TTL_SECONDS
 

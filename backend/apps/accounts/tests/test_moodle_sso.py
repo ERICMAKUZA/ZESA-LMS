@@ -4,7 +4,11 @@ from unittest.mock import patch
 from django.core.cache import cache
 from django.test import SimpleTestCase, override_settings
 
-from apps.accounts.moodle_sso import consume_moodle_sso_code, issue_moodle_sso_code
+from apps.accounts.moodle_sso import (
+    consume_moodle_sso_code,
+    issue_moodle_sso_code,
+    normalize_moodle_return_path,
+)
 
 
 @override_settings(
@@ -37,9 +41,20 @@ class MoodleSsoCodeTests(SimpleTestCase):
                     "lastname": "Learner",
                 },
                 "course_ids": [12, 25],
+                "return_path": "",
             },
         )
         self.assertIsNone(consume_moodle_sso_code(code))
 
     def test_invalid_code_is_rejected(self):
         self.assertIsNone(consume_moodle_sso_code("not-a-valid-moodle-sso-code"))
+
+    def test_return_path_must_belong_to_moodle(self):
+        self.assertEqual(
+            normalize_moodle_return_path(
+                "https://moodle.example.test/course/view.php?id=6"
+            ),
+            "/course/view.php?id=6",
+        )
+        with self.assertRaises(ValueError):
+            normalize_moodle_return_path("https://untrusted.example/course/view.php?id=6")

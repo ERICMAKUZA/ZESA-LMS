@@ -49,10 +49,12 @@ export default function DashboardPage() {
 
   const activeEnrollments = enrollments.filter(e => e.status !== 'UNENROLLED')
 
-  const openMoodle = async () => {
+  const openMoodle = async (returnPath?: string) => {
     setIsOpeningMoodle(true)
     try {
-      const { data } = await api.post<{ url: string }>('/auth/moodle-sso/')
+      const { data } = await api.post<{ url: string }>('/auth/moodle-sso/', {
+        return_path: returnPath ?? '',
+      })
       window.location.assign(data.url)
     } catch {
       toast({
@@ -90,7 +92,7 @@ export default function DashboardPage() {
             {process.env.NEXT_PUBLIC_MOODLE_URL ? (
               <button
                 type="button"
-                onClick={openMoodle}
+                onClick={() => openMoodle()}
                 disabled={isOpeningMoodle}
                 className="inline-block bg-white text-green-800 font-semibold text-sm px-4 py-2 rounded-lg hover:bg-green-50 transition-colors"
               >
@@ -164,15 +166,15 @@ export default function DashboardPage() {
 
               if (canOpen) {
                 return (
-                  <a
+                  <button
                     key={enrollment.id}
-                    href={enrollment.moodle_course_url!}
-                    target="_blank"
-                    rel="noopener noreferrer"
+                    type="button"
+                    onClick={() => openMoodle(enrollment.moodle_course_url!)}
+                    disabled={isOpeningMoodle}
                     className="flex items-center justify-between p-4 bg-white rounded-lg border border-gray-200 hover:border-green-500 hover:shadow-sm transition-all group"
                   >
                     {row}
-                  </a>
+                  </button>
                 )
               }
 
