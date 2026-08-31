@@ -308,26 +308,29 @@ def _notify_enrollment_failed(enrollment):
 
 
 def _notify_lecturer_enrolled(enrollment):
-    schedule = enrollment.schedule
-    lecturer = getattr(schedule, "lecturer", None)
-    if not lecturer:
-        return
-
     from apps.workflows.services import queue_notification
 
     app = enrollment.application
-    queue_notification(
-        recipient=lecturer,
-        subject=f"Student enrolled: {app.applicant.full_name}",
-        message=(
-            f"{app.applicant.full_name} has been enrolled in {app.course.fullname}.\n\n"
-            f"Student ID: {app.applicant.student_id or 'Pending'}\n"
-            f"Email: {app.applicant.email}\n\n"
-            "Open My Courses to manage attendance, notices, timetable, and course operations."
-        ),
-        application=app,
-        action_url="/lecturer/courses",
-    )
+    lecturers = list(app.course.lecturers.filter(is_active=True))
+
+    # Existing seeded intakes may still have only the legacy lead lecturer.
+    if not lecturers:
+        legacy_lecturer = getattr(enrollment.schedule, "lecturer", None)
+        lecturers = [legacy_lecturer] if legacy_lecturer else []
+
+    for lecturer in lecturers:
+        queue_notification(
+            recipient=lecturer,
+            subject=f"Student enrolled: {app.applicant.full_name}",
+            message=(
+                f"{app.applicant.full_name} has been enrolled in {app.course.fullname}.\n\n"
+                f"Student ID: {app.applicant.student_id or 'Pending'}\n"
+                f"Email: {app.applicant.email}\n\n"
+                "Open My Courses to manage attendance, notices, timetable, and course operations."
+            ),
+            application=app,
+            action_url="/lecturer/courses",
+        )
 
 
 @shared_task(bind=True, max_retries=2)

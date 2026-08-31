@@ -1,7 +1,7 @@
 from datetime import timedelta
 
 from django.db import transaction
-from django.db.models import Count
+from django.db.models import Count, Q
 from django.db.models.functions import TruncDate
 from django.utils import timezone
 from rest_framework import permissions, status, viewsets
@@ -295,10 +295,9 @@ class AdminApplicationViewSet(viewsets.ModelViewSet):
 class LecturerApplicationViewSet(viewsets.ReadOnlyModelViewSet):
     """
     A lecturer's view of their own students (FRS §3.3): applications for
-    courses that have at least one CourseSchedule assigned to this lecturer,
-    restricted to ENROLLED/CERTIFIED. Applications don't carry a direct FK
-    to a specific intake, so this scopes at the course level like the
-    schedule assignment itself does.
+    courses assigned to this lecturer, restricted to ENROLLED/CERTIFIED.
+    Applications don't carry a direct FK to a specific intake, so access is
+    scoped at the course level.
     """
     permission_classes = [IsLecturer]
     serializer_class = LecturerApplicationSerializer
@@ -308,7 +307,8 @@ class LecturerApplicationViewSet(viewsets.ReadOnlyModelViewSet):
             return Application.objects.none()
         return (
             Application.objects.filter(
-                course__schedules__lecturer=self.request.user,
+                Q(course__lecturers=self.request.user)
+                | Q(course__schedules__lecturer=self.request.user),
                 status__in=[ApplicationStatus.ENROLLED, ApplicationStatus.CERTIFIED],
             )
             .select_related("applicant", "course", "assigned_centre")
@@ -316,8 +316,6 @@ class LecturerApplicationViewSet(viewsets.ReadOnlyModelViewSet):
         )
 
     def get_serializer_class(self):
-        if self.action == "retrieve":
-            return ApplicationDetailSerializer
         return LecturerApplicationSerializer
 
     @action(detail=True, methods=["post"], url_path="sign-off")

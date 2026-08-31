@@ -3,6 +3,8 @@ import datetime
 from django.db.models import Count, Q
 from rest_framework import serializers
 
+from apps.accounts.models import User
+
 from .models import Course, CourseCategory, CourseSchedule
 
 
@@ -63,6 +65,14 @@ class CourseScheduleSerializer(serializers.ModelSerializer):
         ]
 
 
+class InitialScheduleSerializer(serializers.Serializer):
+    year = serializers.IntegerField(min_value=2020, max_value=2100)
+    month = serializers.IntegerField(min_value=1, max_value=12)
+    week_in_month = serializers.IntegerField(min_value=1, max_value=4)
+    max_capacity = serializers.IntegerField(min_value=1)
+    notes = serializers.CharField(required=False, allow_blank=True, default="")
+
+
 class CourseSerializer(serializers.ModelSerializer):
     category = CourseCategorySerializer(read_only=True)
     category_id = serializers.PrimaryKeyRelatedField(
@@ -76,6 +86,52 @@ class CourseSerializer(serializers.ModelSerializer):
     category_name = serializers.CharField(source='category.name', read_only=True)
     next_schedule = serializers.SerializerMethodField()
     upcoming_schedules = serializers.SerializerMethodField()
+    lecturers = serializers.SerializerMethodField()
+    lecturer_ids = serializers.PrimaryKeyRelatedField(
+        queryset=User.objects.filter(role=User.Role.LECTURER, is_active=True),
+        source="lecturers",
+        write_only=True,
+        many=True,
+        required=False,
+    )
+    initial_schedule = InitialScheduleSerializer(write_only=True, required=False)
+
+    def get_lecturers(self, obj):
+        request = self.context.get("request")
+        if not request or not request.user.is_authenticated or not request.user.is_admin:
+            return []
+        return [
+            {"id": lecturer.id, "full_name": lecturer.full_name, "email": lecturer.email}
+            for lecturer in obj.lecturers.all()
+        ]
+
+    def validate(self, attrs):
+        if self.instance is None:
+            if not attrs.get("lecturers"):
+                raise serializers.ValidationError(
+                    {"lecturer_ids": "Assign at least one lecturer to a new course."}
+                )
+            if not attrs.get("category"):
+                raise serializers.ValidationError(
+                    {"category_id": "Select a category for the new course."}
+                )
+            if not attrs.get("initial_schedule"):
+                raise serializers.ValidationError(
+                    {"initial_schedule": "Add the first course intake before publishing."}
+                )
+            if not attrs.get("duration_days"):
+                raise serializers.ValidationError(
+                    {"duration_days": "Set the course duration before adding an intake."}
+                )
+        elif "lecturers" in attrs and not attrs["lecturers"]:
+            raise serializers.ValidationError(
+                {"lecturer_ids": "A course must have at least one assigned lecturer."}
+            )
+        return attrs
+
+    def create(self, validated_data):
+        validated_data.pop("initial_schedule", None)
+        return super().create(validated_data)
 
     def get_next_schedule(self, obj):
         today = datetime.date.today()
@@ -104,6 +160,9 @@ class CourseSerializer(serializers.ModelSerializer):
             "is_active", "requires_approval", "price", "thumbnail_url",
             "duration_days", "level",
             "is_full", "created_at", "updated_at",
+            "lecturers", "lecturer_ids", "initial_schedule",
             "next_schedule", "upcoming_schedules",
         )
-        read_only_fields = ("id", "enrolled_count", "created_at", "updated_at")
+        read_only_fields = (
+            "id", "moodle_course_id", "enrolled_count", "created_at", "updated_at"
+        )

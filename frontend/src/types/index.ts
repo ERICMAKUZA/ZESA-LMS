@@ -99,6 +99,7 @@ export interface Course {
   is_full: boolean
   requires_approval: boolean
   moodle_course_id: number | null
+  lecturers: Array<Pick<User, 'id' | 'full_name' | 'email'>>
   created_at: string
   updated_at: string
   next_schedule: CourseSchedule | null

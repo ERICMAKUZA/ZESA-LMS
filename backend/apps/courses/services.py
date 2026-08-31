@@ -34,6 +34,59 @@ class MoodleClient:
     def get_courses(self) -> list[dict]:
         return self._call("core_course_get_courses")
 
+    def create_course(
+        self,
+        *,
+        shortname: str,
+        fullname: str,
+        category_id: int,
+        summary: str,
+        visible: bool,
+    ) -> dict:
+        result = self._call(
+            "core_course_create_courses",
+            **{
+                "courses[0][shortname]": shortname,
+                "courses[0][fullname]": fullname,
+                "courses[0][categoryid]": category_id,
+                "courses[0][summary]": summary,
+                "courses[0][summaryformat]": 1,
+                "courses[0][visible]": int(visible),
+            },
+        )
+        if not isinstance(result, list) or not result or not result[0].get("id"):
+            raise RuntimeError("Moodle did not return the new course ID.")
+        return result[0]
+
+    def update_course(
+        self,
+        *,
+        course_id: int,
+        shortname: str,
+        fullname: str,
+        category_id: int,
+        summary: str,
+        visible: bool,
+    ) -> dict | list:
+        return self._call(
+            "core_course_update_courses",
+            **{
+                "courses[0][id]": course_id,
+                "courses[0][shortname]": shortname,
+                "courses[0][fullname]": fullname,
+                "courses[0][categoryid]": category_id,
+                "courses[0][summary]": summary,
+                "courses[0][summaryformat]": 1,
+                "courses[0][visible]": int(visible),
+            },
+        )
+
+    def delete_course(self, course_id: int) -> dict | list:
+        return self._call(
+            "core_course_delete_courses",
+            **{"courseids[0]": course_id},
+        )
+
     def enrol_user(self, user_id: int, course_id: int, role_id: int = 5) -> dict:
         return self._call(
             "enrol_manual_enrol_users",

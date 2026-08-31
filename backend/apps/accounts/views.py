@@ -128,6 +128,16 @@ class AdminUserListView(generics.ListAPIView):
     ordering_fields = ["last_name", "date_joined", "role"]
 
 
+class AdminLecturerListView(generics.ListAPIView):
+    queryset = User.objects.filter(
+        role=User.Role.LECTURER,
+        is_active=True,
+    ).order_by("last_name", "first_name")
+    serializer_class = UserSerializer
+    permission_classes = [IsAdmin]
+    pagination_class = None
+
+
 class DemoAccountsView(APIView):
     permission_classes = [permissions.AllowAny]
 

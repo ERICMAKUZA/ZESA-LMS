@@ -2,7 +2,7 @@
 
 import { useState } from 'react'
 import Link from 'next/link'
-import { BookOpen } from 'lucide-react'
+import { BookOpen, Pencil, Plus } from 'lucide-react'
 import { useQuery } from '@tanstack/react-query'
 import AdminLayout from '@/components/layout/AdminLayout'
 import PageHeader from '@/components/ui/PageHeader'
@@ -10,6 +10,7 @@ import Card from '@/components/ui/Card'
 import Spinner from '@/components/ui/Spinner'
 import Input from '@/components/ui/Input'
 import api from '@/lib/api'
+import Button from '@/components/ui/Button'
 import type { Course, PaginatedResponse } from '@/types'
 
 function useAdminCourses(search: string) {
@@ -29,7 +30,11 @@ export default function AdminCoursesPage() {
 
   return (
     <AdminLayout>
-      <PageHeader title="Courses" subtitle={`${data?.count ?? 0} total courses`} />
+      <PageHeader
+        title="Courses"
+        subtitle={`${data?.count ?? 0} total courses`}
+        action={<Link href="/admin/courses/new"><Button><Plus className="h-4 w-4" /> Add Course</Button></Link>}
+      />
 
       <div className="mb-6 max-w-sm">
         <Input
@@ -60,6 +65,7 @@ export default function AdminCoursesPage() {
                   <th className="pb-3 text-left font-medium hidden md:table-cell">Price</th>
                   <th className="pb-3 text-left font-medium">Status</th>
                   <th className="pb-3 text-left font-medium hidden lg:table-cell">Enrolled</th>
+                  <th className="pb-3 text-right font-medium">Actions</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-100">
@@ -95,6 +101,11 @@ export default function AdminCoursesPage() {
                       {course.enrolled_count}
                       {course.max_capacity ? ` / ${course.max_capacity}` : ''}
                     </td>
+                    <td className="py-3 text-right">
+                      <Link href={`/admin/courses/${course.id}`} className="inline-flex items-center gap-1 text-sm font-medium text-primary hover:underline">
+                        <Pencil className="h-3.5 w-3.5" /> Edit
+                      </Link>
+                    </td>
                   </tr>
                 ))}
               </tbody>
@@ -103,13 +114,6 @@ export default function AdminCoursesPage() {
         )}
       </Card>
 
-      <p className="mt-4 text-xs text-gray-400 text-center">
-        To add, edit, or delete courses, categories, or schedules, use the{' '}
-        <Link href="/django-admin/courses/course/" className="text-primary hover:underline" target="_blank">
-          Django admin
-        </Link>{' '}
-        (also in the sidebar under "Manage").
-      </p>
     </AdminLayout>
   )
 }

@@ -1,8 +1,11 @@
 import datetime
+import logging
 
+from django.db import transaction
 from django.db.models import Count, Q
 from rest_framework import generics, permissions, status, viewsets
 from rest_framework.decorators import api_view, permission_classes
+from rest_framework.exceptions import ValidationError
 from rest_framework.permissions import AllowAny
 from rest_framework.response import Response
 from rest_framework.views import APIView
@@ -16,7 +19,10 @@ from .serializers import (
     CourseSerializer,
     CourseSummarySerializer,
 )
+from .services import MoodleClient
 from .tasks import sync_courses_from_moodle
+
+logger = logging.getLogger(__name__)
 
 
 class CourseCategoryListView(generics.ListAPIView):
@@ -46,28 +52,80 @@ class CourseDetailView(generics.RetrieveAPIView):
 
 
 class AdminCourseViewSet(viewsets.ModelViewSet):
-    queryset = Course.objects.all().select_related("category")
+    queryset = Course.objects.all().select_related("category").prefetch_related("lecturers")
     serializer_class = CourseSerializer
     permission_classes = [IsAdmin]
 
     def perform_create(self, serializer):
-        course = serializer.save()
+        category = serializer.validated_data["category"]
+        initial_schedule = serializer.validated_data["initial_schedule"]
+        moodle_client = MoodleClient()
+        moodle_course = None
+        try:
+            moodle_course = moodle_client.create_course(
+                shortname=serializer.validated_data["shortname"],
+                fullname=serializer.validated_data["fullname"],
+                category_id=category.moodle_id,
+                summary=serializer.validated_data.get("summary", ""),
+                visible=serializer.validated_data.get("is_active", True),
+            )
+            with transaction.atomic():
+                course = serializer.save(moodle_course_id=moodle_course["id"])
+                CourseSchedule.objects.create(course=course, **initial_schedule)
+        except Exception as exc:
+            if moodle_course:
+                try:
+                    moodle_client.delete_course(moodle_course["id"])
+                except Exception:
+                    logger.exception(
+                        "Could not clean up Moodle course %s after portal course creation failed.",
+                        moodle_course["id"],
+                    )
+            raise ValidationError(
+                {"moodle": f"The course could not be created in Moodle: {exc}"}
+            ) from exc
+
         if not course.is_active:
             return
 
         from apps.accounts.models import User
         from apps.workflows.services import queue_notifications
 
-        queue_notifications(
-            recipients=User.objects.filter(role=User.Role.STUDENT, is_active=True),
-            subject=f"New course available: {course.fullname}",
-            message=(
-                f"A new ZNTC course is now available: {course.fullname}.\n\n"
-                f"Course code: {course.shortname}\n"
-                "Log in to the ZESA training portal to view details and apply."
-            ),
-            action_url=f"/courses/{course.id}",
-        )
+        try:
+            queue_notifications(
+                recipients=User.objects.filter(role=User.Role.STUDENT, is_active=True),
+                subject=f"New course available: {course.fullname}",
+                message=(
+                    f"A new ZNTC course is now available: {course.fullname}.\n\n"
+                    f"Course code: {course.shortname}\n"
+                    "Log in to the ZESA training portal to view details and apply."
+                ),
+                action_url=f"/courses/{course.id}",
+            )
+        except Exception:
+            logger.exception("Could not queue new-course notifications for course %s.", course.id)
+
+    def perform_update(self, serializer):
+        course = serializer.instance
+        category = serializer.validated_data.get("category", course.category)
+        if not category:
+            raise ValidationError({"category_id": "A course category is required."})
+
+        try:
+            MoodleClient().update_course(
+                course_id=course.moodle_course_id,
+                shortname=serializer.validated_data.get("shortname", course.shortname),
+                fullname=serializer.validated_data.get("fullname", course.fullname),
+                category_id=category.moodle_id,
+                summary=serializer.validated_data.get("summary", course.summary),
+                visible=serializer.validated_data.get("is_active", course.is_active),
+            )
+        except Exception as exc:
+            raise ValidationError(
+                {"moodle": f"The course could not be updated in Moodle: {exc}"}
+            ) from exc
+
+        serializer.save()
 
     filterset_fields = ["is_active", "category", "requires_approval"]
     search_fields = ["fullname", "shortname"]
@@ -122,12 +180,12 @@ def schedule_list(request):
 @permission_classes([IsLecturer])
 def lecturer_schedule_list(request):
     """
-    GET /api/courses/lecturer/schedules/ — the intakes assigned to the
-    logged-in lecturer.
+    GET /api/courses/lecturer/schedules/ — intakes for courses assigned to
+    the logged-in lecturer.
     """
     qs = CourseSchedule.objects.filter(
-        lecturer=request.user
-    ).select_related('course', 'course__category').order_by('-year', '-month')
+        Q(course__lecturers=request.user) | Q(lecturer=request.user)
+    ).select_related('course', 'course__category').distinct().order_by('-year', '-month')
     return Response(CourseScheduleSerializer(qs, many=True).data)
 
 

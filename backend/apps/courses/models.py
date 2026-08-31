@@ -44,6 +44,13 @@ class Course(models.Model):
         on_delete=models.SET_NULL,
         related_name="courses",
     )
+    lecturers = models.ManyToManyField(
+        settings.AUTH_USER_MODEL,
+        blank=True,
+        related_name="assigned_courses",
+        limit_choices_to={"role": "LECTURER"},
+        help_text="Lecturers who may manage this course and its student activity.",
+    )
     enrolled_count = models.PositiveIntegerField(default=0)
     max_capacity = models.PositiveIntegerField(null=True, blank=True)
     is_active = models.BooleanField(default=True)

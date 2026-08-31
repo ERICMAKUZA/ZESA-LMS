@@ -6,7 +6,7 @@ from drf_spectacular.views import (
     SpectacularSwaggerView,
 )
 
-from apps.accounts.views import AdminUserListView, DemoAccountsView, MeView
+from apps.accounts.views import AdminLecturerListView, AdminUserListView, DemoAccountsView, MeView
 
 urlpatterns = [
     path("django-admin/", admin.site.urls),
@@ -18,6 +18,7 @@ urlpatterns = [
     path("api/auth/", include("apps.accounts.urls")),
     path("api/users/me/", MeView.as_view(), name="user-me"),
     path("api/admin/users/", AdminUserListView.as_view(), name="admin-user-list"),
+    path("api/admin/lecturers/", AdminLecturerListView.as_view(), name="admin-lecturer-list"),
     path("api/demo-accounts/", DemoAccountsView.as_view(), name="demo-accounts"),
 
     path("api/centres/", include("centres.urls")),
