@@ -218,3 +218,24 @@ class QualificationApplicationApiTests(APITestCase):
 
         self.assertEqual(response.status_code, status.HTTP_201_CREATED, response.data)
         self.assertEqual(application.qualification_overrides.count(), 1)
+
+    def test_reviewer_can_export_the_required_shortlist_columns(self):
+        application = Application.objects.create(
+            applicant=self.student, course=self.course, motivation="Apply", line_manager_email="manager@example.com",
+            department=self.department.code, selected_department=self.department,
+            certification_type=self.certificate,
+        )
+        sitting = ApplicationAcademicSitting.objects.create(
+            application=application, education_level="O_LEVEL", sitting_number=1, exam_year=2025,
+        )
+        ApplicationAcademicResult.objects.create(sitting=sitting, subject="Mathematics", grade_band=self.grade_b)
+        ApplicationAcademicResult.objects.create(sitting=sitting, subject="English", grade_band=self.grade_c)
+        ApplicationAcademicResult.objects.create(sitting=sitting, subject="Physics", grade_band=self.grade_b)
+        assess_application(application)
+        self.client.force_authenticate(self.reviewer)
+
+        response = self.client.get(f"/api/reports/shortlist/?course={self.course.id}&format=csv")
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK, response.content)
+        self.assertEqual(response["Content-Type"], "text/csv")
+        self.assertEqual(response.content.decode().splitlines()[0], "Course,Surname,Name,Points")
