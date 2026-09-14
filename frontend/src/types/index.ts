@@ -11,7 +11,7 @@ export interface User {
   first_name: string
   last_name: string
   full_name: string
-  role: 'STUDENT' | 'REVIEWER' | 'ADMIN' | 'FINANCE' | 'SUPERADMIN' | 'LECTURER' | 'CENTRE_ADMIN'
+  role: 'STUDENT' | 'REVIEWER' | 'ADMIN' | 'FINANCE' | 'SUPERADMIN' | 'TRAINER' | 'LECTURER' | 'CENTRE_ADMIN'
   employee_id: string
   ec_number: string
   student_id: string | null
@@ -60,6 +60,31 @@ export interface CourseCategory {
   course_count?: number
 }
 
+export interface CourseType {
+  id: number
+  code: string
+  name: string
+  description: string
+  is_active: boolean
+}
+
+export interface CertificationType {
+  id: number
+  course_type: number
+  code: string
+  name: string
+  description: string
+  is_active: boolean
+}
+
+export interface Department {
+  id: number
+  code: string
+  name: string
+  description: string
+  is_active: boolean
+}
+
 export interface CourseSchedule {
   id: string
   course: number
@@ -89,6 +114,11 @@ export interface Course {
   shortname: string
   summary: string
   category: CourseCategory | null
+  course_type: CourseType | null
+  departments: Department[]
+  certification_types: CertificationType[]
+  minimum_points_required: number | null
+  required_subjects: string[]
   enrolled_count: number
   max_capacity: number | null
   price: string | null

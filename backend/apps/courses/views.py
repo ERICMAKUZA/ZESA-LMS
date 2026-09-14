@@ -10,14 +10,30 @@ from rest_framework.permissions import AllowAny
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from apps.accounts.permissions import IsAdmin, IsLecturer
+from apps.accounts.permissions import (
+    CanManageTraining,
+    CanManageTrainingConfiguration,
+    IsAdmin,
+    IsLecturer,
+)
 
-from .models import Course, CourseCategory, CourseSchedule, Enquiry
+from .models import (
+    CertificationType,
+    Course,
+    CourseCategory,
+    CourseSchedule,
+    CourseType,
+    Department,
+    Enquiry,
+)
 from .serializers import (
+    CertificationTypeSerializer,
     CourseCategoryWithCountSerializer,
     CourseScheduleSerializer,
     CourseSerializer,
     CourseSummarySerializer,
+    CourseTypeSerializer,
+    DepartmentSerializer,
 )
 from .services import MoodleClient
 from .tasks import sync_courses_from_moodle
@@ -37,7 +53,9 @@ class CourseCategoryListView(generics.ListAPIView):
 
 
 class CourseListView(generics.ListAPIView):
-    queryset = Course.objects.filter(is_active=True).select_related("category")
+    queryset = Course.objects.filter(is_active=True).select_related(
+        "category", "course_type"
+    ).prefetch_related("departments", "certification_types", "lecturers")
     serializer_class = CourseSerializer
     permission_classes = [permissions.AllowAny]
     filterset_fields = ["category", "requires_approval"]
@@ -46,15 +64,19 @@ class CourseListView(generics.ListAPIView):
 
 
 class CourseDetailView(generics.RetrieveAPIView):
-    queryset = Course.objects.filter(is_active=True).select_related("category")
+    queryset = Course.objects.filter(is_active=True).select_related(
+        "category", "course_type"
+    ).prefetch_related("departments", "certification_types", "lecturers")
     serializer_class = CourseSerializer
     permission_classes = [permissions.AllowAny]
 
 
 class AdminCourseViewSet(viewsets.ModelViewSet):
-    queryset = Course.objects.all().select_related("category").prefetch_related("lecturers")
+    queryset = Course.objects.all().select_related(
+        "category", "course_type"
+    ).prefetch_related("lecturers", "departments", "certification_types")
     serializer_class = CourseSerializer
-    permission_classes = [IsAdmin]
+    permission_classes = [CanManageTraining]
 
     def perform_create(self, serializer):
         category = serializer.validated_data["category"]
@@ -127,9 +149,106 @@ class AdminCourseViewSet(viewsets.ModelViewSet):
 
         serializer.save()
 
-    filterset_fields = ["is_active", "category", "requires_approval"]
+    filterset_fields = ["is_active", "category", "requires_approval", "course_type"]
     search_fields = ["fullname", "shortname"]
-    ordering_fields = ["fullname", "price", "enrolled_count"]
+    ordering_fields = ["fullname", "price", "enrolled_count", "course_type__name"]
+
+
+class TrainingConfigurationViewSet(viewsets.ModelViewSet):
+    # Taxonomy is retired through is_active so historic course data remains intact.
+    http_method_names = ["get", "post", "put", "patch", "head", "options"]
+
+
+class DepartmentViewSet(TrainingConfigurationViewSet):
+    queryset = Department.objects.all()
+    serializer_class = DepartmentSerializer
+    permission_classes = [CanManageTrainingConfiguration]
+
+    def get_queryset(self):
+        queryset = super().get_queryset()
+        if self.request.query_params.get("include_inactive") != "true":
+            queryset = queryset.filter(is_active=True)
+        return queryset
+
+
+class CourseTypeViewSet(TrainingConfigurationViewSet):
+    queryset = CourseType.objects.all()
+    serializer_class = CourseTypeSerializer
+    permission_classes = [CanManageTrainingConfiguration]
+
+    def get_queryset(self):
+        queryset = super().get_queryset()
+        if self.request.query_params.get("include_inactive") != "true":
+            queryset = queryset.filter(is_active=True)
+        return queryset
+
+
+class CertificationTypeViewSet(TrainingConfigurationViewSet):
+    queryset = CertificationType.objects.all()
+    serializer_class = CertificationTypeSerializer
+    permission_classes = [CanManageTrainingConfiguration]
+
+    def get_queryset(self):
+        qs = super().get_queryset()
+        if self.request.query_params.get("include_inactive") != "true":
+            qs = qs.filter(is_active=True)
+        course_type_id = self.request.query_params.get("course_type")
+        if course_type_id:
+            qs = qs.filter(course_type_id=course_type_id)
+        return qs
+
+
+@api_view(['GET'])
+@permission_classes([AllowAny])
+def training_selection(request):
+    department_id = request.query_params.get("department")
+    course_type_id = request.query_params.get("course_type")
+
+    courses = Course.objects.filter(is_active=True)
+
+    if department_id:
+        courses = courses.filter(
+            Q(departments=department_id) | Q(departments__isnull=True)
+        ).distinct()
+    if course_type_id:
+        courses = courses.filter(course_type_id=course_type_id)
+
+    payload = []
+    for course in courses.select_related("course_type").prefetch_related("departments", "certification_types"):
+        departments = [
+            {
+                "id": department.id,
+                "code": department.code,
+                "name": department.name,
+            }
+            for department in course.departments.filter(is_active=True)
+        ]
+        cert_types = [
+            {
+                "id": cert.id,
+                "code": cert.code,
+                "name": cert.name,
+            }
+            for cert in course.certification_types.filter(is_active=True)
+        ]
+
+        payload.append({
+            "id": course.id,
+            "shortname": course.shortname,
+            "fullname": course.fullname,
+            "course_type": {
+                "id": course.course_type.id,
+                "code": course.course_type.code,
+                "name": course.course_type.name,
+            } if course.course_type else None,
+            "departments": departments,
+            "department_ids": [department["id"] for department in departments],
+            "certification_types": cert_types,
+            "minimum_points_required": course.minimum_points_required,
+            "required_subjects": course.required_subjects or [],
+        })
+
+    return Response(payload)
 
 
 class MoodleSyncView(APIView):

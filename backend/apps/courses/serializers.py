@@ -1,11 +1,16 @@
 import datetime
-
-from django.db.models import Count, Q
 from rest_framework import serializers
 
 from apps.accounts.models import User
 
-from .models import Course, CourseCategory, CourseSchedule
+from .models import (
+    CertificationType,
+    Course,
+    CourseCategory,
+    CourseSchedule,
+    CourseType,
+    Department,
+)
 
 
 class CourseCategorySerializer(serializers.ModelSerializer):
@@ -65,6 +70,28 @@ class CourseScheduleSerializer(serializers.ModelSerializer):
         ]
 
 
+class DepartmentSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Department
+        fields = ("id", "code", "name", "description", "is_active")
+
+
+class CourseTypeSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = CourseType
+        fields = ("id", "code", "name", "description", "is_active")
+
+
+class CertificationTypeSerializer(serializers.ModelSerializer):
+    course_type = serializers.PrimaryKeyRelatedField(
+        queryset=CourseType.objects.filter(is_active=True)
+    )
+
+    class Meta:
+        model = CertificationType
+        fields = ("id", "course_type", "code", "name", "description", "is_active")
+
+
 class InitialScheduleSerializer(serializers.Serializer):
     year = serializers.IntegerField(min_value=2020, max_value=2100)
     month = serializers.IntegerField(min_value=1, max_value=12)
@@ -94,11 +121,45 @@ class CourseSerializer(serializers.ModelSerializer):
         many=True,
         required=False,
     )
+    course_type = CourseTypeSerializer(read_only=True)
+    course_type_id = serializers.PrimaryKeyRelatedField(
+        queryset=CourseType.objects.all(),
+        source="course_type",
+        write_only=True,
+        required=False,
+        allow_null=True,
+    )
+    departments = DepartmentSerializer(many=True, read_only=True)
+    department_ids = serializers.PrimaryKeyRelatedField(
+        queryset=Department.objects.all(),
+        source="departments",
+        write_only=True,
+        many=True,
+        required=False,
+    )
+    certification_type_ids = serializers.PrimaryKeyRelatedField(
+        queryset=CertificationType.objects.all(),
+        source="certification_types",
+        write_only=True,
+        many=True,
+        required=False,
+    )
+    certification_types = CertificationTypeSerializer(many=True, read_only=True)
+    minimum_points_required = serializers.IntegerField(required=False, allow_null=True)
+    required_subjects = serializers.ListField(child=serializers.CharField(), required=False)
     initial_schedule = InitialScheduleSerializer(write_only=True, required=False)
 
     def get_lecturers(self, obj):
         request = self.context.get("request")
-        if not request or not request.user.is_authenticated or not request.user.is_admin:
+        if (
+            not request
+            or not request.user.is_authenticated
+            or request.user.role not in (
+                User.Role.ADMIN,
+                User.Role.SUPERADMIN,
+                User.Role.TRAINER,
+            )
+        ):
             return []
         return [
             {"id": lecturer.id, "full_name": lecturer.full_name, "email": lecturer.email}
@@ -106,6 +167,68 @@ class CourseSerializer(serializers.ModelSerializer):
         ]
 
     def validate(self, attrs):
+        # If certification types are provided, validate they all belong to the
+        # selected course type (when already set or supplied in this payload).
+        course_type_supplied = "course_type" in attrs
+        course_type = attrs.get("course_type") if course_type_supplied else getattr(
+            self.instance, "course_type", None
+        )
+        if not course_type and (self.instance is None or course_type_supplied):
+            raise serializers.ValidationError(
+                {"course_type_id": "Select a course type before creating a course."}
+            )
+
+        existing_course_type_id = getattr(self.instance, "course_type_id", None)
+        if course_type and not course_type.is_active and course_type.id != existing_course_type_id:
+            raise serializers.ValidationError(
+                {"course_type_id": "Select an active course type."}
+            )
+
+        if "departments" in attrs:
+            existing_department_ids = set()
+            if self.instance is not None:
+                existing_department_ids = set(
+                    self.instance.departments.values_list("id", flat=True)
+                )
+            inactive_departments = [
+                item.id
+                for item in attrs["departments"]
+                if not item.is_active and item.id not in existing_department_ids
+            ]
+            if inactive_departments:
+                raise serializers.ValidationError(
+                    {"department_ids": "Select active departments only."}
+                )
+
+        cert_types = attrs.get("certification_types")
+        if cert_types is not None:
+            existing_certification_ids = set()
+            if self.instance is not None:
+                existing_certification_ids = set(
+                    self.instance.certification_types.values_list("id", flat=True)
+                )
+            inactive_certifications = [
+                item.id
+                for item in cert_types
+                if not item.is_active and item.id not in existing_certification_ids
+            ]
+            if inactive_certifications:
+                raise serializers.ValidationError(
+                    {"certification_type_ids": "Select active certification options only."}
+                )
+        if cert_types is None and self.instance is not None:
+            cert_types = self.instance.certification_types.all()
+        if cert_types:
+            if not course_type:
+                raise serializers.ValidationError(
+                    {"course_type_id": "Select a course type before selecting certification options."}
+                )
+            invalid = [item.id for item in cert_types if item.course_type_id != course_type.id]
+            if invalid:
+                raise serializers.ValidationError(
+                    {"certification_type_ids": "All certificate options must belong to the selected course type."}
+                )
+
         if self.instance is None:
             if not attrs.get("lecturers"):
                 raise serializers.ValidationError(
@@ -156,6 +279,9 @@ class CourseSerializer(serializers.ModelSerializer):
         fields = (
             "id", "moodle_course_id", "shortname", "fullname", "summary",
             "category", "category_id", "category_name",
+            "course_type", "course_type_id", "departments", "department_ids",
+            "certification_types", "certification_type_ids",
+            "minimum_points_required", "required_subjects",
             "enrolled_count", "max_capacity",
             "is_active", "requires_approval", "price", "thumbnail_url",
             "duration_days", "level",

@@ -1,5 +1,6 @@
 import uuid
 
+from django.core.exceptions import ValidationError
 from django.conf import settings
 from django.db import models
 
@@ -15,6 +16,57 @@ class CourseCategory(models.Model):
 
     def __str__(self):
         return self.name
+
+
+class Department(models.Model):
+    code = models.CharField(max_length=30, unique=True)
+    name = models.CharField(max_length=255, unique=True)
+    description = models.TextField(blank=True)
+    is_active = models.BooleanField(default=True)
+
+    class Meta:
+        verbose_name = "Department"
+        verbose_name_plural = "Departments"
+        ordering = ["name"]
+
+    def __str__(self):
+        return f"{self.code} — {self.name}"
+
+
+class CourseType(models.Model):
+    code = models.CharField(max_length=50, unique=True)
+    name = models.CharField(max_length=255, unique=True)
+    description = models.TextField(blank=True)
+    is_active = models.BooleanField(default=True)
+
+    class Meta:
+        verbose_name = "Course Type"
+        verbose_name_plural = "Course Types"
+        ordering = ["name"]
+
+    def __str__(self):
+        return f"{self.code} — {self.name}"
+
+
+class CertificationType(models.Model):
+    course_type = models.ForeignKey(
+        CourseType,
+        on_delete=models.CASCADE,
+        related_name="certification_types",
+    )
+    code = models.CharField(max_length=50)
+    name = models.CharField(max_length=255)
+    description = models.TextField(blank=True)
+    is_active = models.BooleanField(default=True)
+
+    class Meta:
+        verbose_name = "Certification Type"
+        verbose_name_plural = "Certification Types"
+        ordering = ["course_type", "name"]
+        unique_together = [("course_type", "code")]
+
+    def __str__(self):
+        return f"{self.code} — {self.name}"
 
 
 class Course(models.Model):
@@ -36,6 +88,33 @@ class Course(models.Model):
     duration_days = models.PositiveIntegerField(null=True, blank=True)
     level = models.CharField(
         max_length=20, choices=LEVEL_CHOICES, null=True, blank=True
+    )
+    course_type = models.ForeignKey(
+        CourseType,
+        null=True,
+        blank=True,
+        on_delete=models.SET_NULL,
+        related_name="courses",
+    )
+    departments = models.ManyToManyField(
+        Department,
+        blank=True,
+        related_name="courses",
+    )
+    certification_types = models.ManyToManyField(
+        CertificationType,
+        blank=True,
+        related_name="courses",
+    )
+    minimum_points_required = models.PositiveIntegerField(
+        null=True,
+        blank=True,
+        help_text="Set to a value if applicants must meet a minimum points threshold.",
+    )
+    required_subjects = models.JSONField(
+        default=list,
+        blank=True,
+        help_text="Optional list of mandatory subjects required for qualification checks.",
     )
     category = models.ForeignKey(
         CourseCategory,
@@ -71,6 +150,30 @@ class Course(models.Model):
     @property
     def is_full(self):
         return self.max_capacity is not None and self.enrolled_count >= self.max_capacity
+
+    def clean(self):
+        super().clean()
+
+        has_certifications = self.pk and self.certification_types.exists()
+        if not self.course_type and has_certifications:
+            raise ValidationError(
+                {"certification_type_ids": "Select a course type before adding certificate options."}
+            )
+
+        if not self.course_type:
+            return
+
+        invalid = self.certification_types.exclude(course_type=self.course_type)
+        if invalid.exists():
+            invalid_ids = list(invalid.values_list("id", flat=True))
+            raise ValidationError(
+                {
+                    "certification_type_ids": (
+                        "Certification options must belong to the selected course type. "
+                        f"Invalid IDs: {invalid_ids}"
+                    )
+                }
+            )
 
 
 class CourseSchedule(models.Model):

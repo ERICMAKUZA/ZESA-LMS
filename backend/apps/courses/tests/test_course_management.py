@@ -5,7 +5,14 @@ from rest_framework.test import APITestCase
 
 from apps.accounts.models import User
 from apps.applications.models import Application, ApplicationStatus
-from apps.courses.models import Course, CourseCategory, CourseSchedule
+from apps.courses.models import (
+    CertificationType,
+    Course,
+    CourseCategory,
+    CourseSchedule,
+    CourseType,
+    Department,
+)
 from apps.enrollments.models import Enrollment
 from apps.enrollments.tasks import _notify_lecturer_enrolled
 
@@ -33,8 +40,161 @@ class CourseManagementTests(APITestCase):
             last_name="Ncube",
             role=User.Role.LECTURER,
         )
+        self.trainer = User.objects.create_user(
+            email="trainer@example.com",
+            password="Password123!",
+            first_name="Training",
+            last_name="Manager",
+            role=User.Role.TRAINER,
+        )
         self.category = CourseCategory.objects.create(name="Electrical", moodle_id=11)
+        self.course_type = CourseType.objects.create(code="STANDARD", name="Standard")
         self.client.force_authenticate(self.admin)
+
+    def test_trainer_can_create_training_taxonomy(self):
+        self.client.force_authenticate(self.trainer)
+
+        department = self.client.post(
+            "/api/courses/training/departments/",
+            {"code": "ELEC", "name": "Electrical", "description": "Electrical training."},
+            format="json",
+        )
+        course_type = self.client.post(
+            "/api/courses/training/course-types/",
+            {"code": "HEXCO", "name": "HEXCO", "description": "National qualifications."},
+            format="json",
+        )
+        certification = self.client.post(
+            "/api/courses/training/certification-types/",
+            {
+                "course_type": course_type.data["id"],
+                "code": "NC",
+                "name": "National Certificate",
+            },
+            format="json",
+        )
+
+        self.assertEqual(department.status_code, status.HTTP_201_CREATED)
+        self.assertEqual(course_type.status_code, status.HTTP_201_CREATED)
+        self.assertEqual(certification.status_code, status.HTTP_201_CREATED)
+        self.assertEqual(certification.data["course_type"], course_type.data["id"])
+
+    def test_lecturer_cannot_change_shared_training_taxonomy(self):
+        self.client.force_authenticate(self.lecturer_one)
+
+        response = self.client.post(
+            "/api/courses/training/course-types/",
+            {"code": "SHORT", "name": "Short Course"},
+            format="json",
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+
+    @patch("apps.courses.services.MoodleClient.create_course", create=True)
+    def test_trainer_can_list_lecturers_and_create_a_course(self, create_course):
+        create_course.return_value = {"id": 512}
+        self.client.force_authenticate(self.trainer)
+
+        lecturer_list = self.client.get("/api/admin/lecturers/")
+        response = self.client.post(
+            "/api/courses/admin/",
+            {
+                "shortname": "ELEC-112",
+                "fullname": "Trainer Created Course",
+                "category_id": self.category.id,
+                "course_type_id": self.course_type.id,
+                "duration_days": 3,
+                "lecturer_ids": [self.lecturer_one.id],
+                "initial_schedule": {
+                    "year": 2026,
+                    "month": 11,
+                    "week_in_month": 1,
+                    "max_capacity": 20,
+                },
+            },
+            format="json",
+        )
+
+        self.assertEqual(lecturer_list.status_code, status.HTTP_200_OK)
+        self.assertIn(self.lecturer_one.id, [item["id"] for item in lecturer_list.data])
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        self.assertEqual(response.data["lecturers"][0]["id"], self.lecturer_one.id)
+
+    def test_certification_type_requires_an_active_course_type(self):
+        self.course_type.is_active = False
+        self.course_type.save(update_fields=["is_active"])
+
+        response = self.client.post(
+            "/api/courses/training/certification-types/",
+            {
+                "course_type": self.course_type.id,
+                "code": "NC",
+                "name": "National Certificate",
+            },
+            format="json",
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertIn("course_type", response.data)
+
+    def test_training_configuration_cannot_be_deleted(self):
+        response = self.client.delete(
+            f"/api/courses/training/course-types/{self.course_type.id}/"
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_405_METHOD_NOT_ALLOWED)
+        self.assertTrue(CourseType.objects.filter(id=self.course_type.id).exists())
+
+    def test_deactivated_training_configuration_remains_visible_to_managers(self):
+        department = Department.objects.create(code="TELE", name="Telecommunications")
+
+        response = self.client.patch(
+            f"/api/courses/training/departments/{department.id}/",
+            {"is_active": False},
+            format="json",
+        )
+        listing = self.client.get("/api/courses/training/departments/?include_inactive=true")
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertIn(
+            {"id": department.id, "is_active": False},
+            [
+                {"id": item["id"], "is_active": item["is_active"]}
+                for item in listing.data["results"]
+            ],
+        )
+
+    @patch("apps.courses.services.MoodleClient.create_course", create=True)
+    def test_course_rejects_certification_from_another_course_type(self, create_course):
+        hexco = CourseType.objects.create(code="HEXCO", name="HEXCO")
+        invalid_certificate = CertificationType.objects.create(
+            course_type=self.course_type,
+            code="STD",
+            name="Standard Certificate",
+        )
+
+        response = self.client.post(
+            "/api/courses/admin/",
+            {
+                "shortname": "ELEC-102",
+                "fullname": "Electrical Safety",
+                "category_id": self.category.id,
+                "course_type_id": hexco.id,
+                "certification_type_ids": [invalid_certificate.id],
+                "lecturer_ids": [self.lecturer_one.id],
+                "initial_schedule": {
+                    "year": 2026,
+                    "month": 10,
+                    "week_in_month": 1,
+                    "max_capacity": 20,
+                },
+            },
+            format="json",
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertIn("certification_type_ids", response.data)
+        create_course.assert_not_called()
 
     @patch("apps.courses.services.MoodleClient.create_course", create=True)
     def test_admin_can_create_course_with_multiple_lecturers(self, create_course):
@@ -48,6 +208,7 @@ class CourseManagementTests(APITestCase):
                 "fullname": "Electrical Safety Fundamentals",
                 "summary": "A foundation course for electrical safety.",
                 "category_id": self.category.id,
+                "course_type_id": self.course_type.id,
                 "duration_days": 5,
                 "level": "BEGINNER",
                 "price": "120.00",
@@ -85,6 +246,7 @@ class CourseManagementTests(APITestCase):
                 "fullname": "Electrical Networks",
                 "summary": "Planning and operating electrical networks.",
                 "category_id": self.category.id,
+                "course_type_id": self.course_type.id,
                 "duration_days": 10,
                 "level": "INTERMEDIATE",
                 "price": "250.00",
@@ -120,6 +282,7 @@ class CourseManagementTests(APITestCase):
                 "shortname": "ELEC-105A",
                 "fullname": "Electrical Networks Planning",
                 "category_id": self.category.id,
+                "course_type_id": self.course_type.id,
                 "lecturer_ids": [self.lecturer_one.id],
             },
             format="json",
@@ -159,6 +322,31 @@ class CourseManagementTests(APITestCase):
             summary="Updated network operations content.",
             visible=False,
         )
+
+    @patch("apps.courses.services.MoodleClient.update_course", create=True)
+    def test_course_can_retain_an_inactive_configured_type(self, update_course):
+        course = Course.objects.create(
+            moodle_course_id=507,
+            shortname="ELEC-107",
+            fullname="Electrical Maintenance",
+            category=self.category,
+            course_type=self.course_type,
+        )
+        course.lecturers.add(self.lecturer_one)
+        self.course_type.is_active = False
+        self.course_type.save(update_fields=["is_active"])
+
+        response = self.client.patch(
+            f"/api/courses/admin/{course.id}/",
+            {
+                "summary": "Existing course with a retired classification.",
+                "course_type_id": self.course_type.id,
+            },
+            format="json",
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data["course_type"]["id"], self.course_type.id)
 
     def test_course_update_cannot_remove_every_lecturer(self):
         course = Course.objects.create(
@@ -300,6 +488,7 @@ class CourseManagementTests(APITestCase):
                 "shortname": "ELEC-111",
                 "fullname": "Electrical Fault Finding",
                 "category_id": self.category.id,
+                "course_type_id": self.course_type.id,
                 "duration_days": 5,
                 "lecturer_ids": [self.lecturer_one.id],
                 "initial_schedule": {
