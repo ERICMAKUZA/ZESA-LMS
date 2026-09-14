@@ -236,6 +236,8 @@ export interface Application {
   department: string
   employee_id: string
   hexco_level: 'NC' | 'ND' | ''
+  selected_department: number | null
+  certification_type: number | null
   student_category: 'DIRECT' | 'APPRENTICE' | 'INTERNAL' | ''
   preferred_centre: string | null
   assigned_centre: string | null
@@ -270,6 +272,35 @@ export interface Application {
   code_of_conduct_signed_at: string | null
   escalated: boolean
   escalated_at: string | null
+  academic_sittings: AcademicSitting[]
+  qualification_assessment: QualificationAssessment | null
+  qualification_overrides: QualificationOverride[]
+}
+
+export interface AcademicSitting {
+  id: number
+  education_level: 'O_LEVEL' | 'A_LEVEL'
+  sitting_number: number
+  exam_year: number
+  exam_session: string
+  results: Array<{ id: number; subject: string; grade_band_id: number; grade_label_snapshot: string; points_snapshot: number; rank_snapshot: number }>
+}
+
+export interface QualificationAssessment {
+  qualifies: boolean
+  total_o_level_points: number
+  has_a_level_sciences: boolean
+  failed_rule_codes: string[]
+  assessment_summary: string
+  assessed_at: string
+}
+
+export interface QualificationOverride {
+  id: number
+  reviewer: number | null
+  reviewer_name: string
+  note: string
+  created_at: string
 }
 
 export interface ApplicationListItem {
@@ -284,6 +315,18 @@ export interface ApplicationListItem {
   submitted_at: string | null
   created_at: string
   enrollment_status: string | null
+  qualification_assessment: QualificationAssessment | null
+}
+
+export interface ShortlistRow {
+  application_id: string
+  surname: string
+  name: string
+  points: number
+  eligibility: string
+  has_a_level_sciences: boolean
+  failed_rule_codes: string[]
+  has_override: boolean
 }
 
 export interface LecturerApplication {

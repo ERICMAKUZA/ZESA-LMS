@@ -12,6 +12,7 @@ import Select from '@/components/ui/Select'
 import Spinner from '@/components/ui/Spinner'
 import WalkInModal from '@/components/WalkInModal'
 import { useAdminApplications, useDashboardStats } from '@/hooks/useApplications'
+import { useCourses } from '@/hooks/useCourses'
 import type { ApplicationStatus } from '@/types'
 
 const STATUS_OPTIONS = [
@@ -34,6 +35,15 @@ export default function AdminApplicationsPage() {
   const [submittedBefore, setSubmittedBefore] = useState('')
   const [escalatedOnly, setEscalatedOnly] = useState(false)
   const [walkInOpen, setWalkInOpen] = useState(false)
+  const [courseType, setCourseType] = useState('')
+  const [department, setDepartment] = useState('')
+  const [certification, setCertification] = useState('')
+  const [eligibility, setEligibility] = useState('')
+  const { data: coursesData } = useCourses()
+  const courses = coursesData?.results ?? []
+  const courseTypes = Array.from(new Map(courses.filter((course) => course.course_type).map((course) => [course.course_type!.id, course.course_type!])).values())
+  const departments = Array.from(new Map(courses.flatMap((course) => course.departments).map((item) => [item.id, item])).values())
+  const certifications = Array.from(new Map(courses.flatMap((course) => course.certification_types).map((item) => [item.id, item])).values())
 
   const { data, isLoading } = useAdminApplications({
     status: status || undefined,
@@ -41,6 +51,10 @@ export default function AdminApplicationsPage() {
     submitted_after: submittedAfter || undefined,
     submitted_before: submittedBefore || undefined,
     escalated: escalatedOnly || undefined,
+    course_type: courseType ? Number(courseType) : undefined,
+    selected_department: department ? Number(department) : undefined,
+    certification_type: certification ? Number(certification) : undefined,
+    eligibility: eligibility as 'MEETS' | 'DOES_NOT_MEET' || undefined,
   })
   const { data: stats } = useDashboardStats()
 
@@ -89,6 +103,10 @@ export default function AdminApplicationsPage() {
             value={email}
             onChange={(e) => setEmail(e.target.value)}
           />
+          <Select label="Course type" value={courseType} onValueChange={setCourseType} options={[{ value: '', label: 'All course types' }, ...courseTypes.map((item) => ({ value: String(item.id), label: item.name }))]} />
+          <Select label="Department" value={department} onValueChange={setDepartment} options={[{ value: '', label: 'All departments' }, ...departments.map((item) => ({ value: String(item.id), label: item.name }))]} />
+          <Select label="Certification" value={certification} onValueChange={setCertification} options={[{ value: '', label: 'All certifications' }, ...certifications.map((item) => ({ value: String(item.id), label: item.name }))]} />
+          <Select label="Eligibility" value={eligibility} onValueChange={setEligibility} options={[{ value: '', label: 'All outcomes' }, { value: 'MEETS', label: 'Meets requirements' }, { value: 'DOES_NOT_MEET', label: 'Does not fully meet requirements' }]} />
           <Input
             label="Submitted after"
             type="date"
@@ -134,6 +152,7 @@ export default function AdminApplicationsPage() {
                   <th className="pb-3 text-left font-medium">Applicant</th>
                   <th className="pb-3 text-left font-medium">Course</th>
                   <th className="pb-3 text-left font-medium">Status</th>
+                  <th className="pb-3 text-left font-medium hidden xl:table-cell">Qualification</th>
                   <th className="pb-3 text-left font-medium hidden lg:table-cell">Submitted</th>
                   <th className="pb-3 text-right font-medium">Actions</th>
                 </tr>
@@ -151,6 +170,13 @@ export default function AdminApplicationsPage() {
                         )}
                       </p>
                       <p className="text-xs text-gray-500">{app.applicant_email}</p>
+                    </td>
+                    <td className="py-3 hidden xl:table-cell">
+                      {app.qualification_assessment ? (
+                        <span className={`text-xs font-medium ${app.qualification_assessment.qualifies ? 'text-green-700' : 'text-red-700'}`}>
+                          {app.qualification_assessment.total_o_level_points} pts · {app.qualification_assessment.assessment_summary}
+                        </span>
+                      ) : <span className="text-xs text-gray-400">Not assessed</span>}
                     </td>
                     <td className="py-3 text-gray-700">{app.course_name}</td>
                     <td className="py-3">

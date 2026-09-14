@@ -12,6 +12,10 @@ interface ApplicationFilters {
   submitted_before?: string
   reviewer?: string | number
   escalated?: boolean
+  course_type?: number
+  selected_department?: number
+  certification_type?: number
+  eligibility?: 'MEETS' | 'DOES_NOT_MEET'
 }
 
 type CreateApplicationPayload = FormData | Record<string, unknown>
@@ -172,6 +176,19 @@ export function useReviewAction(id: string) {
   return useMutation<Application, Error, ReviewActionData>({
     mutationFn: async (payload) => {
       const { data } = await api.post(`/admin/applications/${id}/review_action/`, payload)
+      return data
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['admin-applications'] })
+    },
+  })
+}
+
+export function useQualificationOverride(id: string) {
+  const queryClient = useQueryClient()
+  return useMutation<Application, Error, { note: string }>({
+    mutationFn: async (payload) => {
+      const { data } = await api.post(`/admin/applications/${id}/override-qualification/`, payload)
       return data
     },
     onSuccess: () => {
