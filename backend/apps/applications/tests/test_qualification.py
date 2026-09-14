@@ -1,4 +1,6 @@
 from django.test import TestCase
+from rest_framework import status
+from rest_framework.test import APITestCase
 
 from apps.accounts.models import User
 from apps.applications.models import (
@@ -8,9 +10,11 @@ from apps.applications.models import (
 )
 from apps.applications.services.qualification import assess_application, shortlist_ordering
 from apps.courses.models import (
+    CertificationType,
     Course,
     CourseCategory,
     CourseType,
+    Department,
     GradeBand,
     QualificationProfile,
     QualificationRequirement,
@@ -127,3 +131,90 @@ class QualificationAssessmentTests(TestCase):
         ranked = list(shortlist_ordering(Application.objects.filter(course=self.course)))
 
         self.assertEqual([item.applicant.last_name for item in ranked], ["Zulu", "Alpha", "Beta"])
+
+
+class QualificationApplicationApiTests(APITestCase):
+    def setUp(self):
+        self.student = User.objects.create_user(
+            email="student.qualification@example.com", password="Password123!",
+            first_name="Student", last_name="Qualification", role=User.Role.STUDENT,
+        )
+        self.reviewer = User.objects.create_user(
+            email="reviewer.qualification@example.com", password="Password123!",
+            first_name="Reviewer", last_name="Qualification", role=User.Role.REVIEWER,
+        )
+        category = CourseCategory.objects.create(name="Engineering", moodle_id=92)
+        course_type = CourseType.objects.create(
+            code="API_HEXCO", name="API HEXCO", requires_qualification_assessment=True,
+        )
+        self.department = Department.objects.create(code="API_ELEC", name="API Electrical")
+        self.certificate = CertificationType.objects.create(
+            course_type=course_type, code="API_NC", name="API National Certificate",
+        )
+        grade_b = GradeBand.objects.create(code="API_B", label="B", rank=5, points=4)
+        grade_c = GradeBand.objects.create(code="API_C", label="C", rank=4, points=3)
+        profile = QualificationProfile.objects.create(
+            code="API_PROFILE", name="API Profile", course_type=course_type,
+            max_o_level_sittings=2, minimum_total_points=8,
+        )
+        QualificationRequirement.objects.create(
+            profile=profile, education_level="O_LEVEL", subject_group=["Mathematics"],
+            minimum_grade_band=grade_b,
+        )
+        self.course = Course.objects.create(
+            moodle_course_id=902, shortname="API-QUAL", fullname="API Qualification",
+            category=category, course_type=course_type, qualification_profile=profile,
+            duration_days=5,
+        )
+        self.course.departments.add(self.department)
+        self.course.certification_types.add(self.certificate)
+        self.grade_b = grade_b
+        self.grade_c = grade_c
+
+    def application_payload(self):
+        return {
+            "course": self.course.id,
+            "motivation": "I would like to apply for this programme.",
+            "line_manager_email": "manager@example.com",
+            "selected_department_id": self.department.id,
+            "certification_type_id": self.certificate.id,
+            "academic_sittings": [{
+                "education_level": "O_LEVEL", "sitting_number": 1,
+                "exam_year": 2025, "exam_session": "NOVEMBER",
+                "results": [
+                    {"subject": "Mathematics", "grade_band_id": self.grade_b.id},
+                    {"subject": "English", "grade_band_id": self.grade_c.id},
+                    {"subject": "Physics", "grade_band_id": self.grade_b.id},
+                ],
+            }],
+        }
+
+    def test_student_submission_saves_results_and_assessment(self):
+        self.client.force_authenticate(self.student)
+
+        response = self.client.post("/api/my-applications/", self.application_payload(), format="json")
+
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED, response.data)
+        application = Application.objects.get(applicant=self.student)
+        self.assertEqual(application.selected_department, self.department)
+        self.assertEqual(application.certification_type, self.certificate)
+        self.assertEqual(application.department, self.department.code)
+        self.assertTrue(application.qualification_assessment.qualifies)
+        self.assertEqual(application.academic_sittings.count(), 1)
+
+    def test_reviewer_can_record_a_qualification_override(self):
+        application = Application.objects.create(
+            applicant=self.student, course=self.course, motivation="Apply", line_manager_email="manager@example.com",
+            department=self.department.code, selected_department=self.department,
+            certification_type=self.certificate, status="UNDER_REVIEW", reviewer=self.reviewer,
+        )
+        self.client.force_authenticate(self.reviewer)
+
+        response = self.client.post(
+            f"/api/admin/applications/{application.id}/override-qualification/",
+            {"note": "Relevant industry experience verified."},
+            format="json",
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED, response.data)
+        self.assertEqual(application.qualification_overrides.count(), 1)

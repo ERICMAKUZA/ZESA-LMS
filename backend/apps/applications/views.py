@@ -16,11 +16,13 @@ from apps.accounts.permissions import IsAdmin, IsAdminOrReviewer, IsLecturer
 from apps.enrollments.models import Enrollment
 
 from .filters import ApplicationFilter
-from .models import Application, ApplicationStatus
+from .models import Application, ApplicationQualificationOverride, ApplicationStatus
+from .services.qualification import assess_application
 from .serializers import (
     ApplicationCreateSerializer,
     ApplicationDetailSerializer,
     ApplicationListSerializer,
+    ApplicationQualificationOverrideSerializer,
     LecturerApplicationSerializer,
     ReviewActionSerializer,
 )
@@ -41,8 +43,8 @@ class StudentApplicationViewSet(viewsets.ModelViewSet):
             return Application.objects.none()
         return (
             Application.objects.filter(applicant=self.request.user)
-            .select_related("course", "reviewer")
-            .prefetch_related("documents", "history")
+            .select_related("course", "course__course_type", "course__qualification_profile", "reviewer", "qualification_assessment")
+            .prefetch_related("documents", "history", "academic_sittings__results", "qualification_overrides")
         )
 
     def get_serializer_class(self):
@@ -154,8 +156,8 @@ class AdminApplicationViewSet(viewsets.ModelViewSet):
     def get_queryset(self):
         return (
             Application.objects.all()
-            .select_related("applicant", "course", "reviewer", "enrollment", "payment")
-            .prefetch_related("documents", "history")
+            .select_related("applicant", "course", "course__course_type", "course__qualification_profile", "reviewer", "enrollment", "payment", "qualification_assessment")
+            .prefetch_related("documents", "history", "academic_sittings__results", "qualification_overrides")
         )
 
     def get_serializer_class(self):
@@ -190,6 +192,7 @@ class AdminApplicationViewSet(viewsets.ModelViewSet):
 
         try:
             if act == ReviewActionSerializer.ACTION_APPROVE:
+                assess_application(application)
                 centre_id = request.data.get('assigned_centre')
                 if centre_id:
                     from centres.models import Centre
@@ -219,6 +222,26 @@ class AdminApplicationViewSet(viewsets.ModelViewSet):
             return Response({"detail": str(exc)}, status=status.HTTP_400_BAD_REQUEST)
 
         return Response(ApplicationDetailSerializer(application, context={"request": request}).data)
+
+    @action(detail=True, methods=["post"], url_path="override-qualification")
+    def override_qualification(self, request, pk=None):
+        application = self.get_object()
+        serializer = ApplicationQualificationOverrideSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        ApplicationQualificationOverride.objects.create(
+            application=application,
+            reviewer=request.user,
+            note=serializer.validated_data.get("note", ""),
+        )
+        application._record_transition(
+            application.status,
+            changed_by=request.user,
+            notes="Qualification assessment override recorded.",
+        )
+        return Response(
+            ApplicationDetailSerializer(application, context={"request": request}).data,
+            status=status.HTTP_201_CREATED,
+        )
 
     @action(detail=True, methods=["post"], permission_classes=[IsAdmin])
     def issue_certificate(self, request, pk=None):
