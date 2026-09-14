@@ -19,6 +19,8 @@ from apps.courses.models import (
     QualificationProfile,
     QualificationRequirement,
 )
+from apps.workflows.models import Notification
+from centres.models import Centre
 
 
 class QualificationAssessmentTests(TestCase):
@@ -116,6 +118,31 @@ class QualificationAssessmentTests(TestCase):
         self.assertTrue(assessment.qualifies)
         self.assertEqual(assessment.total_o_level_points, 13)
 
+    def test_course_can_opt_out_of_its_type_assessment(self):
+        self.course.qualification_assessment_enabled = False
+        self.course.save(update_fields=["qualification_assessment_enabled"])
+        application = self.application("optout@example.com")
+
+        assessment = assess_application(application)
+
+        self.assertTrue(assessment.qualifies)
+        self.assertFalse(assessment.configuration_snapshot["assessment_required"])
+
+    def test_course_can_opt_in_and_required_subjects_affect_result(self):
+        self.course.course_type.requires_qualification_assessment = False
+        self.course.course_type.save(update_fields=["requires_qualification_assessment"])
+        self.course.qualification_assessment_enabled = True
+        self.course.required_subjects = ["Physics"]
+        self.course.save(update_fields=["qualification_assessment_enabled", "required_subjects"])
+        application = self.application("optin@example.com")
+        self.add_result(application, "Mathematics", self.grade_b)
+        self.add_result(application, "English", self.grade_b)
+
+        assessment = assess_application(application)
+
+        self.assertFalse(assessment.qualifies)
+        self.assertIn("COURSE_REQUIRED_SUBJECT:PHYSICS", assessment.failed_rule_codes)
+
     def test_shortlist_prefers_a_level_sciences_then_points_then_name(self):
         science = self.application("zulu@example.com")
         points = self.application("alpha@example.com")
@@ -202,6 +229,18 @@ class QualificationApplicationApiTests(APITestCase):
         self.assertTrue(application.qualification_assessment.qualifies)
         self.assertEqual(application.academic_sittings.count(), 1)
 
+    def test_assessed_course_cannot_be_submitted_without_o_level_results(self):
+        self.client.force_authenticate(self.student)
+        payload = self.application_payload()
+        payload.pop("academic_sittings")
+        response = self.client.post("/api/my-applications/", payload, format="json")
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED, response.data)
+
+        submit_response = self.client.post(f"/api/my-applications/{response.data['id']}/submit/")
+
+        self.assertEqual(submit_response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertEqual(Application.objects.get(pk=response.data["id"]).status, "DRAFT")
+
     def test_reviewer_can_record_a_qualification_override(self):
         application = Application.objects.create(
             applicant=self.student, course=self.course, motivation="Apply", line_manager_email="manager@example.com",
@@ -239,3 +278,81 @@ class QualificationApplicationApiTests(APITestCase):
         self.assertEqual(response.status_code, status.HTTP_200_OK, response.content)
         self.assertEqual(response["Content-Type"], "text/csv")
         self.assertEqual(response.content.decode().splitlines()[0], "Course,Surname,Name,Points")
+
+    def test_walk_in_uses_same_academic_validation_and_assessment(self):
+        self.client.force_authenticate(self.reviewer)
+        payload = self.application_payload()
+        payload.update({
+            "student_first_name": "Walk", "student_last_name": "In",
+            "student_email": "walk.in@example.com", "student_phone": "0771234567",
+            "student_category": "DIRECT",
+        })
+        response = self.client.post("/api/admin/applications/walk-in/", payload, format="json")
+
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED, response.data)
+        application = Application.objects.get(applicant__email="walk.in@example.com")
+        self.assertTrue(application.qualification_assessment.qualifies)
+        self.assertEqual(application.academic_sittings.count(), 1)
+
+    def test_walk_in_rejects_certificate_outside_course_without_creating_student(self):
+        self.client.force_authenticate(self.reviewer)
+        payload = self.application_payload()
+        payload.update({
+            "student_first_name": "Invalid", "student_last_name": "Walk",
+            "student_email": "invalid.walk@example.com", "student_phone": "0771234567",
+            "certification_type_id": 999999,
+        })
+        response = self.client.post("/api/admin/applications/walk-in/", payload, format="json")
+
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertFalse(User.objects.filter(email="invalid.walk@example.com").exists())
+
+    def test_student_can_read_active_grade_choices_but_not_change_them(self):
+        self.client.force_authenticate(self.student)
+
+        response = self.client.get("/api/courses/training/grade-bands/")
+        create_response = self.client.post(
+            "/api/courses/training/grade-bands/",
+            {"code": "STUDENT_CREATED", "label": "A+", "rank": 7, "points": 6},
+            format="json",
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(create_response.status_code, status.HTTP_403_FORBIDDEN)
+        self.assertFalse(GradeBand.objects.filter(code="STUDENT_CREATED").exists())
+
+    def test_selection_only_lists_applicable_courses_and_default_profile(self):
+        self.client.force_authenticate(self.student)
+        self.course.qualification_profile = None
+        self.course.course_type.default_qualification_profile = QualificationProfile.objects.get(code="API_PROFILE")
+        self.course.course_type.save(update_fields=["default_qualification_profile"])
+        self.course.save(update_fields=["qualification_profile"])
+        Course.objects.create(
+            moodle_course_id=903, shortname="NO-APPLICATION", fullname="No Application",
+            category=self.course.category, requires_approval=False,
+        )
+
+        response = self.client.get("/api/courses/training/selection/")
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(len(response.data), 1)
+        self.assertEqual(response.data[0]["qualification_profile_id"], self.course.course_type.default_qualification_profile_id)
+
+    def test_approval_creates_one_acceptance_bell_and_email_record_even_if_ineligible(self):
+        centre = Centre.objects.create(name="Main", location="Harare")
+        application = Application.objects.create(
+            applicant=self.student, course=self.course, motivation="Apply",
+            status="UNDER_REVIEW", reviewer=self.reviewer, assigned_centre=centre,
+        )
+        self.client.force_authenticate(self.reviewer)
+
+        response = self.client.post(
+            f"/api/admin/applications/{application.id}/review_action/",
+            {"action": "approve", "notes": "Experience verified."}, format="json",
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK, response.data)
+        self.assertEqual(Notification.objects.filter(application=application).count(), 1)
+        notification = Notification.objects.get(application=application)
+        self.assertEqual(notification.recipient, self.student)
+        self.assertEqual(notification.subject, f"Acceptance: {self.course.fullname}")

@@ -100,6 +100,15 @@ export interface EditableApplicationFields {
   guardian_contact: string
   guardian_email: string
   responsible_party: string
+  selected_department_id?: number | null
+  certification_type_id?: number | null
+  academic_sittings?: Array<{
+    education_level: 'O_LEVEL' | 'A_LEVEL'
+    sitting_number: number
+    exam_year: number
+    exam_session: string
+    results: Array<{ subject: string; grade_band_id: number }>
+  }>
 }
 
 export function useUpdateApplication(id: string) {

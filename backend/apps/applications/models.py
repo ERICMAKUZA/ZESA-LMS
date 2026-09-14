@@ -244,6 +244,13 @@ class Application(models.Model):
         allowed = (ApplicationStatus.DRAFT, ApplicationStatus.MORE_INFO_REQUESTED)
         if self.status not in allowed:
             raise ValueError(f"Cannot submit from status '{self.status}'.")
+        profile = self.course.qualification_profile or (
+            self.course.course_type.default_qualification_profile if self.course.course_type else None
+        )
+        if self.course.uses_qualification_assessment and profile and not ApplicationAcademicResult.objects.filter(
+            sitting__application=self, sitting__education_level=ApplicationAcademicSitting.O_LEVEL,
+        ).exists():
+            raise ValueError("Enter your O-Level subjects and grades before submitting this application.")
         self._record_transition(ApplicationStatus.SUBMITTED)
         self.status = ApplicationStatus.SUBMITTED
         self.submitted_at = timezone.now()
@@ -308,47 +315,70 @@ class Application(models.Model):
         self.save(update_fields=["status", "updated_at"])
 
     def enroll(self):
-        if not self.code_of_conduct_signed:
-            raise ValueError("Student must sign the code of conduct before enrolment.")
-        if self.status != ApplicationStatus.PAYMENT_CONFIRMED:
-            raise ValueError(f"Cannot enroll from status '{self.status}'.")
-        self._record_transition(ApplicationStatus.ENROLLED)
-        self.status = ApplicationStatus.ENROLLED
-        self.enrolled_at = timezone.now()
-        self.save(update_fields=["status", "enrolled_at", "updated_at"])
-        if self.applicant and not self.applicant.student_id:
-            from django.contrib.auth import get_user_model
-            User = get_user_model()
-            with transaction.atomic():
+        from apps.courses.models import CourseSchedule
+        from apps.enrollments.models import Enrollment
+        from apps.enrollments.models import EnrollmentStatus
+        from apps.enrollments.tasks import sync_to_moodle
+
+        with transaction.atomic():
+            locked = Application.objects.select_for_update().get(pk=self.pk)
+            if not locked.code_of_conduct_signed:
+                raise ValueError("Student must sign the code of conduct before enrolment.")
+            if locked.status != ApplicationStatus.PAYMENT_CONFIRMED:
+                raise ValueError(f"Cannot enroll from status '{locked.status}'.")
+
+            schedule = None
+            candidates = CourseSchedule.objects.select_for_update().filter(
+                course_id=locked.course_id, status='OPEN',
+            ).order_by('year', 'month', 'week_in_month')
+            for candidate in candidates:
+                if candidate.get_approximate_start_date() < timezone.localdate():
+                    continue
+                occupied = max(
+                    candidate.enrolled_count,
+                    Enrollment.objects.filter(schedule=candidate).exclude(
+                        status=EnrollmentStatus.UNENROLLED,
+                    ).count(),
+                )
+                if occupied >= candidate.max_capacity:
+                    continue
+                reserved = CourseSchedule.objects.filter(
+                    pk=candidate.pk, status='OPEN', enrolled_count__lte=occupied,
+                    max_capacity__gt=occupied,
+                ).update(enrolled_count=occupied + 1)
+                if reserved:
+                    schedule = candidate
+                    break
+            if schedule is None and CourseSchedule.objects.filter(course_id=locked.course_id).exists():
+                raise ValueError("No open intake with available space is scheduled for this course.")
+
+            self._record_transition(ApplicationStatus.ENROLLED)
+            self.status = ApplicationStatus.ENROLLED
+            self.enrolled_at = timezone.now()
+            self.save(update_fields=["status", "enrolled_at", "updated_at"])
+            if self.applicant and not self.applicant.student_id:
+                from django.contrib.auth import get_user_model
+                User = get_user_model()
                 self.applicant.student_id = User.generate_student_id(
                     department=self.department or ''
                 )
                 self.applicant.save(update_fields=['student_id'])
-        from apps.enrollments.models import Enrollment
-        from apps.enrollments.tasks import sync_to_moodle
 
-        # No direct FK from Application to a specific CourseSchedule intake,
-        # so resolve the soonest open one for the course (best-effort, same
-        # simplification the lecturer-schedule-assignment feature relies on).
-        schedule = self.course.schedules.filter(status='OPEN').order_by(
-            'year', 'month', 'week_in_month'
-        ).first()
-        start_date = schedule.get_approximate_start_date() if schedule else None
-        end_date = (
-            schedule.get_approximate_end_date()
-            if schedule and self.course.duration_days else None
-        )
-
-        enrollment, _ = Enrollment.objects.get_or_create(
-            application=self,
-            defaults={
-                'moodle_course_id': self.course.moodle_course_id or 0,
-                'schedule': schedule,
-                'start_date': start_date,
-                'end_date': end_date,
-            },
-        )
-        sync_to_moodle.delay(str(enrollment.pk))
+            start_date = schedule.get_approximate_start_date() if schedule else None
+            end_date = (
+                schedule.get_approximate_end_date()
+                if schedule and locked.course.duration_days else None
+            )
+            enrollment, _ = Enrollment.objects.get_or_create(
+                application=self,
+                defaults={
+                    'moodle_course_id': locked.course.moodle_course_id or 0,
+                    'schedule': schedule,
+                    'start_date': start_date,
+                    'end_date': end_date,
+                },
+            )
+            transaction.on_commit(lambda: sync_to_moodle.delay(str(enrollment.pk)))
 
 
 class ApplicationAcademicSitting(models.Model):

@@ -9,9 +9,8 @@ import Input from '@/components/ui/Input'
 import Select from '@/components/ui/Select'
 import Spinner from '@/components/ui/Spinner'
 import { useToast } from '@/components/ui/Toast'
-import api from '@/lib/api'
+import api, { fetchAllPages } from '@/lib/api'
 import type {
-  PaginatedResponse,
   CertificationType,
   Course,
   CourseCategory,
@@ -78,46 +77,43 @@ export default function CourseEditor({ course }: CourseEditorProps) {
     intakeMonth: '',
     intakeWeek: '',
     intakeCapacity: course?.max_capacity ? String(course.max_capacity) : '',
+    intakePaymentDueDate: '',
     intakeNotes: '',
     courseTypeId: course?.course_type?.id ? String(course.course_type.id) : '',
     departmentIds: course?.departments?.map((department) => String(department.id)) ?? [],
     certificationTypeIds: course?.certification_types?.map((cert) => String(cert.id)) ?? [],
     minimumPointsRequired: course?.minimum_points_required != null ? String(course.minimum_points_required) : '',
     requiredSubjects: (course?.required_subjects ?? []).join(', '),
-    qualificationProfileId: course?.qualification_profile?.id ? String(course.qualification_profile.id) : '',
+    assessmentEnabled: course?.qualification_assessment_enabled ?? course?.course_type?.requires_qualification_assessment ?? false,
+    qualificationProfileId: course?.qualification_profile?.id
+      ? String(course.qualification_profile.id)
+      : course?.course_type?.default_qualification_profile ? String(course.course_type.default_qualification_profile) : '',
   })
   const [departmentSearch, setDepartmentSearch] = useState('')
   const [certificationSearch, setCertificationSearch] = useState('')
 
-  const normalizeList = <T,>(payload: T[] | PaginatedResponse<T>): T[] => Array.isArray(payload) ? payload : payload.results
   const [assignmentError, setAssignmentError] = useState('')
   const [intakeError, setIntakeError] = useState('')
 
   const categoriesQuery = useQuery<CourseCategory[]>({
     queryKey: ['course-categories'],
-    queryFn: async () => normalizeList((await api.get('/courses/categories/')).data),
+    queryFn: () => fetchAllPages<CourseCategory>('/courses/categories/'),
   })
   const courseTypesQuery = useQuery<CourseType[]>({
     queryKey: ['course-types'],
-    queryFn: async () => normalizeList((await api.get('/courses/training/course-types/', {
-      params: { include_inactive: 'true' },
-    })).data),
+    queryFn: () => fetchAllPages<CourseType>('/courses/training/course-types/', { include_inactive: 'true' }),
   })
   const departmentsQuery = useQuery<Department[]>({
     queryKey: ['course-departments'],
-    queryFn: async () => normalizeList((await api.get('/courses/training/departments/', {
-      params: { include_inactive: 'true' },
-    })).data),
+    queryFn: () => fetchAllPages<Department>('/courses/training/departments/', { include_inactive: 'true' }),
   })
   const certTypesQuery = useQuery<CertificationType[]>({
     queryKey: ['course-cert-types'],
-    queryFn: async () => normalizeList((await api.get('/courses/training/certification-types/', {
-      params: { include_inactive: 'true' },
-    })).data),
+    queryFn: () => fetchAllPages<CertificationType>('/courses/training/certification-types/', { include_inactive: 'true' }),
   })
   const profilesQuery = useQuery<QualificationProfile[]>({
     queryKey: ['qualification-profiles'],
-    queryFn: async () => normalizeList((await api.get('/courses/training/qualification-profiles/', { params: { include_inactive: 'true' } })).data),
+    queryFn: () => fetchAllPages<QualificationProfile>('/courses/training/qualification-profiles/', { include_inactive: 'true' }),
   })
   const lecturersQuery = useQuery<User[]>({
     queryKey: ['active-lecturers'],
@@ -179,6 +175,7 @@ export default function CourseEditor({ course }: CourseEditorProps) {
           ? null
           : Number(form.minimumPointsRequired),
         required_subjects: parseSubjects(form.requiredSubjects),
+        qualification_assessment_enabled: form.assessmentEnabled,
         qualification_profile_id: form.qualificationProfileId ? Number(form.qualificationProfileId) : null,
         lecturer_ids: lecturerIds,
         ...(!course && {
@@ -187,6 +184,7 @@ export default function CourseEditor({ course }: CourseEditorProps) {
             month: Number(form.intakeMonth),
             week_in_month: Number(form.intakeWeek),
             max_capacity: Number(form.intakeCapacity || form.maxCapacity),
+            payment_due_date: form.intakePaymentDueDate || null,
             notes: form.intakeNotes.trim(),
           },
         }),
@@ -222,15 +220,16 @@ export default function CourseEditor({ course }: CourseEditorProps) {
   }
 
   const setCourseType = (value: string) => {
+    const nextType = courseTypes.find((item) => String(item.id) === value)
     setForm((current) => ({
       ...current,
       courseTypeId: value,
+      assessmentEnabled: nextType?.requires_qualification_assessment ?? false,
       certificationTypeIds: [],
-      qualificationProfileId: '',
+      qualificationProfileId: nextType?.default_qualification_profile ? String(nextType.default_qualification_profile) : '',
     }))
   }
 
-  const selectedCourseType = courseTypes.find((item) => item.id === selectedCourseTypeId)
   const availableProfiles = profiles.filter((profile) => profile.is_active && (!profile.course_type || profile.course_type === selectedCourseTypeId))
 
   const toggleDepartment = (departmentId: number) => {
@@ -275,6 +274,11 @@ export default function CourseEditor({ course }: CourseEditorProps) {
 
     if (lecturerIds.length === 0) {
       setAssignmentError('Assign at least one lecturer before saving this course.')
+      return
+    }
+
+    if (form.assessmentEnabled && !form.qualificationProfileId) {
+      setAssignmentError('Choose a qualification profile for courses that assess academic results.')
       return
     }
 
@@ -328,8 +332,12 @@ export default function CourseEditor({ course }: CourseEditorProps) {
             <Input label="Duration (days)" type="number" min="1" value={form.durationDays} onChange={(event) => setField('durationDays', event.target.value)} />
             <Input label="Fee (USD)" type="number" min="0" step="0.01" value={form.price} onChange={(event) => setField('price', event.target.value)} />
             <Input label="Maximum class size" type="number" min="1" value={form.maxCapacity} onChange={(event) => setField('maxCapacity', event.target.value)} />
-            <Input label="Minimum points to qualify" type="number" min="0" value={form.minimumPointsRequired} onChange={(event) => setField('minimumPointsRequired', event.target.value)} />
-            {selectedCourseType?.requires_qualification_assessment && (
+            <Input label="Minimum points to qualify" type="number" min="0" disabled={!form.assessmentEnabled} value={form.minimumPointsRequired} onChange={(event) => setField('minimumPointsRequired', event.target.value)} helper={!form.assessmentEnabled ? 'Enable assessment to apply a points threshold.' : undefined} />
+            <label className="flex items-center gap-2 text-sm font-medium text-gray-700">
+              <input type="checkbox" checked={form.assessmentEnabled} onChange={(event) => setField('assessmentEnabled', event.target.checked)} className="h-4 w-4 rounded border-gray-300 text-primary focus:ring-primary" />
+              Assess points and required subjects for this course
+            </label>
+            {form.assessmentEnabled && (
               <Select
                 label="Qualification profile *"
                 value={form.qualificationProfileId}
@@ -345,6 +353,7 @@ export default function CourseEditor({ course }: CourseEditorProps) {
                 id="required-subjects"
                 rows={3}
                 value={form.requiredSubjects}
+                disabled={!form.assessmentEnabled}
                 onChange={(event) => setField('requiredSubjects', event.target.value)}
                 className="rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
                 placeholder="Maths, English, Physics"
@@ -452,6 +461,7 @@ export default function CourseEditor({ course }: CourseEditorProps) {
             <Select label="Month *" value={form.intakeMonth} onValueChange={(value) => setField('intakeMonth', value)} options={months} placeholder="Select month" />
             <Select label="Week *" value={form.intakeWeek} onValueChange={(value) => setField('intakeWeek', value)} options={weeks} placeholder="Select week" />
             <Input label="Intake capacity *" type="number" min="1" value={form.intakeCapacity} onChange={(event) => setField('intakeCapacity', event.target.value)} helper="Defaults to the course capacity if left blank." />
+            <Input label="Fee payment deadline" type="date" value={form.intakePaymentDueDate} onChange={(event) => setField('intakePaymentDueDate', event.target.value)} helper="Optional. If blank, acceptance messages use the intake start date." />
             <div className="md:col-span-2 lg:col-span-4 flex flex-col gap-1">
               <label htmlFor="intake-notes" className="text-sm font-medium text-gray-700">Intake notes</label>
               <textarea

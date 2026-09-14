@@ -32,6 +32,7 @@ const lecturerNav = [
 
 const trainerNav = [
   { href: '/admin/courses', label: 'Courses', icon: BookOpen },
+  { href: '/admin/training', label: 'Training Calendar', icon: CalendarDays },
   { href: '/admin/settings', label: 'Settings', icon: Settings },
 ]
 
@@ -78,7 +79,7 @@ function AdminContent({ children }: { children: ReactNode }) {
     : isTrainer
       ? trainerNav
       : canManageTrainingConfiguration
-        ? [...nav, { href: '/admin/settings', label: 'Settings', icon: Settings }]
+        ? [...nav, { href: '/admin/training', label: 'Training Calendar', icon: CalendarDays }, { href: '/admin/settings', label: 'Settings', icon: Settings }]
         : nav
 
   return (

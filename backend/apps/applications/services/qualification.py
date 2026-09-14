@@ -40,9 +40,8 @@ def _profile_for(course):
 def assess_application(application):
     """Persist the current, fully auditable eligibility result for an application."""
     course = application.course
-    course_type = course.course_type
     profile = _profile_for(course)
-    requires_assessment = bool(course_type and course_type.requires_qualification_assessment)
+    requires_assessment = course.uses_qualification_assessment
 
     if not requires_assessment:
         return ApplicationQualificationAssessment.objects.update_or_create(
@@ -95,6 +94,11 @@ def assess_application(application):
         if not matches or max(result.rank_snapshot or 0 for result in matches) < requirement.minimum_grade_band.rank:
             failed_rule_codes.append(f"REQUIRED_SUBJECT:{normalise_subject(requirement.subject_group[0])}")
 
+    all_subjects = set(best_o_level) | set(_best_results(a_level_results))
+    for subject in course.required_subjects or []:
+        if normalise_subject(subject) not in all_subjects:
+            failed_rule_codes.append(f"COURSE_REQUIRED_SUBJECT:{normalise_subject(subject)}")
+
     total_points = sum(result.points_snapshot or 0 for result in best_o_level.values())
     minimum_points = (
         course.minimum_points_required
@@ -126,6 +130,7 @@ def assess_application(application):
             }
             for requirement in requirements
         ],
+        "course_required_subjects": course.required_subjects or [],
     }
     qualifies = not failed_rule_codes
     return ApplicationQualificationAssessment.objects.update_or_create(

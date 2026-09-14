@@ -4,6 +4,7 @@ from rest_framework import serializers
 from apps.accounts.models import User
 
 from .models import (
+    AcademicCalendarEvent,
     CertificationType,
     Course,
     CourseCategory,
@@ -14,6 +15,79 @@ from .models import (
     QualificationProfile,
     QualificationRequirement,
 )
+
+
+def _validate_payment_due_date(value, year, month, week_in_month):
+    if value and value > CourseSchedule(
+        year=year, month=month, week_in_month=week_in_month
+    ).get_approximate_start_date():
+        raise serializers.ValidationError({
+            "payment_due_date": "Payment is due no later than the intake start date."
+        })
+
+
+class AcademicCalendarEventSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = AcademicCalendarEvent
+        fields = (
+            "id", "event_type", "title", "start_date", "end_date", "audience",
+            "course", "schedule", "timetable_url", "published_by", "published_at",
+        )
+        read_only_fields = ("id", "published_by", "published_at")
+
+    def validate(self, attrs):
+        event_type = attrs["event_type"]
+        start_date = attrs["start_date"]
+        end_date = attrs.get("end_date")
+        ranged_types = {
+            AcademicCalendarEvent.EventType.EXAMINATION,
+            AcademicCalendarEvent.EventType.SEMESTER_START,
+            AcademicCalendarEvent.EventType.SEMESTER_END,
+            AcademicCalendarEvent.EventType.BLOCK_START,
+            AcademicCalendarEvent.EventType.BLOCK_END,
+            AcademicCalendarEvent.EventType.SEMESTER_BREAK,
+        }
+        if event_type in ranged_types and not end_date:
+            raise serializers.ValidationError({"end_date": "An end date is required for this event."})
+        if end_date and end_date < start_date:
+            raise serializers.ValidationError({"end_date": "End date cannot precede start date."})
+        if event_type == AcademicCalendarEvent.EventType.EXAMINATION and not attrs.get("timetable_url"):
+            raise serializers.ValidationError({"timetable_url": "A timetable URL is required for examinations."})
+
+        schedule = attrs.get("schedule")
+        course = attrs.get("course")
+        if event_type == AcademicCalendarEvent.EventType.COMMENCEMENT:
+            missing = {}
+            if not course:
+                missing["course"] = "Select a course for commencement."
+            if not schedule:
+                missing["schedule"] = "Select an intake for commencement."
+            if missing:
+                raise serializers.ValidationError(missing)
+        if event_type == AcademicCalendarEvent.EventType.DEFERMENT:
+            if not course:
+                raise serializers.ValidationError({"course": "Select the postponed course."})
+            if end_date and end_date <= start_date:
+                raise serializers.ValidationError({"end_date": "The new date must be after the original date."})
+        if schedule and course and schedule.course_id != course.id:
+            raise serializers.ValidationError({"schedule": "The intake must belong to the selected course."})
+        if schedule and not course:
+            attrs["course"] = schedule.course
+
+        defaults = {
+            AcademicCalendarEvent.EventType.EXAMINATION: AcademicCalendarEvent.Audience.BOTH,
+            AcademicCalendarEvent.EventType.MARKS_DEADLINE: AcademicCalendarEvent.Audience.BOTH,
+        }
+        audience = attrs.get("audience", defaults.get(event_type, AcademicCalendarEvent.Audience.STUDENTS))
+        if event_type == AcademicCalendarEvent.EventType.MARKS_DEADLINE and audience != AcademicCalendarEvent.Audience.BOTH:
+            raise serializers.ValidationError({"audience": "Marks deadlines must reach students and lecturers."})
+        if event_type in (
+            AcademicCalendarEvent.EventType.EXAM_FEE,
+            AcademicCalendarEvent.EventType.COMMENCEMENT,
+        ) and audience != AcademicCalendarEvent.Audience.STUDENTS:
+            raise serializers.ValidationError({"audience": "This notice is for students."})
+        attrs["audience"] = audience
+        return attrs
 
 
 class CourseCategorySerializer(serializers.ModelSerializer):
@@ -61,6 +135,15 @@ class CourseScheduleSerializer(serializers.ModelSerializer):
     def get_approximate_end_date(self, obj):
         return obj.get_approximate_end_date().isoformat()
 
+    def validate(self, attrs):
+        year = attrs.get("year", getattr(self.instance, "year", None))
+        month = attrs.get("month", getattr(self.instance, "month", None))
+        week = attrs.get("week_in_month", getattr(self.instance, "week_in_month", None))
+        due_date = attrs.get("payment_due_date", getattr(self.instance, "payment_due_date", None))
+        if year and month and week:
+            _validate_payment_due_date(due_date, year, month, week)
+        return attrs
+
     class Meta:
         model = CourseSchedule
         fields = [
@@ -68,7 +151,7 @@ class CourseScheduleSerializer(serializers.ModelSerializer):
             'course_price', 'course_duration_days',
             'year', 'month', 'month_display', 'week_in_month',
             'max_capacity', 'enrolled_count', 'places_remaining',
-            'status', 'approximate_start_date', 'approximate_end_date', 'notes',
+            'status', 'payment_due_date', 'approximate_start_date', 'approximate_end_date', 'notes',
             'lecturer', 'lecturer_name',
         ]
 
@@ -141,7 +224,14 @@ class InitialScheduleSerializer(serializers.Serializer):
     month = serializers.IntegerField(min_value=1, max_value=12)
     week_in_month = serializers.IntegerField(min_value=1, max_value=4)
     max_capacity = serializers.IntegerField(min_value=1)
+    payment_due_date = serializers.DateField(required=False, allow_null=True)
     notes = serializers.CharField(required=False, allow_blank=True, default="")
+
+    def validate(self, attrs):
+        _validate_payment_due_date(
+            attrs.get("payment_due_date"), attrs["year"], attrs["month"], attrs["week_in_month"]
+        )
+        return attrs
 
 
 class CourseSerializer(serializers.ModelSerializer):
@@ -285,6 +375,11 @@ class CourseSerializer(serializers.ModelSerializer):
         qualification_profile = attrs.get("qualification_profile") if profile_supplied else getattr(
             self.instance, "qualification_profile", None
         )
+        if not profile_supplied and not qualification_profile and course_type:
+            default_profile = course_type.default_qualification_profile
+            if default_profile and default_profile.is_active:
+                qualification_profile = default_profile
+                attrs["qualification_profile"] = default_profile
         existing_profile_id = getattr(self.instance, "qualification_profile_id", None)
         if (
             qualification_profile
@@ -302,9 +397,15 @@ class CourseSerializer(serializers.ModelSerializer):
             raise serializers.ValidationError(
                 {"qualification_profile_id": "The qualification profile must match the selected course type."}
             )
-        if course_type and course_type.requires_qualification_assessment and not qualification_profile:
+        override = attrs.get("qualification_assessment_enabled") if "qualification_assessment_enabled" in attrs else getattr(
+            self.instance, "qualification_assessment_enabled", None
+        )
+        assessment_enabled = override if override is not None else bool(
+            course_type and course_type.requires_qualification_assessment
+        )
+        if assessment_enabled and not qualification_profile:
             raise serializers.ValidationError(
-                {"qualification_profile_id": "Select a qualification profile for this course type."}
+                {"qualification_profile_id": "Select a qualification profile when assessment is enabled."}
             )
 
         if self.instance is None:
@@ -360,6 +461,7 @@ class CourseSerializer(serializers.ModelSerializer):
             "course_type", "course_type_id", "departments", "department_ids",
             "certification_types", "certification_type_ids",
             "minimum_points_required", "required_subjects",
+            "qualification_assessment_enabled",
             "qualification_profile", "qualification_profile_id",
             "enrolled_count", "max_capacity",
             "is_active", "requires_approval", "price", "thumbnail_url",

@@ -210,6 +210,12 @@ class Course(models.Model):
         on_delete=models.SET_NULL,
         related_name="courses",
     )
+    qualification_assessment_enabled = models.BooleanField(
+        null=True,
+        blank=True,
+        default=None,
+        help_text="Override the course type's qualification-assessment setting for this course.",
+    )
     category = models.ForeignKey(
         CourseCategory,
         null=True,
@@ -244,6 +250,12 @@ class Course(models.Model):
     @property
     def is_full(self):
         return self.max_capacity is not None and self.enrolled_count >= self.max_capacity
+
+    @property
+    def uses_qualification_assessment(self):
+        if self.qualification_assessment_enabled is not None:
+            return self.qualification_assessment_enabled
+        return bool(self.course_type and self.course_type.requires_qualification_assessment)
 
     def clean(self):
         super().clean()
@@ -297,6 +309,7 @@ class CourseSchedule(models.Model):
     )
     enrolled_count = models.PositiveIntegerField(default=0)
     status = models.CharField(max_length=12, choices=STATUS_CHOICES, default='OPEN')
+    payment_due_date = models.DateField(null=True, blank=True)
     notes = models.TextField(blank=True, default='')
     lecturer = models.ForeignKey(
         settings.AUTH_USER_MODEL,
@@ -337,6 +350,51 @@ class CourseSchedule(models.Model):
         import datetime
         start = self.get_approximate_start_date()
         return start + datetime.timedelta(days=self.course.duration_days - 1)
+
+
+class AcademicCalendarEvent(models.Model):
+    class EventType(models.TextChoices):
+        COMMENCEMENT = "COMMENCEMENT", "Commencement"
+        DEFERMENT = "DEFERMENT", "Deferment"
+        EXAMINATION = "EXAMINATION", "Examination"
+        SEMESTER_START = "SEMESTER_START", "Semester start"
+        SEMESTER_END = "SEMESTER_END", "Semester end"
+        BLOCK_START = "BLOCK_START", "Block start"
+        BLOCK_END = "BLOCK_END", "Block end"
+        SEMESTER_BREAK = "SEMESTER_BREAK", "Semester break"
+        EXAM_FEE = "EXAM_FEE", "Examination fee"
+        MARKS_DEADLINE = "MARKS_DEADLINE", "Marks deadline"
+
+    class Audience(models.TextChoices):
+        STUDENTS = "STUDENTS", "Students"
+        LECTURERS = "LECTURERS", "Lecturers"
+        BOTH = "BOTH", "Students and lecturers"
+
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    event_type = models.CharField(max_length=20, choices=EventType.choices)
+    title = models.CharField(max_length=255)
+    start_date = models.DateField()
+    end_date = models.DateField(null=True, blank=True)
+    audience = models.CharField(max_length=12, choices=Audience.choices, default=Audience.STUDENTS)
+    course = models.ForeignKey(
+        "Course", null=True, blank=True, on_delete=models.SET_NULL, related_name="calendar_events"
+    )
+    schedule = models.ForeignKey(
+        "CourseSchedule", null=True, blank=True, on_delete=models.SET_NULL,
+        related_name="calendar_events",
+    )
+    timetable_url = models.URLField(max_length=500, blank=True)
+    published_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL, null=True, on_delete=models.SET_NULL,
+        related_name="published_calendar_events",
+    )
+    published_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ["-published_at"]
+
+    def __str__(self):
+        return f"{self.title} ({self.get_event_type_display()})"
 
 
 class Enquiry(models.Model):

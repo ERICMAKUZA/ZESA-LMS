@@ -57,7 +57,7 @@ class AcademicSittingInputSerializer(serializers.Serializer):
 
 
 class ApplicationAcademicResultSerializer(serializers.ModelSerializer):
-    grade_band_id = serializers.IntegerField(source="grade_band_id", read_only=True)
+    grade_band_id = serializers.IntegerField(read_only=True)
 
     class Meta:
         model = ApplicationAcademicResult
@@ -135,7 +135,10 @@ class ApplicationCreateSerializer(serializers.ModelSerializer):
         # applicant is a HiddenField, so on a partial update where it isn't
         # in the payload DRF skips it entirely rather than applying its
         # CurrentUserDefault — fall back to the existing instance's owner.
-        applicant = attrs.get("applicant") or (self.instance.applicant if self.instance else None)
+        applicant = self.context.get("application_applicant") or attrs.get("applicant") or (
+            self.instance.applicant if self.instance else None
+        )
+        attrs["applicant"] = applicant
         conflict = (
             Application.objects.filter(applicant=applicant, course=course)
             .exclude(status=ApplicationStatus.REJECTED)
@@ -185,7 +188,7 @@ class ApplicationCreateSerializer(serializers.ModelSerializer):
 
         sittings = attrs.get("academic_sittings")
         profile = course.qualification_profile or getattr(course.course_type, "default_qualification_profile", None)
-        if sittings is not None and profile:
+        if sittings is not None and course.uses_qualification_assessment and profile:
             o_level_sittings = [item for item in sittings if item["education_level"] == "O_LEVEL"]
             sitting_keys = {(item["education_level"], item["sitting_number"]) for item in sittings}
             if len(sitting_keys) != len(sittings):

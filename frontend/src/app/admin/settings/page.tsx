@@ -9,28 +9,20 @@ import Card from '@/components/ui/Card'
 import Input from '@/components/ui/Input'
 import PageHeader from '@/components/ui/PageHeader'
 import Spinner from '@/components/ui/Spinner'
-import api from '@/lib/api'
+import QualificationSettings from '@/components/admin/QualificationSettings'
+import api, { fetchAllPages } from '@/lib/api'
 import { useToast } from '@/components/ui/Toast'
-import type { CertificationType, CourseType, Department, PaginatedResponse } from '@/types'
+import type { CertificationType, CourseType, Department } from '@/types'
 
 function matchesSearch(text: string, search: string) {
   if (!search.trim()) return true
   return text.toLowerCase().includes(search.toLowerCase())
 }
 
-function normalizeList<T>(payload: T[] | PaginatedResponse<T>): T[] {
-  return Array.isArray(payload) ? payload : payload.results
-}
-
 function useTrainingConfig<T>(path: string) {
   return useQuery<T[]>({
     queryKey: ['training-config', path],
-    queryFn: async () => {
-      const { data } = await api.get(`/courses/training/${path}/`, {
-        params: { include_inactive: 'true' },
-      })
-      return normalizeList(data)
-    },
+    queryFn: () => fetchAllPages<T>(`/courses/training/${path}/`, { include_inactive: 'true' }),
   })
 }
 
@@ -352,6 +344,7 @@ export default function AdminSettingsPage() {
           ))}
         </div>
       </Card>
+      <QualificationSettings courseTypes={courseTypes} courseTypesError={courseTypesQuery.error} />
     </AdminLayout>
   )
 }

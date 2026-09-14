@@ -2,6 +2,7 @@ from django.urls import include, path
 from rest_framework.routers import DefaultRouter
 
 from .views import (
+    AcademicCalendarEventView,
     AdminCourseViewSet, CertificationTypeViewSet, CourseCategoryListView,
     CourseDetailView, CourseListView, CourseTypeViewSet, DepartmentViewSet,
     GradeBandViewSet, QualificationProfileViewSet, QualificationRequirementViewSet,
@@ -24,12 +25,13 @@ urlpatterns = [
     # Explicit paths must come before "<int:pk>/" to avoid pk-collision
     path("lecturer/schedules/", lecturer_schedule_list, name="lecturer-schedule-list"),
     path("categories/", CourseCategoryListView.as_view(), name="course-category-list"),
+    path("calendar-events/", AcademicCalendarEventView.as_view(), name="calendar-event-list-create"),
     path("training/selection/", training_selection, name="course-training-selection"),
     path("sync/", MoodleSyncView.as_view(), name="course-moodle-sync"),
     path("schedule/", schedule_list, name="schedule-list"),
     path("enquiries/", submit_enquiry, name="submit-enquiry"),
     path("training/", include(training_router.urls)),
-    path("", include(router.urls)),
     path("", CourseListView.as_view(), name="course-list"),
+    path("", include(router.urls)),
     path("<int:pk>/", CourseDetailView.as_view(), name="course-detail"),
 ]

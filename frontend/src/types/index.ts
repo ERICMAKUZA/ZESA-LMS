@@ -142,6 +142,7 @@ export interface Course {
   certification_types: CertificationType[]
   minimum_points_required: number | null
   required_subjects: string[]
+  qualification_assessment_enabled: boolean | null
   enrolled_count: number
   max_capacity: number | null
   price: string | null

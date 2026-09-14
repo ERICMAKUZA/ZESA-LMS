@@ -18,6 +18,7 @@ from apps.courses.models import (
 )
 from apps.enrollments.models import Enrollment
 from apps.enrollments.tasks import _notify_lecturer_enrolled
+from apps.courses.serializers import CourseScheduleSerializer
 
 
 class CourseManagementTests(APITestCase):
@@ -53,6 +54,20 @@ class CourseManagementTests(APITestCase):
         self.category = CourseCategory.objects.create(name="Electrical", moodle_id=11)
         self.course_type = CourseType.objects.create(code="STANDARD", name="Standard")
         self.client.force_authenticate(self.admin)
+
+    def test_course_catalogue_is_public(self):
+        course = Course.objects.create(
+            moodle_course_id=81001,
+            shortname="PUBLIC-COURSE",
+            fullname="Public Course",
+            category=self.category,
+        )
+        self.client.force_authenticate(user=None)
+
+        response = self.client.get("/api/courses/")
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertIn(course.id, [item["id"] for item in response.data["results"]])
 
     def test_trainer_can_create_training_taxonomy(self):
         self.client.force_authenticate(self.trainer)
@@ -92,6 +107,104 @@ class CourseManagementTests(APITestCase):
         )
 
         self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+
+    @patch("apps.courses.services.MoodleClient.create_course", create=True)
+    def test_new_course_uses_active_default_qualification_profile(self, create_course):
+        create_course.return_value = {"id": 8871}
+        self.course_type.requires_qualification_assessment = True
+        profile = QualificationProfile.objects.create(
+            code="DEFAULT_STANDARD", name="Default Standard", course_type=self.course_type,
+        )
+        self.course_type.default_qualification_profile = profile
+        self.course_type.save(update_fields=[
+            "requires_qualification_assessment", "default_qualification_profile",
+        ])
+
+        response = self.client.post("/api/courses/admin/", {
+            "shortname": "DEFAULT-101", "fullname": "Default Profile Course",
+            "category_id": self.category.id, "course_type_id": self.course_type.id,
+            "duration_days": 5, "lecturer_ids": [self.lecturer_one.id],
+            "initial_schedule": {
+                "year": 2026, "month": 11, "week_in_month": 1, "max_capacity": 20,
+            },
+        }, format="json")
+
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        course = Course.objects.get(moodle_course_id=8871)
+        self.assertEqual(course.qualification_profile, profile)
+        self.assertEqual(response.data["qualification_profile"]["id"], profile.id)
+
+    @patch("apps.courses.services.MoodleClient.create_course", create=True)
+    def test_standard_course_can_enable_qualification_assessment_independently(self, create_course):
+        create_course.return_value = {"id": 8890}
+        profile = QualificationProfile.objects.create(
+            code="COURSE_OPT_IN", name="Course opt-in profile", course_type=self.course_type,
+        )
+
+        response = self.client.post("/api/courses/admin/", {
+            "shortname": "OPT-IN-101", "fullname": "Opt-in course",
+            "category_id": self.category.id, "course_type_id": self.course_type.id,
+            "duration_days": 5, "lecturer_ids": [self.lecturer_one.id],
+            "qualification_assessment_enabled": True,
+            "qualification_profile_id": profile.id,
+            "initial_schedule": {
+                "year": 2026, "month": 11, "week_in_month": 1, "max_capacity": 20,
+            },
+        }, format="json")
+
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED, response.data)
+        course = Course.objects.get(moodle_course_id=8890)
+        self.assertTrue(course.uses_qualification_assessment)
+        self.assertTrue(response.data["qualification_assessment_enabled"])
+
+    @patch("apps.courses.services.MoodleClient.create_course", create=True)
+    def test_initial_schedule_saves_payment_due_date(self, create_course):
+        create_course.return_value = {"id": 8872}
+        response = self.client.post("/api/courses/admin/", {
+            "shortname": "DUE-101", "fullname": "Payment Due Course",
+            "category_id": self.category.id, "course_type_id": self.course_type.id,
+            "duration_days": 5, "lecturer_ids": [self.lecturer_one.id],
+            "initial_schedule": {
+                "year": 2026, "month": 11, "week_in_month": 1, "max_capacity": 20,
+                "payment_due_date": "2026-11-01",
+            },
+        }, format="json")
+
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        schedule = Course.objects.get(moodle_course_id=8872).schedules.get()
+        self.assertEqual(schedule.payment_due_date.isoformat(), "2026-11-01")
+        self.assertEqual(CourseScheduleSerializer(schedule).data["payment_due_date"], "2026-11-01")
+
+    @patch("apps.courses.services.MoodleClient.create_course", create=True)
+    def test_initial_schedule_rejects_payment_due_after_start(self, create_course):
+        create_course.return_value = {"id": 8873}
+        response = self.client.post("/api/courses/admin/", {
+            "shortname": "DUE-102", "fullname": "Invalid Payment Due Course",
+            "category_id": self.category.id, "course_type_id": self.course_type.id,
+            "duration_days": 5, "lecturer_ids": [self.lecturer_one.id],
+            "initial_schedule": {
+                "year": 2026, "month": 11, "week_in_month": 1, "max_capacity": 20,
+                "payment_due_date": "2026-11-03",
+            },
+        }, format="json")
+
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertIn("payment_due_date", response.data["initial_schedule"])
+        create_course.assert_not_called()
+
+    def test_schedule_serializer_rejects_due_date_after_start(self):
+        course = Course.objects.create(
+            moodle_course_id=8874, shortname="DUE-103", fullname="Schedule Due Course",
+        )
+        schedule = CourseSchedule.objects.create(
+            course=course, year=2026, month=11, week_in_month=1,
+        )
+        serializer = CourseScheduleSerializer(
+            schedule, data={"payment_due_date": "2026-11-03"}, partial=True,
+        )
+
+        self.assertFalse(serializer.is_valid())
+        self.assertIn("payment_due_date", serializer.errors)
 
     @patch("apps.courses.services.MoodleClient.create_course", create=True)
     def test_trainer_can_list_lecturers_and_create_a_course(self, create_course):

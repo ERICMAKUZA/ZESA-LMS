@@ -76,10 +76,19 @@ function CoursesContent() {
 
   const { data: courses = [], isLoading } = useQuery<Course[]>({
     queryKey: ['courses', selectedCategory],
-    queryFn: () =>
-      publicApi.get('/courses/', {
+    queryFn: async () => {
+      const first = await publicApi.get('/courses/', {
         params: selectedCategory ? { category: selectedCategory } : {},
-      }).then(r => r.data.results ?? r.data),
+      })
+      const courses: Course[] = first.data.results ?? first.data
+      let next: string | null = first.data.next ?? null
+      while (next) {
+        const page = await publicApi.get(next)
+        courses.push(...page.data.results)
+        next = page.data.next ?? null
+      }
+      return courses
+    },
   })
 
   const { data: monthData } = useQuery<ScheduleMonthGroup[]>({
@@ -90,7 +99,7 @@ function CoursesContent() {
   })
 
   const filteredCourses = search
-    ? courses.filter(c => c.fullname.toLowerCase().includes(search.toLowerCase()))
+    ? courses.filter(c => `${c.fullname} ${c.shortname}`.toLowerCase().includes(search.toLowerCase()))
     : courses
 
   const selectedCategoryName = categories.find(c => String(c.id) === selectedCategory)?.name

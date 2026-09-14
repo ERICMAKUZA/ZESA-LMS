@@ -91,3 +91,24 @@ class Enrollment(models.Model):
             f"{self.application.applicant.email} → "
             f"{self.application.course.shortname} ({self.status})"
         )
+
+
+class EnrollmentAttendanceResponse(models.Model):
+    class Response(models.TextChoices):
+        CONFIRMED = "CONFIRMED", "Confirmed"
+        DEFERRED = "DEFERRED", "Deferred"
+        PENDING_STAFF = "PENDING_STAFF", "Pending staff review"
+
+    enrollment = models.OneToOneField(
+        Enrollment, on_delete=models.CASCADE, related_name="attendance_response",
+    )
+    response = models.CharField(max_length=20, choices=Response.choices)
+    responded_at = models.DateTimeField(default=timezone.now)
+    target_schedule = models.ForeignKey(
+        "courses.CourseSchedule", null=True, blank=True,
+        on_delete=models.SET_NULL, related_name="attendance_deferrals",
+    )
+    audit_note = models.TextField(blank=True, default="")
+
+    def __str__(self):
+        return f"{self.enrollment_id}: {self.response}"

@@ -18,6 +18,7 @@ from apps.accounts.permissions import (
 )
 
 from .models import (
+    AcademicCalendarEvent,
     CertificationType,
     Course,
     CourseCategory,
@@ -30,6 +31,7 @@ from .models import (
     Enquiry,
 )
 from .serializers import (
+    AcademicCalendarEventSerializer,
     CertificationTypeSerializer,
     CourseCategoryWithCountSerializer,
     CourseScheduleSerializer,
@@ -45,6 +47,23 @@ from .services import MoodleClient
 from .tasks import sync_courses_from_moodle
 
 logger = logging.getLogger(__name__)
+
+
+class AcademicCalendarEventView(generics.ListCreateAPIView):
+    queryset = AcademicCalendarEvent.objects.select_related(
+        "course", "schedule", "published_by"
+    )
+    serializer_class = AcademicCalendarEventSerializer
+    permission_classes = [CanManageTraining]
+    filterset_fields = ["event_type", "course", "audience"]
+    ordering_fields = ["start_date", "published_at"]
+
+    def perform_create(self, serializer):
+        from apps.workflows.services import publish_calendar_event
+
+        with transaction.atomic():
+            event = serializer.save(published_by=self.request.user)
+            publish_calendar_event(event)
 
 
 class CourseCategoryListView(generics.ListAPIView):
@@ -209,9 +228,15 @@ class GradeBandViewSet(TrainingConfigurationViewSet):
     serializer_class = GradeBandSerializer
     permission_classes = [CanManageTrainingConfiguration]
 
+    def get_permissions(self):
+        if self.request.method in permissions.SAFE_METHODS:
+            return [permissions.IsAuthenticated()]
+        return super().get_permissions()
+
     def get_queryset(self):
         queryset = super().get_queryset()
-        if self.request.query_params.get("include_inactive") != "true":
+        can_manage = CanManageTrainingConfiguration().has_permission(self.request, self)
+        if self.request.query_params.get("include_inactive") != "true" or not can_manage:
             queryset = queryset.filter(is_active=True)
         return queryset
 
@@ -247,7 +272,7 @@ def training_selection(request):
     department_id = request.query_params.get("department")
     course_type_id = request.query_params.get("course_type")
 
-    courses = Course.objects.filter(is_active=True)
+    courses = Course.objects.filter(is_active=True, requires_approval=True)
 
     if department_id:
         courses = courses.filter(
@@ -257,7 +282,10 @@ def training_selection(request):
         courses = courses.filter(course_type_id=course_type_id)
 
     payload = []
-    for course in courses.select_related("course_type", "qualification_profile").prefetch_related("departments", "certification_types"):
+    for course in courses.select_related("course_type", "course_type__default_qualification_profile", "qualification_profile").prefetch_related("departments", "certification_types"):
+        profile = course.qualification_profile or (
+            course.course_type.default_qualification_profile if course.course_type else None
+        )
         departments = [
             {
                 "id": department.id,
@@ -283,16 +311,17 @@ def training_selection(request):
                 "id": course.course_type.id,
                 "code": course.course_type.code,
                 "name": course.course_type.name,
+                "requires_qualification_assessment": course.course_type.requires_qualification_assessment,
             } if course.course_type else None,
             "departments": departments,
             "department_ids": [department["id"] for department in departments],
             "certification_types": cert_types,
             "minimum_points_required": course.minimum_points_required,
             "required_subjects": course.required_subjects or [],
-            "qualification_profile_id": course.qualification_profile_id,
+            "qualification_assessment_enabled": course.uses_qualification_assessment,
+            "qualification_profile_id": profile.id if profile and course.uses_qualification_assessment else None,
             "max_o_level_sittings": (
-                course.qualification_profile.max_o_level_sittings
-                if course.qualification_profile else None
+                profile.max_o_level_sittings if profile and course.uses_qualification_assessment else None
             ),
         })
 
