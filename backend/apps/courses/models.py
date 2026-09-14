@@ -37,6 +37,14 @@ class CourseType(models.Model):
     code = models.CharField(max_length=50, unique=True)
     name = models.CharField(max_length=255, unique=True)
     description = models.TextField(blank=True)
+    requires_qualification_assessment = models.BooleanField(default=False)
+    default_qualification_profile = models.ForeignKey(
+        "QualificationProfile",
+        null=True,
+        blank=True,
+        on_delete=models.SET_NULL,
+        related_name="default_for_course_types",
+    )
     is_active = models.BooleanField(default=True)
 
     class Meta:
@@ -67,6 +75,85 @@ class CertificationType(models.Model):
 
     def __str__(self):
         return f"{self.code} — {self.name}"
+
+
+class GradeBand(models.Model):
+    code = models.CharField(max_length=20, unique=True)
+    label = models.CharField(max_length=50)
+    rank = models.PositiveIntegerField(
+        help_text="Higher values represent better grades for requirement checks."
+    )
+    points = models.IntegerField(
+        help_text="Points awarded when this grade is used for ranking."
+    )
+    is_active = models.BooleanField(default=True)
+
+    class Meta:
+        ordering = ["-rank", "label"]
+
+    def __str__(self):
+        return self.label
+
+
+class QualificationProfile(models.Model):
+    code = models.CharField(max_length=50, unique=True)
+    name = models.CharField(max_length=255, unique=True)
+    course_type = models.ForeignKey(
+        CourseType,
+        null=True,
+        blank=True,
+        on_delete=models.SET_NULL,
+        related_name="qualification_profiles",
+    )
+    max_o_level_sittings = models.PositiveIntegerField(default=2)
+    minimum_total_points = models.PositiveIntegerField(default=0)
+    prefer_a_level_sciences = models.BooleanField(default=False)
+    is_active = models.BooleanField(default=True)
+
+    class Meta:
+        ordering = ["name"]
+
+    def __str__(self):
+        return self.name
+
+
+class QualificationRequirement(models.Model):
+    O_LEVEL = "O_LEVEL"
+    A_LEVEL = "A_LEVEL"
+    EDUCATION_LEVEL_CHOICES = [
+        (O_LEVEL, "O-Level"),
+        (A_LEVEL, "A-Level"),
+    ]
+
+    profile = models.ForeignKey(
+        QualificationProfile,
+        on_delete=models.CASCADE,
+        related_name="requirements",
+    )
+    education_level = models.CharField(max_length=10, choices=EDUCATION_LEVEL_CHOICES)
+    subject_group = models.JSONField(
+        default=list,
+        help_text="One subject or a list of acceptable alternative subjects.",
+    )
+    minimum_grade_band = models.ForeignKey(
+        GradeBand,
+        on_delete=models.PROTECT,
+        related_name="qualification_requirements",
+    )
+    is_required = models.BooleanField(default=True)
+
+    class Meta:
+        ordering = ["profile", "education_level", "id"]
+
+    def clean(self):
+        super().clean()
+        if not isinstance(self.subject_group, list) or not any(
+            str(subject).strip() for subject in self.subject_group
+        ):
+            raise ValidationError({"subject_group": "Provide at least one subject."})
+
+    def __str__(self):
+        return f"{self.profile}: {' / '.join(self.subject_group)}"
 
 
 class Course(models.Model):
@@ -115,6 +202,13 @@ class Course(models.Model):
         default=list,
         blank=True,
         help_text="Optional list of mandatory subjects required for qualification checks.",
+    )
+    qualification_profile = models.ForeignKey(
+        QualificationProfile,
+        null=True,
+        blank=True,
+        on_delete=models.SET_NULL,
+        related_name="courses",
     )
     category = models.ForeignKey(
         CourseCategory,

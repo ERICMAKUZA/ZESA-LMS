@@ -24,6 +24,9 @@ from .models import (
     CourseSchedule,
     CourseType,
     Department,
+    GradeBand,
+    QualificationProfile,
+    QualificationRequirement,
     Enquiry,
 )
 from .serializers import (
@@ -34,6 +37,9 @@ from .serializers import (
     CourseSummarySerializer,
     CourseTypeSerializer,
     DepartmentSerializer,
+    GradeBandSerializer,
+    QualificationProfileSerializer,
+    QualificationRequirementSerializer,
 )
 from .services import MoodleClient
 from .tasks import sync_courses_from_moodle
@@ -198,6 +204,43 @@ class CertificationTypeViewSet(TrainingConfigurationViewSet):
         return qs
 
 
+class GradeBandViewSet(TrainingConfigurationViewSet):
+    queryset = GradeBand.objects.all()
+    serializer_class = GradeBandSerializer
+    permission_classes = [CanManageTrainingConfiguration]
+
+    def get_queryset(self):
+        queryset = super().get_queryset()
+        if self.request.query_params.get("include_inactive") != "true":
+            queryset = queryset.filter(is_active=True)
+        return queryset
+
+
+class QualificationProfileViewSet(TrainingConfigurationViewSet):
+    queryset = QualificationProfile.objects.select_related("course_type")
+    serializer_class = QualificationProfileSerializer
+    permission_classes = [CanManageTrainingConfiguration]
+
+    def get_queryset(self):
+        queryset = super().get_queryset()
+        if self.request.query_params.get("include_inactive") != "true":
+            queryset = queryset.filter(is_active=True)
+        return queryset
+
+
+class QualificationRequirementViewSet(TrainingConfigurationViewSet):
+    queryset = QualificationRequirement.objects.select_related("profile", "minimum_grade_band")
+    serializer_class = QualificationRequirementSerializer
+    permission_classes = [CanManageTrainingConfiguration]
+
+    def get_queryset(self):
+        queryset = super().get_queryset()
+        profile_id = self.request.query_params.get("profile")
+        if profile_id:
+            queryset = queryset.filter(profile_id=profile_id)
+        return queryset
+
+
 @api_view(['GET'])
 @permission_classes([AllowAny])
 def training_selection(request):
@@ -214,7 +257,7 @@ def training_selection(request):
         courses = courses.filter(course_type_id=course_type_id)
 
     payload = []
-    for course in courses.select_related("course_type").prefetch_related("departments", "certification_types"):
+    for course in courses.select_related("course_type", "qualification_profile").prefetch_related("departments", "certification_types"):
         departments = [
             {
                 "id": department.id,
@@ -246,6 +289,11 @@ def training_selection(request):
             "certification_types": cert_types,
             "minimum_points_required": course.minimum_points_required,
             "required_subjects": course.required_subjects or [],
+            "qualification_profile_id": course.qualification_profile_id,
+            "max_o_level_sittings": (
+                course.qualification_profile.max_o_level_sittings
+                if course.qualification_profile else None
+            ),
         })
 
     return Response(payload)

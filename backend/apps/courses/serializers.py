@@ -10,6 +10,9 @@ from .models import (
     CourseSchedule,
     CourseType,
     Department,
+    GradeBand,
+    QualificationProfile,
+    QualificationRequirement,
 )
 
 
@@ -79,7 +82,10 @@ class DepartmentSerializer(serializers.ModelSerializer):
 class CourseTypeSerializer(serializers.ModelSerializer):
     class Meta:
         model = CourseType
-        fields = ("id", "code", "name", "description", "is_active")
+        fields = (
+            "id", "code", "name", "description", "is_active",
+            "requires_qualification_assessment", "default_qualification_profile",
+        )
 
 
 class CertificationTypeSerializer(serializers.ModelSerializer):
@@ -90,6 +96,44 @@ class CertificationTypeSerializer(serializers.ModelSerializer):
     class Meta:
         model = CertificationType
         fields = ("id", "course_type", "code", "name", "description", "is_active")
+
+
+class GradeBandSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = GradeBand
+        fields = ("id", "code", "label", "rank", "points", "is_active")
+
+
+class QualificationProfileSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = QualificationProfile
+        fields = (
+            "id", "code", "name", "course_type", "max_o_level_sittings",
+            "minimum_total_points", "prefer_a_level_sciences", "is_active",
+        )
+
+    def validate_course_type(self, value):
+        if value and not value.is_active:
+            raise serializers.ValidationError("Select an active course type.")
+        return value
+
+
+class QualificationRequirementSerializer(serializers.ModelSerializer):
+    minimum_grade_band = serializers.PrimaryKeyRelatedField(
+        queryset=GradeBand.objects.filter(is_active=True)
+    )
+
+    class Meta:
+        model = QualificationRequirement
+        fields = (
+            "id", "profile", "education_level", "subject_group",
+            "minimum_grade_band", "is_required",
+        )
+
+    def validate_profile(self, value):
+        if not value.is_active:
+            raise serializers.ValidationError("Select an active qualification profile.")
+        return value
 
 
 class InitialScheduleSerializer(serializers.Serializer):
@@ -147,6 +191,14 @@ class CourseSerializer(serializers.ModelSerializer):
     certification_types = CertificationTypeSerializer(many=True, read_only=True)
     minimum_points_required = serializers.IntegerField(required=False, allow_null=True)
     required_subjects = serializers.ListField(child=serializers.CharField(), required=False)
+    qualification_profile = QualificationProfileSerializer(read_only=True)
+    qualification_profile_id = serializers.PrimaryKeyRelatedField(
+        queryset=QualificationProfile.objects.all(),
+        source="qualification_profile",
+        write_only=True,
+        required=False,
+        allow_null=True,
+    )
     initial_schedule = InitialScheduleSerializer(write_only=True, required=False)
 
     def get_lecturers(self, obj):
@@ -229,6 +281,32 @@ class CourseSerializer(serializers.ModelSerializer):
                     {"certification_type_ids": "All certificate options must belong to the selected course type."}
                 )
 
+        profile_supplied = "qualification_profile" in attrs
+        qualification_profile = attrs.get("qualification_profile") if profile_supplied else getattr(
+            self.instance, "qualification_profile", None
+        )
+        existing_profile_id = getattr(self.instance, "qualification_profile_id", None)
+        if (
+            qualification_profile
+            and not qualification_profile.is_active
+            and qualification_profile.id != existing_profile_id
+        ):
+            raise serializers.ValidationError(
+                {"qualification_profile_id": "Select an active qualification profile."}
+            )
+        if (
+            qualification_profile
+            and qualification_profile.course_type_id
+            and qualification_profile.course_type_id != getattr(course_type, "id", None)
+        ):
+            raise serializers.ValidationError(
+                {"qualification_profile_id": "The qualification profile must match the selected course type."}
+            )
+        if course_type and course_type.requires_qualification_assessment and not qualification_profile:
+            raise serializers.ValidationError(
+                {"qualification_profile_id": "Select a qualification profile for this course type."}
+            )
+
         if self.instance is None:
             if not attrs.get("lecturers"):
                 raise serializers.ValidationError(
@@ -282,6 +360,7 @@ class CourseSerializer(serializers.ModelSerializer):
             "course_type", "course_type_id", "departments", "department_ids",
             "certification_types", "certification_type_ids",
             "minimum_points_required", "required_subjects",
+            "qualification_profile", "qualification_profile_id",
             "enrolled_count", "max_capacity",
             "is_active", "requires_approval", "price", "thumbnail_url",
             "duration_days", "level",

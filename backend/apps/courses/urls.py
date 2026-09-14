@@ -4,6 +4,7 @@ from rest_framework.routers import DefaultRouter
 from .views import (
     AdminCourseViewSet, CertificationTypeViewSet, CourseCategoryListView,
     CourseDetailView, CourseListView, CourseTypeViewSet, DepartmentViewSet,
+    GradeBandViewSet, QualificationProfileViewSet, QualificationRequirementViewSet,
     MoodleSyncView, lecturer_schedule_list, schedule_list, submit_enquiry,
     training_selection,
 )
@@ -15,6 +16,9 @@ training_router = DefaultRouter()
 training_router.register("departments", DepartmentViewSet, basename="training-department")
 training_router.register("course-types", CourseTypeViewSet, basename="training-course-type")
 training_router.register("certification-types", CertificationTypeViewSet, basename="training-cert-type")
+training_router.register("grade-bands", GradeBandViewSet, basename="training-grade-band")
+training_router.register("qualification-profiles", QualificationProfileViewSet, basename="training-profile")
+training_router.register("qualification-requirements", QualificationRequirementViewSet, basename="training-requirement")
 
 urlpatterns = [
     # Explicit paths must come before "<int:pk>/" to avoid pk-collision

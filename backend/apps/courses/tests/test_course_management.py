@@ -12,6 +12,9 @@ from apps.courses.models import (
     CourseSchedule,
     CourseType,
     Department,
+    GradeBand,
+    QualificationProfile,
+    QualificationRequirement,
 )
 from apps.enrollments.models import Enrollment
 from apps.enrollments.tasks import _notify_lecturer_enrolled
@@ -136,6 +139,73 @@ class CourseManagementTests(APITestCase):
 
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
         self.assertIn("course_type", response.data)
+
+    def test_trainer_can_configure_grade_bands_and_qualification_requirements(self):
+        self.client.force_authenticate(self.trainer)
+        course_type = CourseType.objects.create(
+            code="HEXCO",
+            name="HEXCO",
+            requires_qualification_assessment=True,
+        )
+        grade_band = self.client.post(
+            "/api/courses/training/grade-bands/",
+            {"code": "B_PLUS", "label": "B+", "rank": 7, "points": 5},
+            format="json",
+        )
+        self.assertEqual(grade_band.status_code, status.HTTP_201_CREATED, grade_band.data)
+        profile = self.client.post(
+            "/api/courses/training/qualification-profiles/",
+            {
+                "code": "HEXCO_DEFAULT",
+                "name": "HEXCO default",
+                "course_type": course_type.id,
+                "max_o_level_sittings": 2,
+                "minimum_total_points": 12,
+                "prefer_a_level_sciences": True,
+            },
+            format="json",
+        )
+        self.assertEqual(profile.status_code, status.HTTP_201_CREATED, profile.data)
+        requirement = self.client.post(
+            "/api/courses/training/qualification-requirements/",
+            {
+                "profile": profile.data["id"],
+                "education_level": "O_LEVEL",
+                "subject_group": ["Mathematics"],
+                "minimum_grade_band": grade_band.data["id"],
+                "is_required": True,
+            },
+            format="json",
+        )
+
+        self.assertEqual(requirement.status_code, status.HTTP_201_CREATED)
+        self.assertEqual(requirement.data["minimum_grade_band"], grade_band.data["id"])
+        self.assertEqual(QualificationRequirement.objects.count(), 1)
+
+    def test_course_requires_profile_when_its_type_requires_qualification_assessment(self):
+        self.course_type.requires_qualification_assessment = True
+        self.course_type.save(update_fields=["requires_qualification_assessment"])
+
+        response = self.client.post(
+            "/api/courses/admin/",
+            {
+                "shortname": "ELEC-QUAL",
+                "fullname": "Qualification Required Course",
+                "category_id": self.category.id,
+                "course_type_id": self.course_type.id,
+                "lecturer_ids": [self.lecturer_one.id],
+                "initial_schedule": {
+                    "year": 2026,
+                    "month": 11,
+                    "week_in_month": 1,
+                    "max_capacity": 20,
+                },
+            },
+            format="json",
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertIn("qualification_profile_id", response.data)
 
     def test_training_configuration_cannot_be_deleted(self):
         response = self.client.delete(
