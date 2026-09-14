@@ -17,6 +17,7 @@ import type {
   CourseCategory,
   CourseType,
   Department,
+  QualificationProfile,
   User,
 } from '@/types'
 
@@ -83,6 +84,7 @@ export default function CourseEditor({ course }: CourseEditorProps) {
     certificationTypeIds: course?.certification_types?.map((cert) => String(cert.id)) ?? [],
     minimumPointsRequired: course?.minimum_points_required != null ? String(course.minimum_points_required) : '',
     requiredSubjects: (course?.required_subjects ?? []).join(', '),
+    qualificationProfileId: course?.qualification_profile?.id ? String(course.qualification_profile.id) : '',
   })
   const [departmentSearch, setDepartmentSearch] = useState('')
   const [certificationSearch, setCertificationSearch] = useState('')
@@ -113,6 +115,10 @@ export default function CourseEditor({ course }: CourseEditorProps) {
       params: { include_inactive: 'true' },
     })).data),
   })
+  const profilesQuery = useQuery<QualificationProfile[]>({
+    queryKey: ['qualification-profiles'],
+    queryFn: async () => normalizeList((await api.get('/courses/training/qualification-profiles/', { params: { include_inactive: 'true' } })).data),
+  })
   const lecturersQuery = useQuery<User[]>({
     queryKey: ['active-lecturers'],
     queryFn: async () => (await api.get('/admin/lecturers/')).data,
@@ -121,6 +127,7 @@ export default function CourseEditor({ course }: CourseEditorProps) {
   const courseTypes = courseTypesQuery.data ?? []
   const departments = departmentsQuery.data ?? []
   const certTypes = certTypesQuery.data ?? []
+  const profiles = profilesQuery.data ?? []
   const lecturers = lecturersQuery.data ?? []
   const selectedCourseTypeId = Number(form.courseTypeId)
   const availableCourseTypes = courseTypes.filter(
@@ -172,6 +179,7 @@ export default function CourseEditor({ course }: CourseEditorProps) {
           ? null
           : Number(form.minimumPointsRequired),
         required_subjects: parseSubjects(form.requiredSubjects),
+        qualification_profile_id: form.qualificationProfileId ? Number(form.qualificationProfileId) : null,
         lecturer_ids: lecturerIds,
         ...(!course && {
           initial_schedule: {
@@ -218,8 +226,12 @@ export default function CourseEditor({ course }: CourseEditorProps) {
       ...current,
       courseTypeId: value,
       certificationTypeIds: [],
+      qualificationProfileId: '',
     }))
   }
+
+  const selectedCourseType = courseTypes.find((item) => item.id === selectedCourseTypeId)
+  const availableProfiles = profiles.filter((profile) => profile.is_active && (!profile.course_type || profile.course_type === selectedCourseTypeId))
 
   const toggleDepartment = (departmentId: number) => {
     setForm((current) => ({
@@ -317,6 +329,15 @@ export default function CourseEditor({ course }: CourseEditorProps) {
             <Input label="Fee (USD)" type="number" min="0" step="0.01" value={form.price} onChange={(event) => setField('price', event.target.value)} />
             <Input label="Maximum class size" type="number" min="1" value={form.maxCapacity} onChange={(event) => setField('maxCapacity', event.target.value)} />
             <Input label="Minimum points to qualify" type="number" min="0" value={form.minimumPointsRequired} onChange={(event) => setField('minimumPointsRequired', event.target.value)} />
+            {selectedCourseType?.requires_qualification_assessment && (
+              <Select
+                label="Qualification profile *"
+                value={form.qualificationProfileId}
+                onValueChange={(value) => setField('qualificationProfileId', value)}
+                options={availableProfiles.map((profile) => ({ value: String(profile.id), label: `${profile.name} · ${profile.minimum_total_points} points` }))}
+                placeholder="Select a qualification profile"
+              />
+            )}
             <Input label="Course image URL" type="url" value={form.thumbnailUrl} onChange={(event) => setField('thumbnailUrl', event.target.value)} />
             <div className="md:col-span-2 flex flex-col gap-1">
               <label htmlFor="required-subjects" className="text-sm font-medium text-gray-700">Required subjects</label>

@@ -66,6 +66,8 @@ export interface CourseType {
   name: string
   description: string
   is_active: boolean
+  requires_qualification_assessment: boolean
+  default_qualification_profile: number | null
 }
 
 export interface CertificationType {
@@ -82,6 +84,26 @@ export interface Department {
   code: string
   name: string
   description: string
+  is_active: boolean
+}
+
+export interface GradeBand {
+  id: number
+  code: string
+  label: string
+  rank: number
+  points: number
+  is_active: boolean
+}
+
+export interface QualificationProfile {
+  id: number
+  code: string
+  name: string
+  course_type: number | null
+  max_o_level_sittings: number
+  minimum_total_points: number
+  prefer_a_level_sciences: boolean
   is_active: boolean
 }
 
@@ -115,6 +137,7 @@ export interface Course {
   summary: string
   category: CourseCategory | null
   course_type: CourseType | null
+  qualification_profile: QualificationProfile | null
   departments: Department[]
   certification_types: CertificationType[]
   minimum_points_required: number | null
