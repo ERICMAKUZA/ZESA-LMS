@@ -47,6 +47,13 @@ class Application(models.Model):
     motivation = models.TextField()
     line_manager_email = models.EmailField()
     department = models.CharField(max_length=150)
+    selected_department = models.ForeignKey(
+        "courses.Department",
+        null=True,
+        blank=True,
+        on_delete=models.SET_NULL,
+        related_name="applications",
+    )
     employee_id = models.CharField(max_length=50, blank=True)
     preferred_centre = models.ForeignKey(
         'centres.Centre', null=True, blank=True,
@@ -85,6 +92,13 @@ class Application(models.Model):
 
     hexco_level = models.CharField(
         max_length=2, choices=HEXCO_LEVEL_CHOICES, blank=True, default=''
+    )
+    certification_type = models.ForeignKey(
+        "courses.CertificationType",
+        null=True,
+        blank=True,
+        on_delete=models.SET_NULL,
+        related_name="applications",
     )
 
     STUDENT_CATEGORY_CHOICES = [
@@ -203,6 +217,13 @@ class Application(models.Model):
         if not self.ref:
             self.ref = self.__class__._generate_ref()
         super().save(*args, **kwargs)
+
+    def sync_legacy_training_fields(self):
+        """Keep legacy integration fields aligned with authoritative links."""
+        if self.selected_department_id:
+            self.department = self.selected_department.code
+        if self.certification_type_id:
+            self.hexco_level = self.certification_type.code
 
     # ── Internal helpers ──────────────────────────────────────────────────────
 
@@ -328,6 +349,107 @@ class Application(models.Model):
             },
         )
         sync_to_moodle.delay(str(enrollment.pk))
+
+
+class ApplicationAcademicSitting(models.Model):
+    O_LEVEL = "O_LEVEL"
+    A_LEVEL = "A_LEVEL"
+    EDUCATION_LEVEL_CHOICES = [
+        (O_LEVEL, "O-Level"),
+        (A_LEVEL, "A-Level"),
+    ]
+
+    application = models.ForeignKey(
+        Application,
+        on_delete=models.CASCADE,
+        related_name="academic_sittings",
+    )
+    education_level = models.CharField(max_length=10, choices=EDUCATION_LEVEL_CHOICES)
+    sitting_number = models.PositiveIntegerField(default=1)
+    exam_year = models.PositiveIntegerField()
+    exam_session = models.CharField(max_length=50, blank=True, default="")
+
+    class Meta:
+        ordering = ["education_level", "sitting_number", "id"]
+        constraints = [
+            models.UniqueConstraint(
+                fields=["application", "education_level", "sitting_number"],
+                name="unique_application_education_sitting",
+            )
+        ]
+
+    def __str__(self):
+        return f"{self.application.ref} {self.education_level} sitting {self.sitting_number}"
+
+
+class ApplicationAcademicResult(models.Model):
+    sitting = models.ForeignKey(
+        ApplicationAcademicSitting,
+        on_delete=models.CASCADE,
+        related_name="results",
+    )
+    subject = models.CharField(max_length=150)
+    grade_band = models.ForeignKey(
+        "courses.GradeBand",
+        on_delete=models.PROTECT,
+        related_name="application_results",
+    )
+    grade_label_snapshot = models.CharField(max_length=50, blank=True, default="")
+    points_snapshot = models.IntegerField(null=True, blank=True)
+    rank_snapshot = models.PositiveIntegerField(null=True, blank=True)
+
+    class Meta:
+        ordering = ["subject", "id"]
+
+    def save(self, *args, **kwargs):
+        if self.grade_band_id:
+            if not self.grade_label_snapshot:
+                self.grade_label_snapshot = self.grade_band.label
+            if self.points_snapshot is None:
+                self.points_snapshot = self.grade_band.points
+            if self.rank_snapshot is None:
+                self.rank_snapshot = self.grade_band.rank
+        super().save(*args, **kwargs)
+
+    def __str__(self):
+        return f"{self.subject}: {self.grade_label_snapshot or self.grade_band}"
+
+
+class ApplicationQualificationAssessment(models.Model):
+    application = models.OneToOneField(
+        Application,
+        on_delete=models.CASCADE,
+        related_name="qualification_assessment",
+    )
+    qualifies = models.BooleanField(default=True)
+    total_o_level_points = models.IntegerField(default=0)
+    has_a_level_sciences = models.BooleanField(default=False)
+    failed_rule_codes = models.JSONField(default=list, blank=True)
+    assessment_summary = models.CharField(max_length=100, default="Meets requirements")
+    configuration_snapshot = models.JSONField(default=dict, blank=True)
+    assessed_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ["-assessed_at"]
+
+
+class ApplicationQualificationOverride(models.Model):
+    application = models.ForeignKey(
+        Application,
+        on_delete=models.CASCADE,
+        related_name="qualification_overrides",
+    )
+    reviewer = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        null=True,
+        related_name="qualification_overrides",
+    )
+    note = models.TextField(blank=True, default="")
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ["-created_at"]
 
     def certify(self):
         if self.status != ApplicationStatus.ENROLLED:
