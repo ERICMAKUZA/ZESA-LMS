@@ -38,6 +38,32 @@ class UserCreateSerializer(serializers.ModelSerializer):
         return User.objects.create_user(**validated_data)
 
 
+class AdminUserCreateSerializer(serializers.ModelSerializer):
+    password = serializers.CharField(write_only=True, required=True, validators=[validate_password])
+    password_confirm = serializers.CharField(write_only=True, required=True)
+    role = serializers.ChoiceField(
+        choices=[
+            (User.Role.TRAINER, User.Role.TRAINER.label),
+            (User.Role.LECTURER, User.Role.LECTURER.label),
+        ]
+    )
+
+    class Meta:
+        model = User
+        fields = (
+            "email", "first_name", "last_name", "employee_id",
+            "department", "phone", "role", "password", "password_confirm",
+        )
+
+    def validate(self, attrs):
+        if attrs["password"] != attrs.pop("password_confirm"):
+            raise serializers.ValidationError({"password": "Passwords do not match."})
+        return attrs
+
+    def create(self, validated_data):
+        return User.objects.create_user(**validated_data)
+
+
 class UserUpdateSerializer(serializers.ModelSerializer):
     class Meta:
         model = User

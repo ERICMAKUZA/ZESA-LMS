@@ -14,20 +14,22 @@ from rest_framework.response import Response
 
 from apps.accounts.permissions import IsAdmin, IsAdminOrReviewer, IsLecturer
 from apps.enrollments.models import Enrollment
+from apps.workflows.services import queue_acceptance_notification
 
 from .filters import ApplicationFilter
-from .models import Application, ApplicationStatus
+from .models import Application, ApplicationQualificationOverride, ApplicationStatus
+from .services.qualification import assess_application
 from .serializers import (
     ApplicationCreateSerializer,
     ApplicationDetailSerializer,
     ApplicationListSerializer,
+    ApplicationQualificationOverrideSerializer,
     LecturerApplicationSerializer,
     ReviewActionSerializer,
 )
 from .tasks import (
     notify_application_reviewed,
     notify_application_submitted,
-    notify_payment_required,
 )
 
 
@@ -41,8 +43,8 @@ class StudentApplicationViewSet(viewsets.ModelViewSet):
             return Application.objects.none()
         return (
             Application.objects.filter(applicant=self.request.user)
-            .select_related("course", "reviewer")
-            .prefetch_related("documents", "history")
+            .select_related("course", "course__course_type", "course__qualification_profile", "reviewer", "qualification_assessment")
+            .prefetch_related("documents", "history", "academic_sittings__results", "qualification_overrides")
         )
 
     def get_serializer_class(self):
@@ -154,8 +156,8 @@ class AdminApplicationViewSet(viewsets.ModelViewSet):
     def get_queryset(self):
         return (
             Application.objects.all()
-            .select_related("applicant", "course", "reviewer", "enrollment", "payment")
-            .prefetch_related("documents", "history")
+            .select_related("applicant", "course", "course__course_type", "course__qualification_profile", "reviewer", "enrollment", "payment", "qualification_assessment")
+            .prefetch_related("documents", "history", "academic_sittings__results", "qualification_overrides")
         )
 
     def get_serializer_class(self):
@@ -190,6 +192,7 @@ class AdminApplicationViewSet(viewsets.ModelViewSet):
 
         try:
             if act == ReviewActionSerializer.ACTION_APPROVE:
+                assess_application(application)
                 centre_id = request.data.get('assigned_centre')
                 if centre_id:
                     from centres.models import Centre
@@ -207,8 +210,7 @@ class AdminApplicationViewSet(viewsets.ModelViewSet):
                     )
                 application.save(update_fields=['assigned_centre'])
                 application.approve(notes=notes)
-                notify_application_reviewed.delay(str(application.id))
-                notify_payment_required.delay(str(application.id))
+                queue_acceptance_notification(application)
             elif act == ReviewActionSerializer.ACTION_REJECT:
                 application.reject(reason=rejection_reason)
                 notify_application_reviewed.delay(str(application.id))
@@ -219,6 +221,26 @@ class AdminApplicationViewSet(viewsets.ModelViewSet):
             return Response({"detail": str(exc)}, status=status.HTTP_400_BAD_REQUEST)
 
         return Response(ApplicationDetailSerializer(application, context={"request": request}).data)
+
+    @action(detail=True, methods=["post"], url_path="override-qualification")
+    def override_qualification(self, request, pk=None):
+        application = self.get_object()
+        serializer = ApplicationQualificationOverrideSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        ApplicationQualificationOverride.objects.create(
+            application=application,
+            reviewer=request.user,
+            note=serializer.validated_data.get("note", ""),
+        )
+        application._record_transition(
+            application.status,
+            changed_by=request.user,
+            notes="Qualification assessment override recorded.",
+        )
+        return Response(
+            ApplicationDetailSerializer(application, context={"request": request}).data,
+            status=status.HTTP_201_CREATED,
+        )
 
     @action(detail=True, methods=["post"], permission_classes=[IsAdmin])
     def issue_certificate(self, request, pk=None):
@@ -410,63 +432,50 @@ def de_enrol_student(request, pk):
 @permission_classes([IsAdminOrReviewer])
 def create_walkin_application(request):
     from django.contrib.auth import get_user_model
-    from apps.courses.models import Course
-    from centres.models import Centre
 
     User = get_user_model()
     email = request.data.get('student_email', '').lower().strip()
-    if not email:
-        return Response({'detail': 'student_email is required.'}, status=http_status.HTTP_400_BAD_REQUEST)
+    if not email or not request.data.get('student_first_name') or not request.data.get('student_last_name'):
+        return Response({'detail': 'Student name and email are required.'}, status=http_status.HTTP_400_BAD_REQUEST)
 
-    course_id = request.data.get('course')
-    if not course_id:
-        return Response({'detail': 'course is required.'}, status=http_status.HTTP_400_BAD_REQUEST)
-    try:
-        course = Course.objects.get(pk=course_id)
-    except Course.DoesNotExist:
-        return Response({'detail': 'Course not found.'}, status=http_status.HTTP_400_BAD_REQUEST)
+    with transaction.atomic():
+        student = User.objects.filter(email=email).first()
+        if student and (student.role != User.Role.STUDENT or not student.is_active):
+            raise ValidationError({'student_email': 'This account cannot be used for a walk-in application.'})
+        if student is None:
+            student = User(
+                email=email,
+                first_name=request.data['student_first_name'].strip(),
+                last_name=request.data['student_last_name'].strip(),
+                phone=request.data.get('student_phone', ''),
+                role=User.Role.STUDENT,
+                is_active=True,
+            )
+            student._audit_actor = request.user
+            student.set_unusable_password()
+            student.save()
 
-    try:
-        student = User.objects.get(email=email)
-    except User.DoesNotExist:
-        student = User(
-            email=email,
-            first_name=request.data.get('student_first_name', ''),
-            last_name=request.data.get('student_last_name', ''),
-            phone=request.data.get('student_phone', ''),
-            role='STUDENT',
-            is_active=True,
+        payload = {key: value for key, value in request.data.items() if key not in {
+            'student_first_name', 'student_last_name', 'student_email', 'student_phone'
+        }}
+        payload.setdefault('motivation', 'Walk-in registration')
+        serializer = ApplicationCreateSerializer(
+            data=payload,
+            context={'request': request, 'application_applicant': student},
         )
-        # Set before the first save so the CREATE audit log entry
-        # (apps.core.signals) attributes it to the staff member capturing
-        # this walk-in, not "System".
-        student._audit_actor = request.user
-        student.set_unusable_password()
-        student.save()
+        serializer.is_valid(raise_exception=True)
+        application = serializer.save(
+            applicant=student,
+            source='WALK_IN',
+            staff_captured_by=request.user,
+        )
+        application.submit()
 
-    preferred_centre = None
-    centre_id = request.data.get('preferred_centre')
-    if centre_id:
-        try:
-            preferred_centre = Centre.objects.get(pk=centre_id)
-        except Centre.DoesNotExist:
-            pass
-
-    app = Application.objects.create(
-        applicant=student,
-        course=course,
-        hexco_level=request.data.get('hexco_level', ''),
-        department=request.data.get('department', ''),
-        student_category=request.data.get('student_category', ''),
-        preferred_centre=preferred_centre,
-        motivation=request.data.get('motivation', 'Walk-in registration'),
-        source='WALK_IN',
-        staff_captured_by=request.user,
-        status=ApplicationStatus.SUBMITTED,
+    return Response(
+        {'id': str(application.id), 'ref': application.ref, 'status': application.status,
+         'qualification_assessment': ApplicationDetailSerializer(application, context={'request': request}).data.get('qualification_assessment')},
+        status=http_status.HTTP_201_CREATED,
     )
-    app._record_transition(ApplicationStatus.SUBMITTED, request.user, 'Walk-in registration')
-
-    return Response({'id': str(app.id), 'ref': app.ref, 'status': app.status}, status=http_status.HTTP_201_CREATED)
 
 
 @api_view(['GET'])

@@ -78,3 +78,19 @@ api.interceptors.response.use(
 )
 
 export default api
+
+export async function fetchAllPages<T>(path: string, params?: Record<string, string>): Promise<T[]> {
+  const items: T[] = []
+  let next: string | null = path
+  let first = true
+  while (next) {
+    const response: { data: T[] | { results: T[]; next: string | null } } = await api.get(next, {
+      params: first ? params : undefined,
+    })
+    first = false
+    if (Array.isArray(response.data)) return [...items, ...response.data]
+    items.push(...response.data.results)
+    next = response.data.next
+  }
+  return items
+}

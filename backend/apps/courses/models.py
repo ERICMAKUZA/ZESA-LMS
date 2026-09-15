@@ -1,5 +1,6 @@
 import uuid
 
+from django.core.exceptions import ValidationError
 from django.conf import settings
 from django.db import models
 
@@ -15,6 +16,144 @@ class CourseCategory(models.Model):
 
     def __str__(self):
         return self.name
+
+
+class Department(models.Model):
+    code = models.CharField(max_length=30, unique=True)
+    name = models.CharField(max_length=255, unique=True)
+    description = models.TextField(blank=True)
+    is_active = models.BooleanField(default=True)
+
+    class Meta:
+        verbose_name = "Department"
+        verbose_name_plural = "Departments"
+        ordering = ["name"]
+
+    def __str__(self):
+        return f"{self.code} — {self.name}"
+
+
+class CourseType(models.Model):
+    code = models.CharField(max_length=50, unique=True)
+    name = models.CharField(max_length=255, unique=True)
+    description = models.TextField(blank=True)
+    requires_qualification_assessment = models.BooleanField(default=False)
+    default_qualification_profile = models.ForeignKey(
+        "QualificationProfile",
+        null=True,
+        blank=True,
+        on_delete=models.SET_NULL,
+        related_name="default_for_course_types",
+    )
+    is_active = models.BooleanField(default=True)
+
+    class Meta:
+        verbose_name = "Course Type"
+        verbose_name_plural = "Course Types"
+        ordering = ["name"]
+
+    def __str__(self):
+        return f"{self.code} — {self.name}"
+
+
+class CertificationType(models.Model):
+    course_type = models.ForeignKey(
+        CourseType,
+        on_delete=models.CASCADE,
+        related_name="certification_types",
+    )
+    code = models.CharField(max_length=50)
+    name = models.CharField(max_length=255)
+    description = models.TextField(blank=True)
+    is_active = models.BooleanField(default=True)
+
+    class Meta:
+        verbose_name = "Certification Type"
+        verbose_name_plural = "Certification Types"
+        ordering = ["course_type", "name"]
+        unique_together = [("course_type", "code")]
+
+    def __str__(self):
+        return f"{self.code} — {self.name}"
+
+
+class GradeBand(models.Model):
+    code = models.CharField(max_length=20, unique=True)
+    label = models.CharField(max_length=50)
+    rank = models.PositiveIntegerField(
+        help_text="Higher values represent better grades for requirement checks."
+    )
+    points = models.IntegerField(
+        help_text="Points awarded when this grade is used for ranking."
+    )
+    is_active = models.BooleanField(default=True)
+
+    class Meta:
+        ordering = ["-rank", "label"]
+
+    def __str__(self):
+        return self.label
+
+
+class QualificationProfile(models.Model):
+    code = models.CharField(max_length=50, unique=True)
+    name = models.CharField(max_length=255, unique=True)
+    course_type = models.ForeignKey(
+        CourseType,
+        null=True,
+        blank=True,
+        on_delete=models.SET_NULL,
+        related_name="qualification_profiles",
+    )
+    max_o_level_sittings = models.PositiveIntegerField(default=2)
+    minimum_total_points = models.PositiveIntegerField(default=0)
+    prefer_a_level_sciences = models.BooleanField(default=False)
+    is_active = models.BooleanField(default=True)
+
+    class Meta:
+        ordering = ["name"]
+
+    def __str__(self):
+        return self.name
+
+
+class QualificationRequirement(models.Model):
+    O_LEVEL = "O_LEVEL"
+    A_LEVEL = "A_LEVEL"
+    EDUCATION_LEVEL_CHOICES = [
+        (O_LEVEL, "O-Level"),
+        (A_LEVEL, "A-Level"),
+    ]
+
+    profile = models.ForeignKey(
+        QualificationProfile,
+        on_delete=models.CASCADE,
+        related_name="requirements",
+    )
+    education_level = models.CharField(max_length=10, choices=EDUCATION_LEVEL_CHOICES)
+    subject_group = models.JSONField(
+        default=list,
+        help_text="One subject or a list of acceptable alternative subjects.",
+    )
+    minimum_grade_band = models.ForeignKey(
+        GradeBand,
+        on_delete=models.PROTECT,
+        related_name="qualification_requirements",
+    )
+    is_required = models.BooleanField(default=True)
+
+    class Meta:
+        ordering = ["profile", "education_level", "id"]
+
+    def clean(self):
+        super().clean()
+        if not isinstance(self.subject_group, list) or not any(
+            str(subject).strip() for subject in self.subject_group
+        ):
+            raise ValidationError({"subject_group": "Provide at least one subject."})
+
+    def __str__(self):
+        return f"{self.profile}: {' / '.join(self.subject_group)}"
 
 
 class Course(models.Model):
@@ -36,6 +175,46 @@ class Course(models.Model):
     duration_days = models.PositiveIntegerField(null=True, blank=True)
     level = models.CharField(
         max_length=20, choices=LEVEL_CHOICES, null=True, blank=True
+    )
+    course_type = models.ForeignKey(
+        CourseType,
+        null=True,
+        blank=True,
+        on_delete=models.SET_NULL,
+        related_name="courses",
+    )
+    departments = models.ManyToManyField(
+        Department,
+        blank=True,
+        related_name="courses",
+    )
+    certification_types = models.ManyToManyField(
+        CertificationType,
+        blank=True,
+        related_name="courses",
+    )
+    minimum_points_required = models.PositiveIntegerField(
+        null=True,
+        blank=True,
+        help_text="Set to a value if applicants must meet a minimum points threshold.",
+    )
+    required_subjects = models.JSONField(
+        default=list,
+        blank=True,
+        help_text="Optional list of mandatory subjects required for qualification checks.",
+    )
+    qualification_profile = models.ForeignKey(
+        QualificationProfile,
+        null=True,
+        blank=True,
+        on_delete=models.SET_NULL,
+        related_name="courses",
+    )
+    qualification_assessment_enabled = models.BooleanField(
+        null=True,
+        blank=True,
+        default=None,
+        help_text="Override the course type's qualification-assessment setting for this course.",
     )
     category = models.ForeignKey(
         CourseCategory,
@@ -72,6 +251,36 @@ class Course(models.Model):
     def is_full(self):
         return self.max_capacity is not None and self.enrolled_count >= self.max_capacity
 
+    @property
+    def uses_qualification_assessment(self):
+        if self.qualification_assessment_enabled is not None:
+            return self.qualification_assessment_enabled
+        return bool(self.course_type and self.course_type.requires_qualification_assessment)
+
+    def clean(self):
+        super().clean()
+
+        has_certifications = self.pk and self.certification_types.exists()
+        if not self.course_type and has_certifications:
+            raise ValidationError(
+                {"certification_type_ids": "Select a course type before adding certificate options."}
+            )
+
+        if not self.course_type:
+            return
+
+        invalid = self.certification_types.exclude(course_type=self.course_type)
+        if invalid.exists():
+            invalid_ids = list(invalid.values_list("id", flat=True))
+            raise ValidationError(
+                {
+                    "certification_type_ids": (
+                        "Certification options must belong to the selected course type. "
+                        f"Invalid IDs: {invalid_ids}"
+                    )
+                }
+            )
+
 
 class CourseSchedule(models.Model):
     MONTH_CHOICES = [
@@ -100,6 +309,7 @@ class CourseSchedule(models.Model):
     )
     enrolled_count = models.PositiveIntegerField(default=0)
     status = models.CharField(max_length=12, choices=STATUS_CHOICES, default='OPEN')
+    payment_due_date = models.DateField(null=True, blank=True)
     notes = models.TextField(blank=True, default='')
     lecturer = models.ForeignKey(
         settings.AUTH_USER_MODEL,
@@ -140,6 +350,51 @@ class CourseSchedule(models.Model):
         import datetime
         start = self.get_approximate_start_date()
         return start + datetime.timedelta(days=self.course.duration_days - 1)
+
+
+class AcademicCalendarEvent(models.Model):
+    class EventType(models.TextChoices):
+        COMMENCEMENT = "COMMENCEMENT", "Commencement"
+        DEFERMENT = "DEFERMENT", "Deferment"
+        EXAMINATION = "EXAMINATION", "Examination"
+        SEMESTER_START = "SEMESTER_START", "Semester start"
+        SEMESTER_END = "SEMESTER_END", "Semester end"
+        BLOCK_START = "BLOCK_START", "Block start"
+        BLOCK_END = "BLOCK_END", "Block end"
+        SEMESTER_BREAK = "SEMESTER_BREAK", "Semester break"
+        EXAM_FEE = "EXAM_FEE", "Examination fee"
+        MARKS_DEADLINE = "MARKS_DEADLINE", "Marks deadline"
+
+    class Audience(models.TextChoices):
+        STUDENTS = "STUDENTS", "Students"
+        LECTURERS = "LECTURERS", "Lecturers"
+        BOTH = "BOTH", "Students and lecturers"
+
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    event_type = models.CharField(max_length=20, choices=EventType.choices)
+    title = models.CharField(max_length=255)
+    start_date = models.DateField()
+    end_date = models.DateField(null=True, blank=True)
+    audience = models.CharField(max_length=12, choices=Audience.choices, default=Audience.STUDENTS)
+    course = models.ForeignKey(
+        "Course", null=True, blank=True, on_delete=models.SET_NULL, related_name="calendar_events"
+    )
+    schedule = models.ForeignKey(
+        "CourseSchedule", null=True, blank=True, on_delete=models.SET_NULL,
+        related_name="calendar_events",
+    )
+    timetable_url = models.URLField(max_length=500, blank=True)
+    published_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL, null=True, on_delete=models.SET_NULL,
+        related_name="published_calendar_events",
+    )
+    published_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ["-published_at"]
+
+    def __str__(self):
+        return f"{self.title} ({self.get_event_type_display()})"
 
 
 class Enquiry(models.Model):

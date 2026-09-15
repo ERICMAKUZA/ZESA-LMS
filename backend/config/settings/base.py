@@ -161,6 +161,10 @@ CELERY_BEAT_SCHEDULE = {
         'task': 'applications.escalate_stale_applications',
         'schedule': crontab(hour=8, minute=0),
     },
+    'broadcast-upcoming-courses': {
+        'task': 'workflows.broadcast_upcoming_courses',
+        'schedule': crontab(hour=8, minute=0, day_of_month=1, month_of_year='3,6,9,12'),
+    },
 }
 
 CACHES = {

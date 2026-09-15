@@ -47,6 +47,13 @@ class Application(models.Model):
     motivation = models.TextField()
     line_manager_email = models.EmailField()
     department = models.CharField(max_length=150)
+    selected_department = models.ForeignKey(
+        "courses.Department",
+        null=True,
+        blank=True,
+        on_delete=models.SET_NULL,
+        related_name="applications",
+    )
     employee_id = models.CharField(max_length=50, blank=True)
     preferred_centre = models.ForeignKey(
         'centres.Centre', null=True, blank=True,
@@ -85,6 +92,13 @@ class Application(models.Model):
 
     hexco_level = models.CharField(
         max_length=2, choices=HEXCO_LEVEL_CHOICES, blank=True, default=''
+    )
+    certification_type = models.ForeignKey(
+        "courses.CertificationType",
+        null=True,
+        blank=True,
+        on_delete=models.SET_NULL,
+        related_name="applications",
     )
 
     STUDENT_CATEGORY_CHOICES = [
@@ -204,6 +218,13 @@ class Application(models.Model):
             self.ref = self.__class__._generate_ref()
         super().save(*args, **kwargs)
 
+    def sync_legacy_training_fields(self):
+        """Keep legacy integration fields aligned with authoritative links."""
+        if self.selected_department_id:
+            self.department = self.selected_department.code
+        if self.certification_type_id:
+            self.hexco_level = self.certification_type.code
+
     # ── Internal helpers ──────────────────────────────────────────────────────
 
     def _record_transition(self, to_status, changed_by=None, notes=""):
@@ -223,6 +244,13 @@ class Application(models.Model):
         allowed = (ApplicationStatus.DRAFT, ApplicationStatus.MORE_INFO_REQUESTED)
         if self.status not in allowed:
             raise ValueError(f"Cannot submit from status '{self.status}'.")
+        profile = self.course.qualification_profile or (
+            self.course.course_type.default_qualification_profile if self.course.course_type else None
+        )
+        if self.course.uses_qualification_assessment and profile and not ApplicationAcademicResult.objects.filter(
+            sitting__application=self, sitting__education_level=ApplicationAcademicSitting.O_LEVEL,
+        ).exists():
+            raise ValueError("Enter your O-Level subjects and grades before submitting this application.")
         self._record_transition(ApplicationStatus.SUBMITTED)
         self.status = ApplicationStatus.SUBMITTED
         self.submitted_at = timezone.now()
@@ -287,47 +315,171 @@ class Application(models.Model):
         self.save(update_fields=["status", "updated_at"])
 
     def enroll(self):
-        if not self.code_of_conduct_signed:
-            raise ValueError("Student must sign the code of conduct before enrolment.")
-        if self.status != ApplicationStatus.PAYMENT_CONFIRMED:
-            raise ValueError(f"Cannot enroll from status '{self.status}'.")
-        self._record_transition(ApplicationStatus.ENROLLED)
-        self.status = ApplicationStatus.ENROLLED
-        self.enrolled_at = timezone.now()
-        self.save(update_fields=["status", "enrolled_at", "updated_at"])
-        if self.applicant and not self.applicant.student_id:
-            from django.contrib.auth import get_user_model
-            User = get_user_model()
-            with transaction.atomic():
+        from apps.courses.models import CourseSchedule
+        from apps.enrollments.models import Enrollment
+        from apps.enrollments.models import EnrollmentStatus
+        from apps.enrollments.tasks import sync_to_moodle
+
+        with transaction.atomic():
+            locked = Application.objects.select_for_update().get(pk=self.pk)
+            if not locked.code_of_conduct_signed:
+                raise ValueError("Student must sign the code of conduct before enrolment.")
+            if locked.status != ApplicationStatus.PAYMENT_CONFIRMED:
+                raise ValueError(f"Cannot enroll from status '{locked.status}'.")
+
+            schedule = None
+            candidates = CourseSchedule.objects.select_for_update().filter(
+                course_id=locked.course_id, status='OPEN',
+            ).order_by('year', 'month', 'week_in_month')
+            for candidate in candidates:
+                if candidate.get_approximate_start_date() < timezone.localdate():
+                    continue
+                occupied = max(
+                    candidate.enrolled_count,
+                    Enrollment.objects.filter(schedule=candidate).exclude(
+                        status=EnrollmentStatus.UNENROLLED,
+                    ).count(),
+                )
+                if occupied >= candidate.max_capacity:
+                    continue
+                reserved = CourseSchedule.objects.filter(
+                    pk=candidate.pk, status='OPEN', enrolled_count__lte=occupied,
+                    max_capacity__gt=occupied,
+                ).update(enrolled_count=occupied + 1)
+                if reserved:
+                    schedule = candidate
+                    break
+            if schedule is None and CourseSchedule.objects.filter(course_id=locked.course_id).exists():
+                raise ValueError("No open intake with available space is scheduled for this course.")
+
+            self._record_transition(ApplicationStatus.ENROLLED)
+            self.status = ApplicationStatus.ENROLLED
+            self.enrolled_at = timezone.now()
+            self.save(update_fields=["status", "enrolled_at", "updated_at"])
+            if self.applicant and not self.applicant.student_id:
+                from django.contrib.auth import get_user_model
+                User = get_user_model()
                 self.applicant.student_id = User.generate_student_id(
                     department=self.department or ''
                 )
                 self.applicant.save(update_fields=['student_id'])
-        from apps.enrollments.models import Enrollment
-        from apps.enrollments.tasks import sync_to_moodle
 
-        # No direct FK from Application to a specific CourseSchedule intake,
-        # so resolve the soonest open one for the course (best-effort, same
-        # simplification the lecturer-schedule-assignment feature relies on).
-        schedule = self.course.schedules.filter(status='OPEN').order_by(
-            'year', 'month', 'week_in_month'
-        ).first()
-        start_date = schedule.get_approximate_start_date() if schedule else None
-        end_date = (
-            schedule.get_approximate_end_date()
-            if schedule and self.course.duration_days else None
-        )
+            start_date = schedule.get_approximate_start_date() if schedule else None
+            end_date = (
+                schedule.get_approximate_end_date()
+                if schedule and locked.course.duration_days else None
+            )
+            enrollment, _ = Enrollment.objects.get_or_create(
+                application=self,
+                defaults={
+                    'moodle_course_id': locked.course.moodle_course_id or 0,
+                    'schedule': schedule,
+                    'start_date': start_date,
+                    'end_date': end_date,
+                },
+            )
+            transaction.on_commit(lambda: sync_to_moodle.delay(str(enrollment.pk)))
 
-        enrollment, _ = Enrollment.objects.get_or_create(
-            application=self,
-            defaults={
-                'moodle_course_id': self.course.moodle_course_id or 0,
-                'schedule': schedule,
-                'start_date': start_date,
-                'end_date': end_date,
-            },
-        )
-        sync_to_moodle.delay(str(enrollment.pk))
+
+class ApplicationAcademicSitting(models.Model):
+    O_LEVEL = "O_LEVEL"
+    A_LEVEL = "A_LEVEL"
+    EDUCATION_LEVEL_CHOICES = [
+        (O_LEVEL, "O-Level"),
+        (A_LEVEL, "A-Level"),
+    ]
+
+    application = models.ForeignKey(
+        Application,
+        on_delete=models.CASCADE,
+        related_name="academic_sittings",
+    )
+    education_level = models.CharField(max_length=10, choices=EDUCATION_LEVEL_CHOICES)
+    sitting_number = models.PositiveIntegerField(default=1)
+    exam_year = models.PositiveIntegerField()
+    exam_session = models.CharField(max_length=50, blank=True, default="")
+
+    class Meta:
+        ordering = ["education_level", "sitting_number", "id"]
+        constraints = [
+            models.UniqueConstraint(
+                fields=["application", "education_level", "sitting_number"],
+                name="unique_application_education_sitting",
+            )
+        ]
+
+    def __str__(self):
+        return f"{self.application.ref} {self.education_level} sitting {self.sitting_number}"
+
+
+class ApplicationAcademicResult(models.Model):
+    sitting = models.ForeignKey(
+        ApplicationAcademicSitting,
+        on_delete=models.CASCADE,
+        related_name="results",
+    )
+    subject = models.CharField(max_length=150)
+    grade_band = models.ForeignKey(
+        "courses.GradeBand",
+        on_delete=models.PROTECT,
+        related_name="application_results",
+    )
+    grade_label_snapshot = models.CharField(max_length=50, blank=True, default="")
+    points_snapshot = models.IntegerField(null=True, blank=True)
+    rank_snapshot = models.PositiveIntegerField(null=True, blank=True)
+
+    class Meta:
+        ordering = ["subject", "id"]
+
+    def save(self, *args, **kwargs):
+        if self.grade_band_id:
+            if not self.grade_label_snapshot:
+                self.grade_label_snapshot = self.grade_band.label
+            if self.points_snapshot is None:
+                self.points_snapshot = self.grade_band.points
+            if self.rank_snapshot is None:
+                self.rank_snapshot = self.grade_band.rank
+        super().save(*args, **kwargs)
+
+    def __str__(self):
+        return f"{self.subject}: {self.grade_label_snapshot or self.grade_band}"
+
+
+class ApplicationQualificationAssessment(models.Model):
+    application = models.OneToOneField(
+        Application,
+        on_delete=models.CASCADE,
+        related_name="qualification_assessment",
+    )
+    qualifies = models.BooleanField(default=True)
+    total_o_level_points = models.IntegerField(default=0)
+    has_a_level_sciences = models.BooleanField(default=False)
+    failed_rule_codes = models.JSONField(default=list, blank=True)
+    assessment_summary = models.CharField(max_length=100, default="Meets requirements")
+    configuration_snapshot = models.JSONField(default=dict, blank=True)
+    assessed_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ["-assessed_at"]
+
+
+class ApplicationQualificationOverride(models.Model):
+    application = models.ForeignKey(
+        Application,
+        on_delete=models.CASCADE,
+        related_name="qualification_overrides",
+    )
+    reviewer = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        null=True,
+        related_name="qualification_overrides",
+    )
+    note = models.TextField(blank=True, default="")
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ["-created_at"]
 
     def certify(self):
         if self.status != ApplicationStatus.ENROLLED:

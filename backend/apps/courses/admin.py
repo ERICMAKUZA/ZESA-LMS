@@ -1,6 +1,14 @@
 from django.contrib import admin
 
-from .models import Course, CourseCategory, CourseSchedule, Enquiry
+from .models import (
+    CertificationType,
+    Course,
+    CourseCategory,
+    CourseSchedule,
+    CourseType,
+    Department,
+    Enquiry,
+)
 
 
 @admin.register(CourseCategory)
@@ -8,6 +16,27 @@ class CourseCategoryAdmin(admin.ModelAdmin):
     list_display = ("name", "moodle_id")
     search_fields = ("name",)
     ordering = ("name",)
+
+
+@admin.register(Department)
+class DepartmentAdmin(admin.ModelAdmin):
+    list_display = ("code", "name", "is_active")
+    list_filter = ("is_active",)
+    search_fields = ("code", "name")
+
+
+@admin.register(CourseType)
+class CourseTypeAdmin(admin.ModelAdmin):
+    list_display = ("code", "name", "is_active")
+    list_filter = ("is_active",)
+    search_fields = ("code", "name")
+
+
+@admin.register(CertificationType)
+class CertificationTypeAdmin(admin.ModelAdmin):
+    list_display = ("code", "name", "course_type", "is_active")
+    list_filter = ("is_active",)
+    search_fields = ("code", "name", "course_type__name")
 
 
 @admin.register(Course)

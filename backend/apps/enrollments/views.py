@@ -1,18 +1,23 @@
 import csv
 import logging
+from collections.abc import Mapping
 
 from django.conf import settings
+from django.db import transaction
 from django.http import HttpResponse
 from django.utils import timezone
 from rest_framework import generics, permissions, status, viewsets
 from rest_framework.decorators import action
+from rest_framework.exceptions import NotFound
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from apps.accounts.permissions import IsAdmin, IsAdminOrReviewerOrCentreAdmin
 from apps.applications.models import Application, ApplicationStatus
+from apps.courses.models import CourseSchedule
+from apps.workflows.services import queue_notification
 
-from .models import Enrollment, EnrollmentStatus
+from .models import Enrollment, EnrollmentAttendanceResponse, EnrollmentStatus
 from .serializers import EnrollmentListSerializer, EnrollmentSerializer, StudentEnrollmentSerializer
 from .services import MoodleAPIError, MoodleEnrollmentService
 
@@ -27,9 +32,132 @@ class StudentEnrollmentListView(generics.ListAPIView):
     def get_queryset(self):
         return (
             Enrollment.objects.filter(application__applicant=self.request.user)
-            .select_related("application__course")
+            .select_related("application__course", "attendance_response")
             .order_by("-enrolled_at")
         )
+
+    def list(self, request, *args, **kwargs):
+        enrollments = list(self.get_queryset())
+        data = list(self.get_serializer(enrollments, many=True).data)
+        for item, enrollment in zip(data, enrollments):
+            attendance = getattr(enrollment, "attendance_response", None)
+            item["attendance_response"] = _attendance_response_data(attendance) if attendance else None
+        return Response(data)
+
+
+def _attendance_response_data(attendance):
+    return {
+        "response": attendance.response,
+        "responded_at": attendance.responded_at,
+        "target_schedule": str(attendance.target_schedule_id) if attendance.target_schedule_id else None,
+        "audit_note": attendance.audit_note,
+    }
+
+
+class EnrollmentAttendanceResponseView(APIView):
+    permission_classes = [permissions.IsAuthenticated]
+
+    def post(self, request, enrollment_id):
+        requested = request.data.get("response") if isinstance(request.data, Mapping) else None
+        if requested not in ("CONFIRMED", "DEFER"):
+            return Response(
+                {"detail": "response must be CONFIRMED or DEFER."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        with transaction.atomic():
+            enrollment = (
+                Enrollment.objects.select_for_update()
+                .select_related("application__course", "application__applicant")
+                .filter(pk=enrollment_id, application__applicant=request.user)
+                .first()
+            )
+            if enrollment is None:
+                raise NotFound("Enrollment not found.")
+            if enrollment.status == EnrollmentStatus.UNENROLLED or enrollment.is_suspended:
+                return Response(
+                    {"detail": "Attendance response is unavailable for this enrollment."},
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
+            if EnrollmentAttendanceResponse.objects.filter(enrollment=enrollment).exists():
+                return Response(
+                    {"detail": "Attendance response has already been submitted."},
+                    status=status.HTTP_409_CONFLICT,
+                )
+
+            target = None
+            response_status = EnrollmentAttendanceResponse.Response.CONFIRMED
+            audit_note = "Student confirmed attendance."
+            if requested == "DEFER":
+                response_status = EnrollmentAttendanceResponse.Response.PENDING_STAFF
+                audit_note = "No later open intake with capacity; staff review required."
+                if enrollment.schedule_id:
+                    current = CourseSchedule.objects.select_for_update().get(pk=enrollment.schedule_id)
+                    cutoff = max(timezone.localdate(), current.get_approximate_start_date())
+                    candidates = (
+                        CourseSchedule.objects.select_for_update()
+                        .filter(course_id=enrollment.application.course_id, status="OPEN", year__gte=current.year)
+                        .order_by("year", "month", "week_in_month")
+                    )
+                    for candidate in candidates:
+                        if candidate.pk == current.pk or candidate.get_approximate_start_date() <= cutoff:
+                            continue
+                        actual_occupied = Enrollment.objects.filter(schedule=candidate).exclude(
+                            status=EnrollmentStatus.UNENROLLED,
+                        ).count()
+                        occupied = max(candidate.enrolled_count, actual_occupied)
+                        if occupied >= candidate.max_capacity:
+                            continue
+                        reserved = CourseSchedule.objects.filter(
+                            pk=candidate.pk, status="OPEN",
+                            enrolled_count__lte=occupied, max_capacity__gt=occupied,
+                        ).update(enrolled_count=occupied + 1)
+                        if not reserved:
+                            continue
+                        source_occupied = Enrollment.objects.filter(schedule=current).exclude(
+                            status=EnrollmentStatus.UNENROLLED,
+                        ).count()
+                        CourseSchedule.objects.filter(pk=current.pk).update(
+                            enrolled_count=max(0, source_occupied - 1),
+                        )
+                        target = candidate
+                        enrollment.schedule = target
+                        enrollment.start_date = target.get_approximate_start_date()
+                        enrollment.end_date = (
+                            target.get_approximate_end_date()
+                            if enrollment.application.course.duration_days else None
+                        )
+                        enrollment.save(update_fields=["schedule", "start_date", "end_date"])
+                        response_status = EnrollmentAttendanceResponse.Response.DEFERRED
+                        audit_note = f"Transferred from intake {current.pk} to {target.pk}."
+                        break
+
+            attendance = EnrollmentAttendanceResponse.objects.create(
+                enrollment=enrollment, response=response_status,
+                target_schedule=target, audit_note=audit_note,
+            )
+            course_name = enrollment.application.course.fullname
+            if response_status == EnrollmentAttendanceResponse.Response.CONFIRMED:
+                message = f"Your attendance for {course_name} has been confirmed."
+            elif response_status == EnrollmentAttendanceResponse.Response.DEFERRED:
+                message = (
+                    f"Your deferral for {course_name} has been accepted. "
+                    f"Your new intake starts on {enrollment.start_date:%d %B %Y}."
+                )
+            else:
+                message = (
+                    f"Your deferral request for {course_name} is pending staff review. "
+                    "No later intake with space is currently available."
+                )
+            queue_notification(
+                recipient=request.user,
+                application=enrollment.application,
+                subject=f"Attendance response: {course_name}",
+                message=message,
+                action_url="/dashboard/learning",
+            )
+
+        return Response(_attendance_response_data(attendance))
 
 
 class EnrollmentStatusView(APIView):

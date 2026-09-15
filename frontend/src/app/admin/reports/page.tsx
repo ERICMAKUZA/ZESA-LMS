@@ -1,6 +1,7 @@
 'use client'
 
 import { BarChart2, FileText } from 'lucide-react'
+import Link from 'next/link'
 import { useQuery } from '@tanstack/react-query'
 import { format } from 'date-fns'
 import AdminLayout from '@/components/layout/AdminLayout'
@@ -36,6 +37,7 @@ export default function AdminReportsPage() {
       <PageHeader
         title="Reports"
         subtitle="Generated training and enrollment reports."
+        action={<Link href="/admin/reports/shortlist"><a className="rounded-md bg-primary px-4 py-2 text-sm font-medium text-white">Course Shortlist</a></Link>}
       />
 
       {/* Summary cards */}

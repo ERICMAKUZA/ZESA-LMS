@@ -17,6 +17,7 @@ import { useApplication, useSubmitForReview, useUpdateApplication, useRequestWit
 import type { EditableApplicationFields } from '@/hooks/useApplications'
 import { useToast } from '@/components/ui/Toast'
 import api from '@/lib/api'
+import QualificationFields, { validateQualificationSelection, type QualificationSelection, type TrainingCourse } from '@/components/applications/QualificationFields'
 import type { Application, ApplicationStatus, User } from '@/types'
 
 const timelineStatuses: ApplicationStatus[] = [
@@ -53,9 +54,15 @@ export default function ApplicationDetailPage({ params }: { params: { id: string
   const [cocChecked, setCocChecked] = useState(false)
   const [editMode, setEditMode] = useState(false)
   const [form, setForm] = useState<EditableApplicationFields | null>(null)
+  const [qualificationEdit, setQualificationEdit] = useState<QualificationSelection | null>(null)
+  const [replacementDocs, setReplacementDocs] = useState<Record<string, File>>({})
   const [withdrawOpen, setWithdrawOpen] = useState(false)
   const [withdrawReason, setWithdrawReason] = useState('')
   const [isOpeningMoodle, setIsOpeningMoodle] = useState(false)
+  const { data: trainingCourses = [] } = useQuery<TrainingCourse[]>({
+    queryKey: ['training-selection'],
+    queryFn: () => api.get<TrainingCourse[]>('/courses/training/selection/').then(response => response.data),
+  })
 
   const openMoodle = async (returnPath?: string | null) => {
     setIsOpeningMoodle(true)
@@ -77,24 +84,62 @@ export default function ApplicationDetailPage({ params }: { params: { id: string
   const startEdit = () => {
     if (!app) return
     setForm(toEditableFields(app))
+    setQualificationEdit({
+      course: String(app.course),
+      selected_department_id: app.selected_department ? String(app.selected_department) : '',
+      certification_type_id: app.certification_type ? String(app.certification_type) : '',
+      academic_sittings: app.academic_sittings.map(sitting => ({
+        education_level: sitting.education_level,
+        sitting_number: sitting.sitting_number,
+        exam_year: sitting.exam_year,
+        exam_session: sitting.exam_session,
+        results: sitting.results.map(result => ({ subject: result.subject, grade_band_id: result.grade_band_id })),
+      })),
+    })
+    setReplacementDocs({})
     setEditMode(true)
   }
 
   const cancelEdit = () => {
     setEditMode(false)
     setForm(null)
+    setQualificationEdit(null)
+    setReplacementDocs({})
   }
 
   const handleSaveEdit = async () => {
     if (!form) return
+    if (qualificationEdit) {
+      const course = trainingCourses.find(item => String(item.id) === qualificationEdit.course)
+      const error = course ? validateQualificationSelection(qualificationEdit, course) : null
+      if (error) {
+        toast({ variant: 'error', title: 'Check academic results', description: error })
+        return
+      }
+    }
     try {
-      await updateMutation.mutateAsync(form)
+      await updateMutation.mutateAsync({
+        ...form,
+        ...(qualificationEdit ? {
+          selected_department_id: qualificationEdit.selected_department_id ? Number(qualificationEdit.selected_department_id) : null,
+          certification_type_id: qualificationEdit.certification_type_id ? Number(qualificationEdit.certification_type_id) : null,
+          academic_sittings: qualificationEdit.academic_sittings,
+        } : {}),
+      })
+      if (Object.keys(replacementDocs).length > 0) {
+        const files = new FormData()
+        Object.entries(replacementDocs).forEach(([field, file]) => files.append(field, file))
+        await api.patch(`/my-applications/${params.id}/`, files)
+        queryClient.invalidateQueries({ queryKey: ['my-applications'] })
+      }
       setEditMode(false)
       setForm(null)
+      setQualificationEdit(null)
+      setReplacementDocs({})
       toast({ variant: 'success', title: 'Application updated.' })
     } catch (err: unknown) {
       const msg = (err as { response?: { data?: { detail?: string } } })?.response?.data?.detail
-      toast({ variant: 'error', title: 'Update failed', description: msg })
+      toast({ variant: 'error', title: 'Update failed', description: msg ?? 'Some changes may already be saved. Please review the application before retrying.' })
     }
   }
 
@@ -458,6 +503,29 @@ export default function ApplicationDetailPage({ params }: { params: { id: string
               </div>
             </div>
           )}
+          {(qualificationEdit || app.academic_sittings.length > 0 || app.qualification_assessment) && (
+            <Card header={<h2 className="font-semibold text-gray-900">Qualifications and Assessment</h2>}>
+              {qualificationEdit ? (
+                <QualificationFields value={qualificationEdit} onChange={setQualificationEdit} lockCourse />
+              ) : (
+                <div className="space-y-4 text-sm">
+                  {app.academic_sittings.map(sitting => (
+                    <div key={sitting.id}>
+                      <p className="font-medium text-gray-800">{sitting.education_level === 'O_LEVEL' ? 'O-Level' : 'A-Level'} sitting {sitting.sitting_number} ({sitting.exam_year})</p>
+                      <p className="text-gray-600">{sitting.results.map(result => `${result.subject}: ${result.grade_label_snapshot}`).join(' · ')}</p>
+                    </div>
+                  ))}
+                  {app.qualification_assessment && (
+                    <div className={app.qualification_assessment.qualifies ? 'rounded-md bg-green-50 p-3 text-green-800' : 'rounded-md bg-amber-50 p-3 text-amber-900'}>
+                      <p className="font-semibold">{app.qualification_assessment.qualifies ? 'Meets configured requirements' : 'DO NOT FULLY MEET REQUIREMENTS'}</p>
+                      <p>{app.qualification_assessment.total_o_level_points} O-Level points. {app.qualification_assessment.assessment_summary}</p>
+                      <p className="mt-1 text-xs">This is guidance for the reviewer, not a final admissions decision.</p>
+                    </div>
+                  )}
+                </div>
+              )}
+            </Card>
+          )}
         </div>
 
         {/* Details sidebar */}
@@ -572,7 +640,7 @@ export default function ApplicationDetailPage({ params }: { params: { id: string
           </Card>
 
           {/* Documents */}
-          {(app.national_id_doc || app.academic_certs_doc || app.student_photo || app.documents.length > 0) && (
+          {(editMode || app.national_id_doc || app.academic_certs_doc || app.student_photo || app.documents.length > 0) && (
             <Card header={<h2 className="font-semibold text-gray-900">Documents</h2>}>
               <ul className="flex flex-col gap-2">
                 {app.national_id_doc && (
@@ -608,6 +676,26 @@ export default function ApplicationDetailPage({ params }: { params: { id: string
                   </li>
                 ))}
               </ul>
+              {editMode && (
+                <div className="mt-4 space-y-3 border-t border-gray-200 pt-4">
+                  <p className="text-xs text-gray-500">Replace a file before review. Leave a field blank to keep its current file.</p>
+                  {([
+                    ['national_id_doc', 'National ID / Passport'],
+                    ['academic_certs_doc', 'Academic Certificates'],
+                    ['student_photo', 'Passport Photo'],
+                  ] as const).map(([field, label]) => (
+                    <label key={field} className="block text-xs font-medium text-gray-700">
+                      {label}
+                      <input type="file" accept={field === 'student_photo' ? '.jpg,.jpeg,.png' : '.pdf,.jpg,.jpeg,.png'}
+                        className="mt-1 block w-full text-xs text-gray-600 file:mr-2 file:rounded-md file:border-0 file:bg-primary/10 file:px-3 file:py-2 file:text-primary"
+                        onChange={event => {
+                          const file = event.target.files?.[0]
+                          if (file) setReplacementDocs(previous => ({ ...previous, [field]: file }))
+                        }} />
+                    </label>
+                  ))}
+                </div>
+              )}
             </Card>
           )}
 

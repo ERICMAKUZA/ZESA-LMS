@@ -21,6 +21,7 @@ import {
   useAdminApplication, useStartReview, useReviewAction,
   useConfirmPayment, useRetryMoodleSync, useIssueCertificate,
   useDeEnrolStudent,
+  useQualificationOverride,
 } from '@/hooks/useApplications'
 import api from '@/lib/api'
 import type { ApplicationStatus, Centre } from '@/types'
@@ -65,6 +66,7 @@ export default function AdminApplicationDetailPage({ params }: { params: { id: s
   const retryMoodleSync = useRetryMoodleSync(params.id)
   const issueCertificate = useIssueCertificate(params.id)
   const deEnrolStudent = useDeEnrolStudent(params.id)
+  const qualificationOverride = useQualificationOverride(params.id)
   const { toast } = useToast()
   const { user } = useAuth()
 
@@ -78,6 +80,8 @@ export default function AdminApplicationDetailPage({ params }: { params: { id: s
   const [deEnrolOpen, setDeEnrolOpen] = useState(false)
   const [deEnrolType, setDeEnrolType] = useState<'VOLUNTARY' | 'MANDATORY'>('MANDATORY')
   const [deEnrolReason, setDeEnrolReason] = useState('')
+  const [overrideOpen, setOverrideOpen] = useState(false)
+  const [overrideNote, setOverrideNote] = useState('')
 
   const {
     register: registerPayment,
@@ -201,6 +205,17 @@ export default function AdminApplicationDetailPage({ params }: { params: { id: s
     } catch (err: unknown) {
       const msg = (err as { response?: { data?: { detail?: string } } })?.response?.data?.detail
       toast({ variant: 'error', title: 'Action failed', description: msg })
+    }
+  }
+
+  const saveQualificationOverride = async () => {
+    try {
+      await qualificationOverride.mutateAsync({ note: overrideNote })
+      toast({ variant: 'success', title: 'Qualification override recorded' })
+      setOverrideOpen(false)
+      setOverrideNote('')
+    } catch {
+      toast({ variant: 'error', title: 'Could not save the qualification override' })
     }
   }
 
@@ -379,6 +394,18 @@ export default function AdminApplicationDetailPage({ params }: { params: { id: s
             </dl>
           </Card>
 
+          {app.qualification_assessment && (
+            <Card header={<h2 className="font-semibold text-gray-900">Qualification Assessment</h2>}>
+              <div className={`rounded-lg border p-4 ${app.qualification_assessment.qualifies ? 'border-green-200 bg-green-50' : 'border-red-200 bg-red-50'}`}>
+                <p className={`font-semibold ${app.qualification_assessment.qualifies ? 'text-green-800' : 'text-red-800'}`}>{app.qualification_assessment.assessment_summary}</p>
+                <p className="mt-1 text-sm text-gray-700">O-Level points: <strong>{app.qualification_assessment.total_o_level_points}</strong>{app.qualification_assessment.has_a_level_sciences ? ' · A-Level science preference applies' : ''}</p>
+                {!app.qualification_assessment.qualifies && app.qualification_assessment.failed_rule_codes.length > 0 && <p className="mt-2 text-sm text-red-700">Outstanding requirements: {app.qualification_assessment.failed_rule_codes.join(', ')}</p>}
+              </div>
+              {app.qualification_overrides.length > 0 && <div className="mt-3 text-sm text-gray-600">Override: {app.qualification_overrides[0].note || 'Recorded without a note'} · {app.qualification_overrides[0].reviewer_name}</div>}
+              {app.status === 'UNDER_REVIEW' && !app.qualification_assessment.qualifies && <Button size="sm" variant="outline" className="mt-4" onClick={() => setOverrideOpen(true)}>Override qualification result</Button>}
+            </Card>
+          )}
+
           {/* Accommodation */}
           <Card header={<h2 className="font-semibold text-gray-900">Accommodation</h2>}>
             <dl className="grid grid-cols-2 gap-x-6 gap-y-3 text-sm">
@@ -537,6 +564,16 @@ export default function AdminApplicationDetailPage({ params }: { params: { id: s
       </div>
 
       {/* Review action modal */}
+      <Modal
+        open={overrideOpen}
+        onOpenChange={setOverrideOpen}
+        title="Override qualification result"
+        footer={<><Button variant="ghost" onClick={() => setOverrideOpen(false)}>Cancel</Button><Button loading={qualificationOverride.isPending} onClick={saveQualificationOverride}>Save override</Button></>}
+      >
+        <label className="block text-sm font-medium text-gray-700 mb-1">Override note</label>
+        <textarea rows={4} value={overrideNote} onChange={(event) => setOverrideNote(event.target.value)} className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm" placeholder="Explain why the application may proceed despite the automated result." />
+      </Modal>
+
       <Modal
         open={!!modalAction}
         onOpenChange={(open) => { if (!open) closeModal() }}

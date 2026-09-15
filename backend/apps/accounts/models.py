@@ -31,6 +31,7 @@ class User(AbstractBaseUser, PermissionsMixin):
         ADMIN = "ADMIN", "Admin"
         FINANCE = "FINANCE", "Finance"
         SUPERADMIN = "SUPERADMIN", "Super Admin"
+        TRAINER = "TRAINER", "Trainer"
         LECTURER = "LECTURER", "Lecturer"
         CENTRE_ADMIN = "CENTRE_ADMIN", "Centre Administrator"
 

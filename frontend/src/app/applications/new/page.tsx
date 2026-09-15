@@ -17,7 +17,7 @@ import Button from '@/components/ui/Button'
 import Spinner from '@/components/ui/Spinner'
 import { useToast } from '@/components/ui/Toast'
 import { useSubmitApplication } from '@/hooks/useApplications'
-import { useCourses } from '@/hooks/useCourses'
+import QualificationFields, { emptySelection, validateQualificationSelection, type QualificationSelection, type TrainingCourse } from '@/components/applications/QualificationFields'
 import api from '@/lib/api'
 import type { Centre } from '@/types'
 
@@ -33,8 +33,7 @@ const applicationSchema = z.object({
   course: z.string().min(1, 'Please select a course'),
   motivation: z.string().min(50, 'Please write at least 50 characters'),
   line_manager_email: z.string().email('Enter a valid email').optional().or(z.literal('')),
-  hexco_level: z.enum(['NC', 'ND'], { required_error: 'Select NC or ND' }),
-  department: z.enum(['ELECTRICAL', 'TELECOMS', 'MECHANICAL']).optional(),
+  department: z.string().optional(),
   student_category: z.enum(['DIRECT', 'APPRENTICE', 'INTERNAL'], {
     required_error: 'Select a category',
   }),
@@ -228,7 +227,7 @@ function SectionHeader({ title, description }: { title: string; description?: st
 // ── Main form ───────────────────────────────────────────────────────────────
 
 const DRAFT_WATCH_FIELDS = [
-  'course', 'hexco_level', 'department', 'student_category', 'preferred_centre',
+  'course', 'department', 'student_category', 'preferred_centre',
   'is_resident', 'hostel_name', 'room_number', 'guardian_name', 'guardian_contact',
   'guardian_email', 'responsible_party', 'motivation', 'line_manager_email',
 ] as const
@@ -239,13 +238,18 @@ function NewApplicationForm() {
   const { toast } = useToast()
 
   const preselectedCourse = searchParams.get('course') ?? searchParams.get('courseId') ?? ''
+  const [qualification, setQualification] = useState<QualificationSelection>({ ...emptySelection, course: preselectedCourse })
+  const [qualificationError, setQualificationError] = useState<string | null>(null)
 
   const [draftId, setDraftId] = useState<string | null>(null)
   const [draftSaved, setDraftSaved] = useState(false)
   const draftTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
   const draftSavedTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
 
-  const { data: coursesData, isLoading: coursesLoading } = useCourses()
+  const { data: trainingCourses = [] } = useQuery<TrainingCourse[]>({
+    queryKey: ['training-selection'],
+    queryFn: () => api.get<TrainingCourse[]>('/courses/training/selection/').then(response => response.data),
+  })
   const { data: centresData, isLoading: centresLoading } = useQuery<Centre[]>({
     queryKey: ['centres'],
     queryFn: async () => {
@@ -254,10 +258,6 @@ function NewApplicationForm() {
     },
   })
 
-  const courseOptions = (coursesData?.results ?? []).map((c) => ({
-    value: String(c.id),
-    label: c.fullname,
-  }))
   const centreOptions = (centresData ?? []).map((c) => ({
     value: c.id,
     label: c.name + (c.is_primary ? ' (Primary)' : ''),
@@ -270,6 +270,7 @@ function NewApplicationForm() {
     register,
     handleSubmit,
     getValues,
+    setValue,
     formState: { errors, isSubmitting },
   } = useForm<FormValues>({
     resolver: zodResolver(applicationSchema),
@@ -325,6 +326,13 @@ function NewApplicationForm() {
   }, [watchedJson, draftId])
 
   const onSubmit = async (data: FormValues) => {
+    const selectedCourse = trainingCourses.find(item => String(item.id) === qualification.course)
+    const selectionError = validateQualificationSelection(qualification, selectedCourse)
+    if (selectionError) {
+      setQualificationError(selectionError)
+      return
+    }
+    setQualificationError(null)
     try {
       const hasFile = data.national_id_doc || data.academic_certs_doc || data.student_photo
       let payload: FormData | Record<string, unknown>
@@ -338,13 +346,27 @@ function NewApplicationForm() {
             fd.append(key, String(value))
           }
         })
+        if (qualification.selected_department_id) fd.append('selected_department_id', qualification.selected_department_id)
+        if (qualification.certification_type_id) fd.append('certification_type_id', qualification.certification_type_id)
         payload = fd
       } else {
-        payload = { ...data, course: Number(data.course) } as Record<string, unknown>
+        payload = {
+          ...data,
+          course: Number(data.course),
+          selected_department_id: qualification.selected_department_id || null,
+          certification_type_id: qualification.certification_type_id || null,
+        } as Record<string, unknown>
       }
 
-      const app = await submitMutation.mutateAsync(payload)
+      const app = draftId
+        ? (await api.patch<{ id: string }>(`/my-applications/${draftId}/`, payload)).data
+        : await submitMutation.mutateAsync(payload)
       setDraftId(app.id)
+      await api.patch(`/my-applications/${app.id}/`, {
+        selected_department_id: qualification.selected_department_id || null,
+        certification_type_id: qualification.certification_type_id || null,
+        academic_sittings: qualification.academic_sittings,
+      })
       await api.post(`/my-applications/${app.id}/submit/`)
       toast({
         variant: 'success',
@@ -376,7 +398,7 @@ function NewApplicationForm() {
     }
   }
 
-  const isLoading = coursesLoading || centresLoading
+  const isLoading = centresLoading
 
   return (
     <>
@@ -412,51 +434,11 @@ function NewApplicationForm() {
             <Card header={<SectionHeader title="Programme Details" />}>
               <div className="flex flex-col gap-5 pt-1">
 
-                {/* Course */}
-                <Controller
-                  control={control}
-                  name="course"
-                  render={({ field }) => (
-                    <Select
-                      label="Course *"
-                      placeholder="Select a course…"
-                      options={courseOptions}
-                      value={field.value}
-                      onValueChange={field.onChange}
-                      error={errors.course?.message}
-                    />
-                  )}
-                />
-
-                {/* HEXCO Level */}
-                <Controller
-                  control={control}
-                  name="hexco_level"
-                  render={({ field, fieldState }) => (
-                    <div className="flex flex-col gap-1.5">
-                      <label className="text-sm font-medium text-gray-700">
-                        HEXCO Level <span className="text-danger">*</span>
-                      </label>
-                      <div className="grid grid-cols-2 gap-3">
-                        <RadioCard
-                          selected={field.value === 'NC'}
-                          onClick={() => field.onChange('NC')}
-                          title="NC"
-                          subtitle="National Certificate"
-                        />
-                        <RadioCard
-                          selected={field.value === 'ND'}
-                          onClick={() => field.onChange('ND')}
-                          title="ND"
-                          subtitle="National Diploma"
-                        />
-                      </div>
-                      {fieldState.error && (
-                        <p className="text-xs text-danger">{fieldState.error.message}</p>
-                      )}
-                    </div>
-                  )}
-                />
+                <QualificationFields value={qualification} onChange={next => {
+                  setQualification(next)
+                  setValue('course', next.course, { shouldValidate: true })
+                  setQualificationError(null)
+                }} error={qualificationError ?? errors.course?.message} />
 
                 {/* Preferred Centre */}
                 <Controller
@@ -516,25 +498,13 @@ function NewApplicationForm() {
                   )}
                 />
 
-                {/* Department — INTERNAL only */}
+                {/* Employer department is distinct from the course's academic department. */}
                 {studentCategory === 'INTERNAL' && (
-                  <Controller
-                    control={control}
-                    name="department"
-                    render={({ field }) => (
-                      <Select
-                        label="Department *"
-                        placeholder="Select your ZESA department…"
-                        options={[
-                          { value: 'ELECTRICAL', label: 'Electrical Engineering' },
-                          { value: 'TELECOMS', label: 'Telecommunications' },
-                          { value: 'MECHANICAL', label: 'Mechanical Engineering' },
-                        ]}
-                        value={field.value ?? ''}
-                        onValueChange={field.onChange}
-                        error={errors.department?.message}
-                      />
-                    )}
+                  <Input
+                    label="ZESA employer department *"
+                    placeholder="Your department at work"
+                    error={errors.department?.message}
+                    {...register('department')}
                   />
                 )}
 

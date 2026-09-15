@@ -14,6 +14,7 @@ import BrandLogo from './BrandLogo'
 
 const nav = [
   { href: '/dashboard',      label: 'Dashboard',      icon: LayoutDashboard },
+  { href: '/dashboard/learning', label: 'My Learning', icon: BookOpen },
   { href: '/courses',        label: 'Browse Courses',  icon: BookOpen },
   { href: '/applications',   label: 'My Applications', icon: FileText },
   { href: '/certificates',   label: 'Certificates',    icon: Award },
@@ -49,7 +50,7 @@ function StudentLayoutInner({ children }: { children: ReactNode }) {
               onClick={() => setOpen(false)}
               className={clsx(
                 'flex items-center gap-3 px-6 py-3 text-sm font-medium transition-colors',
-                pathname.startsWith(href)
+                (href === '/dashboard' ? pathname === href : pathname.startsWith(href))
                   ? 'bg-primary-light text-white'
                   : 'text-white/70 hover:bg-primary-light hover:text-white',
               )}

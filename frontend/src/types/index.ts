@@ -11,7 +11,7 @@ export interface User {
   first_name: string
   last_name: string
   full_name: string
-  role: 'STUDENT' | 'REVIEWER' | 'ADMIN' | 'FINANCE' | 'SUPERADMIN' | 'LECTURER' | 'CENTRE_ADMIN'
+  role: 'STUDENT' | 'REVIEWER' | 'ADMIN' | 'FINANCE' | 'SUPERADMIN' | 'TRAINER' | 'LECTURER' | 'CENTRE_ADMIN'
   employee_id: string
   ec_number: string
   student_id: string | null
@@ -60,6 +60,53 @@ export interface CourseCategory {
   course_count?: number
 }
 
+export interface CourseType {
+  id: number
+  code: string
+  name: string
+  description: string
+  is_active: boolean
+  requires_qualification_assessment: boolean
+  default_qualification_profile: number | null
+}
+
+export interface CertificationType {
+  id: number
+  course_type: number
+  code: string
+  name: string
+  description: string
+  is_active: boolean
+}
+
+export interface Department {
+  id: number
+  code: string
+  name: string
+  description: string
+  is_active: boolean
+}
+
+export interface GradeBand {
+  id: number
+  code: string
+  label: string
+  rank: number
+  points: number
+  is_active: boolean
+}
+
+export interface QualificationProfile {
+  id: number
+  code: string
+  name: string
+  course_type: number | null
+  max_o_level_sittings: number
+  minimum_total_points: number
+  prefer_a_level_sciences: boolean
+  is_active: boolean
+}
+
 export interface CourseSchedule {
   id: string
   course: number
@@ -89,6 +136,13 @@ export interface Course {
   shortname: string
   summary: string
   category: CourseCategory | null
+  course_type: CourseType | null
+  qualification_profile: QualificationProfile | null
+  departments: Department[]
+  certification_types: CertificationType[]
+  minimum_points_required: number | null
+  required_subjects: string[]
+  qualification_assessment_enabled: boolean | null
   enrolled_count: number
   max_capacity: number | null
   price: string | null
@@ -206,6 +260,8 @@ export interface Application {
   department: string
   employee_id: string
   hexco_level: 'NC' | 'ND' | ''
+  selected_department: number | null
+  certification_type: number | null
   student_category: 'DIRECT' | 'APPRENTICE' | 'INTERNAL' | ''
   preferred_centre: string | null
   assigned_centre: string | null
@@ -240,6 +296,35 @@ export interface Application {
   code_of_conduct_signed_at: string | null
   escalated: boolean
   escalated_at: string | null
+  academic_sittings: AcademicSitting[]
+  qualification_assessment: QualificationAssessment | null
+  qualification_overrides: QualificationOverride[]
+}
+
+export interface AcademicSitting {
+  id: number
+  education_level: 'O_LEVEL' | 'A_LEVEL'
+  sitting_number: number
+  exam_year: number
+  exam_session: string
+  results: Array<{ id: number; subject: string; grade_band_id: number; grade_label_snapshot: string; points_snapshot: number; rank_snapshot: number }>
+}
+
+export interface QualificationAssessment {
+  qualifies: boolean
+  total_o_level_points: number
+  has_a_level_sciences: boolean
+  failed_rule_codes: string[]
+  assessment_summary: string
+  assessed_at: string
+}
+
+export interface QualificationOverride {
+  id: number
+  reviewer: number | null
+  reviewer_name: string
+  note: string
+  created_at: string
 }
 
 export interface ApplicationListItem {
@@ -254,6 +339,18 @@ export interface ApplicationListItem {
   submitted_at: string | null
   created_at: string
   enrollment_status: string | null
+  qualification_assessment: QualificationAssessment | null
+}
+
+export interface ShortlistRow {
+  application_id: string
+  surname: string
+  name: string
+  points: number
+  eligibility: string
+  has_a_level_sciences: boolean
+  failed_rule_codes: string[]
+  has_override: boolean
 }
 
 export interface LecturerApplication {
