@@ -9,30 +9,27 @@ import PageHeader from '@/components/ui/PageHeader'
 import Card from '@/components/ui/Card'
 import Spinner from '@/components/ui/Spinner'
 import Input from '@/components/ui/Input'
-import api from '@/lib/api'
+import { fetchAllPages } from '@/lib/api'
 import Button from '@/components/ui/Button'
-import type { Course, PaginatedResponse } from '@/types'
+import type { Course } from '@/types'
 
 function useAdminCourses(search: string) {
-  return useQuery<PaginatedResponse<Course>>({
+  return useQuery<Course[]>({
     queryKey: ['admin-courses', search],
-    queryFn: async () => {
-      const { data } = await api.get('/courses/admin/', { params: search ? { search } : undefined })
-      return data
-    },
+    queryFn: () => fetchAllPages<Course>('/courses/admin/', search ? { search } : undefined),
   })
 }
 
 export default function AdminCoursesPage() {
   const [search, setSearch] = useState('')
   const { data, isLoading } = useAdminCourses(search)
-  const courses = data?.results ?? []
+  const courses = data ?? []
 
   return (
     <AdminLayout>
       <PageHeader
         title="Courses"
-        subtitle={`${data?.count ?? 0} total courses`}
+        subtitle={`${courses.length} courses`}
         action={<Link href="/admin/courses/new"><Button><Plus className="h-4 w-4" /> Add Course</Button></Link>}
       />
 

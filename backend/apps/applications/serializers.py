@@ -1,7 +1,20 @@
+from django.db import transaction
 from rest_framework import serializers
 
 from centres.models import Centre
-from .models import Application, ApplicationDocument, ApplicationStatus, ApplicationStatusHistory
+from apps.courses.models import CertificationType, Department, GradeBand
+
+from .models import (
+    Application,
+    ApplicationAcademicResult,
+    ApplicationAcademicSitting,
+    ApplicationDocument,
+    ApplicationQualificationAssessment,
+    ApplicationQualificationOverride,
+    ApplicationStatus,
+    ApplicationStatusHistory,
+)
+from .services.qualification import assess_application
 
 
 class ApplicationDocumentSerializer(serializers.ModelSerializer):
@@ -28,6 +41,55 @@ class ApplicationStatusHistorySerializer(serializers.ModelSerializer):
         return obj.changed_by_name_snapshot or (obj.changed_by.full_name if obj.changed_by else "System")
 
 
+class AcademicResultInputSerializer(serializers.Serializer):
+    subject = serializers.CharField(max_length=150)
+    grade_band_id = serializers.PrimaryKeyRelatedField(
+        queryset=GradeBand.objects.filter(is_active=True), source="grade_band"
+    )
+
+
+class AcademicSittingInputSerializer(serializers.Serializer):
+    education_level = serializers.ChoiceField(choices=ApplicationAcademicSitting.EDUCATION_LEVEL_CHOICES)
+    sitting_number = serializers.IntegerField(min_value=1)
+    exam_year = serializers.IntegerField(min_value=1950, max_value=2100)
+    exam_session = serializers.CharField(required=False, allow_blank=True, default="")
+    results = AcademicResultInputSerializer(many=True, min_length=1)
+
+
+class ApplicationAcademicResultSerializer(serializers.ModelSerializer):
+    grade_band_id = serializers.IntegerField(read_only=True)
+
+    class Meta:
+        model = ApplicationAcademicResult
+        fields = ("id", "subject", "grade_band_id", "grade_label_snapshot", "points_snapshot", "rank_snapshot")
+
+
+class ApplicationAcademicSittingSerializer(serializers.ModelSerializer):
+    results = ApplicationAcademicResultSerializer(many=True, read_only=True)
+
+    class Meta:
+        model = ApplicationAcademicSitting
+        fields = ("id", "education_level", "sitting_number", "exam_year", "exam_session", "results")
+
+
+class ApplicationQualificationAssessmentSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = ApplicationQualificationAssessment
+        fields = (
+            "qualifies", "total_o_level_points", "has_a_level_sciences",
+            "failed_rule_codes", "assessment_summary", "configuration_snapshot", "assessed_at",
+        )
+
+
+class ApplicationQualificationOverrideSerializer(serializers.ModelSerializer):
+    reviewer_name = serializers.CharField(source="reviewer.full_name", read_only=True)
+
+    class Meta:
+        model = ApplicationQualificationOverride
+        fields = ("id", "reviewer", "reviewer_name", "note", "created_at")
+        read_only_fields = ("id", "reviewer", "reviewer_name", "created_at")
+
+
 class ApplicationCreateSerializer(serializers.ModelSerializer):
     applicant = serializers.HiddenField(default=serializers.CurrentUserDefault())
     preferred_centre = serializers.PrimaryKeyRelatedField(
@@ -35,13 +97,21 @@ class ApplicationCreateSerializer(serializers.ModelSerializer):
     )
     line_manager_email = serializers.EmailField(required=False, allow_blank=True, default='')
     department = serializers.CharField(required=False, allow_blank=True, default='')
+    selected_department_id = serializers.PrimaryKeyRelatedField(
+        queryset=Department.objects.all(), source="selected_department", required=False, allow_null=True,
+    )
+    certification_type_id = serializers.PrimaryKeyRelatedField(
+        queryset=CertificationType.objects.all(), source="certification_type", required=False, allow_null=True,
+    )
+    academic_sittings = AcademicSittingInputSerializer(many=True, write_only=True, required=False)
 
     class Meta:
         model = Application
         fields = (
             "id", "applicant", "course", "motivation",
             "line_manager_email", "department", "employee_id",
-            "hexco_level", "student_category",
+            "hexco_level", "selected_department_id", "certification_type_id", "academic_sittings",
+            "student_category",
             "preferred_centre",
             "is_resident", "hostel_name", "room_number",
             "guardian_name", "guardian_contact", "guardian_email",
@@ -58,14 +128,17 @@ class ApplicationCreateSerializer(serializers.ModelSerializer):
         return course
 
     def validate(self, attrs):
-        # course may be absent on partial updates
-        course = attrs.get("course")
+        # Course may be absent on a partial update; its configured rules still apply.
+        course = attrs.get("course") or (self.instance.course if self.instance else None)
         if course is None:
             return attrs
         # applicant is a HiddenField, so on a partial update where it isn't
         # in the payload DRF skips it entirely rather than applying its
         # CurrentUserDefault — fall back to the existing instance's owner.
-        applicant = attrs.get("applicant") or (self.instance.applicant if self.instance else None)
+        applicant = self.context.get("application_applicant") or attrs.get("applicant") or (
+            self.instance.applicant if self.instance else None
+        )
+        attrs["applicant"] = applicant
         conflict = (
             Application.objects.filter(applicant=applicant, course=course)
             .exclude(status=ApplicationStatus.REJECTED)
@@ -76,15 +149,99 @@ class ApplicationCreateSerializer(serializers.ModelSerializer):
             raise serializers.ValidationError(
                 "You already have an active application for this course."
             )
+
+        selected_department = attrs.get("selected_department") if "selected_department" in attrs else getattr(
+            self.instance, "selected_department", None
+        )
+        course_departments = list(course.departments.filter(is_active=True))
+        if len(course_departments) == 1 and selected_department is None:
+            selected_department = course_departments[0]
+            attrs["selected_department"] = selected_department
+        elif len(course_departments) > 1 and selected_department is None:
+            raise serializers.ValidationError(
+                {"selected_department_id": "Select one of the departments linked to this course."}
+            )
+        if selected_department:
+            if not selected_department.is_active:
+                raise serializers.ValidationError({"selected_department_id": "Select an active department."})
+            if course_departments and selected_department.id not in {item.id for item in course_departments}:
+                raise serializers.ValidationError(
+                    {"selected_department_id": "The selected department is not linked to this course."}
+                )
+
+        certification_type = attrs.get("certification_type") if "certification_type" in attrs else getattr(
+            self.instance, "certification_type", None
+        )
+        course_certifications = list(course.certification_types.filter(is_active=True))
+        if len(course_certifications) == 1 and certification_type is None:
+            certification_type = course_certifications[0]
+            attrs["certification_type"] = certification_type
+        elif course_certifications and certification_type is None:
+            raise serializers.ValidationError(
+                {"certification_type_id": "Select a certification type for this course."}
+            )
+        if certification_type:
+            if not certification_type.is_active or certification_type not in course_certifications:
+                raise serializers.ValidationError(
+                    {"certification_type_id": "The selected certification type is not available for this course."}
+                )
+
+        sittings = attrs.get("academic_sittings")
+        profile = course.qualification_profile or getattr(course.course_type, "default_qualification_profile", None)
+        if sittings is not None and course.uses_qualification_assessment and profile:
+            o_level_sittings = [item for item in sittings if item["education_level"] == "O_LEVEL"]
+            sitting_keys = {(item["education_level"], item["sitting_number"]) for item in sittings}
+            if len(sitting_keys) != len(sittings):
+                raise serializers.ValidationError({"academic_sittings": "Each education level and sitting number must be unique."})
+            if len(o_level_sittings) > profile.max_o_level_sittings:
+                raise serializers.ValidationError(
+                    {"academic_sittings": f"This course allows at most {profile.max_o_level_sittings} O-Level sittings."}
+                )
         return attrs
 
+    def _replace_academic_sittings(self, application, sittings):
+        application.academic_sittings.all().delete()
+        for sitting_data in sittings:
+            result_data = sitting_data.pop("results")
+            sitting = ApplicationAcademicSitting.objects.create(application=application, **sitting_data)
+            ApplicationAcademicResult.objects.bulk_create([
+                ApplicationAcademicResult(
+                    sitting=sitting,
+                    subject=result["subject"],
+                    grade_band=result["grade_band"],
+                    grade_label_snapshot=result["grade_band"].label,
+                    points_snapshot=result["grade_band"].points,
+                    rank_snapshot=result["grade_band"].rank,
+                )
+                for result in result_data
+            ])
+
     def create(self, validated_data):
+        sittings = validated_data.pop("academic_sittings", None)
         applicant = validated_data["applicant"]
         if not validated_data.get("employee_id") and applicant.employee_id:
             validated_data["employee_id"] = applicant.employee_id
         if not validated_data.get("department") and applicant.department:
             validated_data["department"] = applicant.department
-        return super().create(validated_data)
+        with transaction.atomic():
+            application = super().create(validated_data)
+            application.sync_legacy_training_fields()
+            application.save(update_fields=["department", "hexco_level", "updated_at"])
+            if sittings is not None:
+                self._replace_academic_sittings(application, sittings)
+            assess_application(application)
+        return application
+
+    def update(self, instance, validated_data):
+        sittings = validated_data.pop("academic_sittings", None)
+        with transaction.atomic():
+            application = super().update(instance, validated_data)
+            application.sync_legacy_training_fields()
+            application.save(update_fields=["department", "hexco_level", "updated_at"])
+            if sittings is not None:
+                self._replace_academic_sittings(application, sittings)
+            assess_application(application)
+        return application
 
 
 class ApplicationListSerializer(serializers.ModelSerializer):
@@ -92,6 +249,7 @@ class ApplicationListSerializer(serializers.ModelSerializer):
     applicant_email = serializers.EmailField(source="applicant.email", read_only=True)
     course_name = serializers.CharField(source="course.fullname", read_only=True)
     enrollment_status = serializers.SerializerMethodField()
+    qualification_assessment = ApplicationQualificationAssessmentSerializer(read_only=True)
 
     class Meta:
         model = Application
@@ -101,6 +259,7 @@ class ApplicationListSerializer(serializers.ModelSerializer):
             "escalated", "escalated_at",
             "submitted_at", "created_at",
             "enrollment_status",
+            "qualification_assessment",
         )
 
     def get_applicant_name(self, obj):
@@ -156,6 +315,9 @@ class ApplicationDetailSerializer(serializers.ModelSerializer):
     enrollment = serializers.SerializerMethodField()
     certificate = serializers.SerializerMethodField()
     lecturer_signed_off_by_name = serializers.SerializerMethodField()
+    academic_sittings = ApplicationAcademicSittingSerializer(many=True, read_only=True)
+    qualification_assessment = ApplicationQualificationAssessmentSerializer(read_only=True)
+    qualification_overrides = ApplicationQualificationOverrideSerializer(many=True, read_only=True)
 
     class Meta:
         model = Application
@@ -163,7 +325,7 @@ class ApplicationDetailSerializer(serializers.ModelSerializer):
             "id", "applicant", "applicant_name", "applicant_email",
             "course", "course_name", "status",
             "motivation", "line_manager_email", "department", "employee_id",
-            "hexco_level", "student_category",
+            "hexco_level", "selected_department", "certification_type", "student_category",
             "preferred_centre", "is_resident", "hostel_name", "room_number",
             "guardian_name", "guardian_contact", "guardian_email", "responsible_party",
             "national_id_doc", "academic_certs_doc", "student_photo",
@@ -177,6 +339,7 @@ class ApplicationDetailSerializer(serializers.ModelSerializer):
             "submitted_at", "reviewed_at", "approved_at", "enrolled_at",
             "created_at", "updated_at",
             "documents", "recent_history",
+            "academic_sittings", "qualification_assessment", "qualification_overrides",
             "payment", "enrollment", "certificate",
         )
         read_only_fields = (

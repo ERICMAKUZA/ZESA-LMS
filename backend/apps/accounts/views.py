@@ -6,7 +6,7 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework_simplejwt.views import TokenObtainPairView
 
-from apps.accounts.permissions import IsAdmin
+from apps.accounts.permissions import CanManageTraining, IsAdmin
 
 from .models import User
 from .moodle_sso import (
@@ -15,7 +15,13 @@ from .moodle_sso import (
     consume_moodle_sso_code,
     issue_moodle_sso_code,
 )
-from .serializers import TokenObtainPairSerializer, UserCreateSerializer, UserSerializer, UserUpdateSerializer
+from .serializers import (
+    AdminUserCreateSerializer,
+    TokenObtainPairSerializer,
+    UserCreateSerializer,
+    UserSerializer,
+    UserUpdateSerializer,
+)
 
 
 class RegisterView(generics.CreateAPIView):
@@ -119,13 +125,69 @@ class MoodleSsoConsumeView(APIView):
         return Response(payload)
 
 
-class AdminUserListView(generics.ListAPIView):
+class AdminUserListCreateView(generics.ListCreateAPIView):
     queryset = User.objects.all().order_by("last_name", "first_name")
-    serializer_class = UserSerializer
     permission_classes = [IsAdmin]
+    serializer_class = UserSerializer
     filterset_fields = ["role", "is_active"]
     search_fields = ["email", "first_name", "last_name", "employee_id", "department"]
     ordering_fields = ["last_name", "date_joined", "role"]
+
+    def get_serializer_class(self):
+        if self.request.method == "POST":
+            return AdminUserCreateSerializer
+        return UserSerializer
+
+
+class AdminUserAssignLecturerView(APIView):
+    permission_classes = [IsAdmin]
+
+    def post(self, request, pk: int):
+        try:
+            user = User.objects.get(pk=pk)
+        except User.DoesNotExist:
+            return Response({"detail": "User not found."}, status=status.HTTP_404_NOT_FOUND)
+
+        if user.role in (User.Role.ADMIN, User.Role.SUPERADMIN):
+            return Response(
+                {"detail": "Cannot assign lecturer role to an administrator account."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        if user.role == User.Role.LECTURER:
+            return Response(UserSerializer(user).data)
+
+        user.role = User.Role.LECTURER
+        user.save(update_fields=["role"])
+        return Response(UserSerializer(user).data)
+
+
+class AdminUserDeactivateView(APIView):
+    permission_classes = [IsAdmin]
+
+    def post(self, request, pk: int):
+        try:
+            user = User.objects.get(pk=pk)
+        except User.DoesNotExist:
+            return Response({"detail": "User not found."}, status=status.HTTP_404_NOT_FOUND)
+
+        user.is_active = False
+        user.save(update_fields=["is_active"])
+        return Response(UserSerializer(user).data)
+
+
+class AdminUserReactivateView(APIView):
+    permission_classes = [IsAdmin]
+
+    def post(self, request, pk: int):
+        try:
+            user = User.objects.get(pk=pk)
+        except User.DoesNotExist:
+            return Response({"detail": "User not found."}, status=status.HTTP_404_NOT_FOUND)
+
+        user.is_active = True
+        user.save(update_fields=["is_active"])
+        return Response(UserSerializer(user).data)
 
 
 class AdminLecturerListView(generics.ListAPIView):
@@ -134,7 +196,7 @@ class AdminLecturerListView(generics.ListAPIView):
         is_active=True,
     ).order_by("last_name", "first_name")
     serializer_class = UserSerializer
-    permission_classes = [IsAdmin]
+    permission_classes = [CanManageTraining]
     pagination_class = None
 
 

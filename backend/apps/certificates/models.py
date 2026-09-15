@@ -120,8 +120,8 @@ class Certificate(models.Model):
     def issue_from_enrollment(cls, enrollment, issued_by=None):
         """
         Create and issue a certificate for an ENROLLED application's
-        enrollment. Transitions the application ENROLLED -> CERTIFIED via
-        the existing Application.certify() state machine method.
+        enrollment. Records the application ENROLLED -> CERTIFIED transition
+        in the same transaction as certificate creation.
         Raises ValueError if the application isn't ENROLLED or a
         certificate already exists for this enrollment.
         """
@@ -147,10 +147,15 @@ class Certificate(models.Model):
                 certificate_number=cls.generate_number(),
                 issued_by=issued_by,
             )
-            application.certify()
+            application._record_transition(ApplicationStatus.CERTIFIED)
+            application.status = ApplicationStatus.CERTIFIED
+            application.save(update_fields=["status", "updated_at"])
 
         from apps.certificates.tasks import generate_certificate_pdf
-        generate_certificate_pdf.delay(str(cert.id))
+        from apps.workflows.services import queue_certificate_collection_notification
+
+        queue_certificate_collection_notification(cert)
+        transaction.on_commit(lambda: generate_certificate_pdf.delay(str(cert.id)))
 
         return cert
 

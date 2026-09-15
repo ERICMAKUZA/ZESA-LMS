@@ -5,7 +5,7 @@ import Link from 'next/link'
 import { usePathname, useRouter } from 'next/navigation'
 import {
   LayoutDashboard, FileText, GraduationCap, BookOpen, Users, BarChart2, Menu, X, LogOut, User,
-  Tags, CalendarDays, Award, HelpCircle, ExternalLink, UserCog,
+  Tags, CalendarDays, Award, HelpCircle, ExternalLink, Settings, UserCog,
 } from 'lucide-react'
 import { clsx } from 'clsx'
 import { useAuth } from '@/hooks/useAuth'
@@ -28,6 +28,12 @@ const nav = [
 const lecturerNav = [
   { href: '/lecturer',         label: 'My Students', icon: GraduationCap },
   { href: '/lecturer/courses', label: 'My Courses',  icon: BookOpen },
+]
+
+const trainerNav = [
+  { href: '/admin/courses', label: 'Courses', icon: BookOpen },
+  { href: '/admin/training', label: 'Training Calendar', icon: CalendarDays },
+  { href: '/admin/settings', label: 'Settings', icon: Settings },
 ]
 
 // Full add/edit/delete management for these lives in the Django admin
@@ -66,7 +72,15 @@ function AdminContent({ children }: { children: ReactNode }) {
   if (user?.role === 'STUDENT') return null
 
   const isLecturer = user?.role === 'LECTURER'
-  const navItems = isLecturer ? lecturerNav : nav
+  const isTrainer = user?.role === 'TRAINER'
+  const canManageTrainingConfiguration = isTrainer || user?.role === 'ADMIN' || user?.role === 'SUPERADMIN'
+  const navItems = isLecturer
+    ? lecturerNav
+    : isTrainer
+      ? trainerNav
+      : canManageTrainingConfiguration
+        ? [...nav, { href: '/admin/training', label: 'Training Calendar', icon: CalendarDays }, { href: '/admin/settings', label: 'Settings', icon: Settings }]
+        : nav
 
   return (
     <div className="flex h-screen overflow-hidden bg-gray-50">

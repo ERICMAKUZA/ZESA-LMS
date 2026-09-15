@@ -48,6 +48,19 @@ class IsLecturer(BasePermission):
         )
 
 
+class CanManageTraining(BasePermission):
+    def has_permission(self, request, view):
+        return bool(
+            request.user
+            and request.user.is_authenticated
+            and request.user.role in (User.Role.ADMIN, User.Role.SUPERADMIN, User.Role.TRAINER)
+        )
+
+
+class CanManageTrainingConfiguration(CanManageTraining):
+    """Restrict shared course taxonomy changes to training managers."""
+
+
 class IsCentreAdmin(BasePermission):
     def has_permission(self, request, view):
         return bool(
