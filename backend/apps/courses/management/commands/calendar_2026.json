@@ -1,0 +1,3510 @@
+{
+  "version": 1,
+  "year": 2026,
+  "source": "Draft Calendar 2026..-1.xlsx",
+  "courses": [
+    {
+      "shortname": "132KV-SWITCH",
+      "fullname": "132KV Switching Fundamentals",
+      "duration_days": 15,
+      "price": "636.00",
+      "category": "Technical Training",
+      "section": "Electrical Engineering",
+      "level": "ADVANCED",
+      "summary": "Advanced high-voltage switching operations at 132KV level. Covers system topology, switching sequences, fault clearance, and safety protocols for transmission substations. Three-week intensive programme.",
+      "source_rows": [
+        "Technical Courses!7"
+      ],
+      "schedules": [
+        {
+          "start_date": "2026-04-13",
+          "end_date": "2026-05-01",
+          "source": "Technical Courses!Apr7"
+        },
+        {
+          "start_date": "2026-10-26",
+          "end_date": "2026-11-13",
+          "source": "Technical Courses!Oct7"
+        }
+      ]
+    },
+    {
+      "shortname": "CAL26-132KV-SWITCHINGAND-PROTECTION-CO-A8BACF",
+      "fullname": "132KV Switchingand Protection Course",
+      "duration_days": null,
+      "price": null,
+      "category": "Technical Training",
+      "section": "Upcoming Hexco Certificate Courses",
+      "level": null,
+      "summary": "132KV Switchingand Protection Course, listed in the ZESA National Training Centre 2026 calendar under Upcoming Hexco Certificate Courses.",
+      "source_rows": [
+        "Technical Courses!86"
+      ],
+      "schedules": []
+    },
+    {
+      "shortname": "CAL26-33KV-SWITCHING-AND-PROTECTION-CO-59AA88",
+      "fullname": "33KV Switching and Protection Course",
+      "duration_days": null,
+      "price": null,
+      "category": "Technical Training",
+      "section": "Upcoming Hexco Certificate Courses",
+      "level": null,
+      "summary": "33KV Switching and Protection Course, listed in the ZESA National Training Centre 2026 calendar under Upcoming Hexco Certificate Courses.",
+      "source_rows": [
+        "Technical Courses!85"
+      ],
+      "schedules": []
+    },
+    {
+      "shortname": "33KV-SWITCH",
+      "fullname": "33KV Switching Fundamentals",
+      "duration_days": 5,
+      "price": "325.00",
+      "category": "Technical Training",
+      "section": "Electrical Engineering",
+      "level": "INTERMEDIATE",
+      "summary": "Covers the principles and safe operational procedures for 33KV switching in ZESA substations and distribution networks. Includes switching schedules, isolation, earthing, and permit-to-work systems.",
+      "source_rows": [
+        "Technical Courses!6"
+      ],
+      "schedules": [
+        {
+          "start_date": "2026-01-12",
+          "end_date": "2026-01-16",
+          "source": "Technical Courses!Jan6"
+        },
+        {
+          "start_date": "2026-03-09",
+          "end_date": "2026-03-13",
+          "source": "Technical Courses!Mar6"
+        },
+        {
+          "start_date": "2026-05-04",
+          "end_date": "2026-05-08",
+          "source": "Technical Courses!May6"
+        },
+        {
+          "start_date": "2026-07-06",
+          "end_date": "2026-07-10",
+          "source": "Technical Courses!Jul6"
+        },
+        {
+          "start_date": "2026-09-14",
+          "end_date": "2026-09-18",
+          "source": "Technical Courses!Sep6"
+        },
+        {
+          "start_date": "2026-11-02",
+          "end_date": "2026-11-06",
+          "source": "Technical Courses!Nov6"
+        }
+      ]
+    },
+    {
+      "shortname": "CAL26-4IR-TECHNOLOGIES-APPRECIATION-69A301",
+      "fullname": "4IR Technologies Appreciation",
+      "duration_days": 5,
+      "price": "325.00",
+      "category": "Available on Request",
+      "section": "Technical Short Courses",
+      "level": null,
+      "summary": "4IR Technologies Appreciation, listed in the ZESA National Training Centre 2026 calendar under Technical Short Courses.",
+      "source_rows": [
+        "Available on Request!19"
+      ],
+      "schedules": []
+    },
+    {
+      "shortname": "CAL26-ACCIDENT-REPORTING-AND-INVESTIGA-FD1A95",
+      "fullname": "Accident Reporting and Investigation",
+      "duration_days": 3,
+      "price": "270.00",
+      "category": "Non-Technical Training",
+      "section": "Safety, Health And Environmental",
+      "level": null,
+      "summary": "Accident Reporting and Investigation, listed in the ZESA National Training Centre 2026 calendar under Safety, Health And Environmental.",
+      "source_rows": [
+        "Non Technical Courses!24"
+      ],
+      "schedules": []
+    },
+    {
+      "shortname": "CAL26-AERONAUTICAL-ENGINEERING-A78F37",
+      "fullname": "Aeronautical Engineering",
+      "duration_days": null,
+      "price": null,
+      "category": "Technical Training",
+      "section": "Upcoming Hexco Certificate Courses",
+      "level": null,
+      "summary": "Aeronautical Engineering, listed in the ZESA National Training Centre 2026 calendar under Upcoming Hexco Certificate Courses.",
+      "source_rows": [
+        "Technical Courses!96"
+      ],
+      "schedules": []
+    },
+    {
+      "shortname": "CAL26-AI-AND-MACHINE-LEARNING-IN-POWER-473FC2",
+      "fullname": "AI and Machine Learning in Power Systems",
+      "duration_days": null,
+      "price": null,
+      "category": "Technical Training",
+      "section": "Upcoming Hexco Certificate Courses",
+      "level": null,
+      "summary": "AI and Machine Learning in Power Systems, listed in the ZESA National Training Centre 2026 calendar under Upcoming Hexco Certificate Courses.",
+      "source_rows": [
+        "Technical Courses!95"
+      ],
+      "schedules": []
+    },
+    {
+      "shortname": "HYDRAULICS",
+      "fullname": "Applied Industrial Hydraulics",
+      "duration_days": 5,
+      "price": "325.00",
+      "category": "Technical Training",
+      "section": "Mechanical Engineering",
+      "level": "INTERMEDIATE",
+      "summary": "Hydraulic circuit design, components (pumps, valves, actuators, accumulators), system commissioning, troubleshooting, and maintenance for industrial hydraulic systems.",
+      "source_rows": [
+        "Technical Courses!28"
+      ],
+      "schedules": [
+        {
+          "start_date": "2026-02-09",
+          "end_date": "2026-02-13",
+          "source": "Technical Courses!Feb28"
+        },
+        {
+          "start_date": "2026-05-27",
+          "end_date": "2026-06-01",
+          "source": "Technical Courses!May28"
+        },
+        {
+          "start_date": "2026-08-10",
+          "end_date": "2026-08-14",
+          "source": "Technical Courses!Aug28"
+        },
+        {
+          "start_date": "2026-11-16",
+          "end_date": "2026-11-20",
+          "source": "Technical Courses!Nov28"
+        }
+      ]
+    },
+    {
+      "shortname": "CAL26-APPRENTICES-ALL-TRADES-INDUCTION-BFC810",
+      "fullname": "Apprentices All Trades Induction",
+      "duration_days": 60,
+      "price": "3240.00",
+      "category": "Available on Request",
+      "section": "Induction Programs",
+      "level": null,
+      "summary": "Apprentices All Trades Induction, listed in the ZESA National Training Centre 2026 calendar under Induction Programs.",
+      "source_rows": [
+        "Available on Request!5"
+      ],
+      "schedules": []
+    },
+    {
+      "shortname": "ARC-WELD",
+      "fullname": "Arc and Gas Welding",
+      "duration_days": 10,
+      "price": "481.00",
+      "category": "Technical Training",
+      "section": "Mechanical Engineering",
+      "level": "BEGINNER",
+      "summary": "Fundamentals of manual metal arc (MMA) and oxy-acetylene welding including joint preparation, welding positions, defect identification, and workshop safety. Two-week practical course.",
+      "source_rows": [
+        "Technical Courses!25"
+      ],
+      "schedules": [
+        {
+          "start_date": "2026-01-12",
+          "end_date": "2026-01-16",
+          "source": "Technical Courses!Jan25"
+        },
+        {
+          "start_date": "2026-03-09",
+          "end_date": "2026-03-20",
+          "source": "Technical Courses!Mar25"
+        },
+        {
+          "start_date": "2026-07-06",
+          "end_date": "2026-07-17",
+          "source": "Technical Courses!Jul25"
+        },
+        {
+          "start_date": "2026-10-12",
+          "end_date": "2026-10-23",
+          "source": "Technical Courses!Oct25"
+        }
+      ]
+    },
+    {
+      "shortname": "CAL26-ARTIFICIAL-INTELLIGENCE-AND-MACH-FE4032",
+      "fullname": "Artificial Intelligence and Machine Learning",
+      "duration_days": 90,
+      "price": "1300.00",
+      "category": "Technical Training",
+      "section": "Renewable Energy Courses",
+      "level": null,
+      "summary": "Artificial Intelligence and Machine Learning, listed in the ZESA National Training Centre 2026 calendar under Renewable Energy Courses.",
+      "source_rows": [
+        "Technical Courses!55"
+      ],
+      "schedules": []
+    },
+    {
+      "shortname": "CAL26-ARTIFICIAL-INTELLIGENCE-AND-MACH-30A6AF",
+      "fullname": "Artificial Intelligence and Machine Learning Courses",
+      "duration_days": 90,
+      "price": null,
+      "category": "Technical Training",
+      "section": "Renewable Energy Courses",
+      "level": null,
+      "summary": "Artificial Intelligence and Machine Learning Courses, listed in the ZESA National Training Centre 2026 calendar under Renewable Energy Courses.",
+      "source_rows": [
+        "Technical Courses!53"
+      ],
+      "schedules": []
+    },
+    {
+      "shortname": "CAL26-AUTOCODE-AND-GIS-BE4BF7",
+      "fullname": "Autocode And GIS",
+      "duration_days": 5,
+      "price": "325.00",
+      "category": "Non-Technical Training",
+      "section": "Safety, Health And Environmental",
+      "level": null,
+      "summary": "Autocode And GIS, listed in the ZESA National Training Centre 2026 calendar under Safety, Health And Environmental.",
+      "source_rows": [
+        "Non Technical Courses!52"
+      ],
+      "schedules": [
+        {
+          "start_date": "2026-03-02",
+          "end_date": "2026-03-06",
+          "source": "Non Technical Courses!Mar52"
+        }
+      ]
+    },
+    {
+      "shortname": "LSMAN1",
+      "fullname": "Basic Linesman 1 Course",
+      "duration_days": 10,
+      "price": "481.00",
+      "category": "Technical Training",
+      "section": "Electrical Engineering",
+      "level": "BEGINNER",
+      "summary": "Foundation course for electrical linesmen covering basic electrical theory, pole climbing, overhead line construction, conductor stringing, and safety on overhead networks. Two-week practical programme.",
+      "source_rows": [
+        "Technical Courses!8",
+        "Technical Courses!89"
+      ],
+      "schedules": [
+        {
+          "start_date": "2026-01-12",
+          "end_date": "2026-01-23",
+          "source": "Technical Courses!Jan8"
+        },
+        {
+          "start_date": "2026-03-09",
+          "end_date": "2026-03-20",
+          "source": "Technical Courses!Mar8"
+        },
+        {
+          "start_date": "2026-05-11",
+          "end_date": "2026-05-22",
+          "source": "Technical Courses!May8"
+        },
+        {
+          "start_date": "2026-07-06",
+          "end_date": "2026-07-17",
+          "source": "Technical Courses!Jul8"
+        },
+        {
+          "start_date": "2026-09-07",
+          "end_date": "2026-09-18",
+          "source": "Technical Courses!Sep8"
+        },
+        {
+          "start_date": "2026-10-26",
+          "end_date": "2026-11-06",
+          "source": "Technical Courses!Oct8"
+        },
+        {
+          "start_date": "2026-11-16",
+          "end_date": "2026-11-27",
+          "source": "Technical Courses!Nov8"
+        }
+      ]
+    },
+    {
+      "shortname": "LSMAN2",
+      "fullname": "Basic Linesman 2 Course",
+      "duration_days": 10,
+      "price": "481.00",
+      "category": "Technical Training",
+      "section": "Electrical Engineering",
+      "level": "INTERMEDIATE",
+      "summary": "Continuation of Basic Linesman 1. Covers underground cable systems, jointing, transformer connections, service connections, and LV network fault-finding. Prerequisite: Basic Linesman 1.",
+      "source_rows": [
+        "Technical Courses!9",
+        "Technical Courses!90"
+      ],
+      "schedules": [
+        {
+          "start_date": "2026-02-02",
+          "end_date": "2026-02-13",
+          "source": "Technical Courses!Feb9"
+        },
+        {
+          "start_date": "2026-04-27",
+          "end_date": "2026-05-08",
+          "source": "Technical Courses!Apr9"
+        },
+        {
+          "start_date": "2026-06-08",
+          "end_date": "2026-06-19",
+          "source": "Technical Courses!Jun9"
+        },
+        {
+          "start_date": "2026-08-03",
+          "end_date": "2026-08-14",
+          "source": "Technical Courses!Aug9"
+        },
+        {
+          "start_date": "2026-10-26",
+          "end_date": "2026-11-06",
+          "source": "Technical Courses!Oct9"
+        },
+        {
+          "start_date": "2026-11-23",
+          "end_date": "2026-12-04",
+          "source": "Technical Courses!Nov9"
+        }
+      ]
+    },
+    {
+      "shortname": "CAL26-BEARING-TECHNOLOGY-9535E1",
+      "fullname": "Bearing Technology",
+      "duration_days": 5,
+      "price": "325.00",
+      "category": "Technical Training",
+      "section": "Mechanical Engineering",
+      "level": null,
+      "summary": "Bearing Technology, listed in the ZESA National Training Centre 2026 calendar under Mechanical Engineering.",
+      "source_rows": [
+        "Technical Courses!31"
+      ],
+      "schedules": []
+    },
+    {
+      "shortname": "CAL26-BIG-DATA-ANALYTICS-AND-BUSINESS--3E1977",
+      "fullname": "Big Data Analytics and Business Intelligence",
+      "duration_days": 5,
+      "price": "325.00",
+      "category": "Available on Request",
+      "section": "Technical Short Courses",
+      "level": null,
+      "summary": "Big Data Analytics and Business Intelligence, listed in the ZESA National Training Centre 2026 calendar under Technical Short Courses.",
+      "source_rows": [
+        "Available on Request!16"
+      ],
+      "schedules": []
+    },
+    {
+      "shortname": "CAL26-BRAND-MANAGEMENT-95B538",
+      "fullname": "Brand Management",
+      "duration_days": 5,
+      "price": "325.00",
+      "category": "Available on Request",
+      "section": "Non-Technical Courses Available On Request",
+      "level": null,
+      "summary": "Brand Management, listed in the ZESA National Training Centre 2026 calendar under Non-Technical Courses Available On Request.",
+      "source_rows": [
+        "Available on Request!24"
+      ],
+      "schedules": []
+    },
+    {
+      "shortname": "CABLE-XPLE",
+      "fullname": "Cable Jointing and Termination XLPE",
+      "duration_days": 5,
+      "price": "325.00",
+      "category": "Technical Training",
+      "section": "Electrical Engineering",
+      "level": "INTERMEDIATE",
+      "summary": "Hands-on training in jointing and terminating XLPE insulated cables for LV and MV systems. Covers preparation, stress control, insulation restoration, and pressure testing.",
+      "source_rows": [
+        "Technical Courses!4"
+      ],
+      "schedules": [
+        {
+          "start_date": "2026-01-19",
+          "end_date": "2026-01-23",
+          "source": "Technical Courses!Jan4"
+        },
+        {
+          "start_date": "2026-03-02",
+          "end_date": "2026-03-06",
+          "source": "Technical Courses!Mar4"
+        },
+        {
+          "start_date": "2026-05-25",
+          "end_date": "2026-05-29",
+          "source": "Technical Courses!May4"
+        },
+        {
+          "start_date": "2026-06-29",
+          "end_date": "2026-07-03",
+          "source": "Technical Courses!Jun4"
+        },
+        {
+          "start_date": "2026-07-13",
+          "end_date": "2026-07-17",
+          "source": "Technical Courses!Jul4"
+        },
+        {
+          "start_date": "2026-11-23",
+          "end_date": "2026-11-27",
+          "source": "Technical Courses!Nov4"
+        }
+      ]
+    },
+    {
+      "shortname": "CAL26-CARBON-AUDIT-AND-CARBON-TRADING-DA528E",
+      "fullname": "Carbon Audit and Carbon Trading",
+      "duration_days": 5,
+      "price": "334.00",
+      "category": "Technical Training",
+      "section": "Renewable Energy Courses",
+      "level": null,
+      "summary": "Carbon Audit and Carbon Trading, listed in the ZESA National Training Centre 2026 calendar under Renewable Energy Courses.",
+      "source_rows": [
+        "Technical Courses!51"
+      ],
+      "schedules": []
+    },
+    {
+      "shortname": "CAL26-CARBON-AUDIT-AND-TRADING-88EE07",
+      "fullname": "Carbon Audit and Trading",
+      "duration_days": null,
+      "price": null,
+      "category": "Consultancy Services",
+      "section": "Consultancy Services",
+      "level": null,
+      "summary": "Carbon Audit and Trading, listed in the ZESA National Training Centre 2026 calendar under Consultancy Services.",
+      "source_rows": [
+        "Consultancy Services!11"
+      ],
+      "schedules": []
+    },
+    {
+      "shortname": "CAL26-CCNA-F62EB9",
+      "fullname": "CCNA",
+      "duration_days": 5,
+      "price": "325.00",
+      "category": "Non-Technical Training",
+      "section": "Safety, Health And Environmental",
+      "level": null,
+      "summary": "CCNA, listed in the ZESA National Training Centre 2026 calendar under Safety, Health And Environmental.",
+      "source_rows": [
+        "Non Technical Courses!53"
+      ],
+      "schedules": [
+        {
+          "start_date": "2026-03-02",
+          "end_date": "2026-03-06",
+          "source": "Non Technical Courses!Mar53"
+        },
+        {
+          "start_date": "2026-09-07",
+          "end_date": "2026-09-11",
+          "source": "Non Technical Courses!Sep53"
+        }
+      ]
+    },
+    {
+      "shortname": "CAL26-CHANGE-MANAGEMENT-3314AA",
+      "fullname": "Change Management",
+      "duration_days": 5,
+      "price": "325.00",
+      "category": "Non-Technical Training",
+      "section": "National University Of Science & Technology Certificate Courses",
+      "level": null,
+      "summary": "Change Management, listed in the ZESA National Training Centre 2026 calendar under National University Of Science & Technology Certificate Courses.",
+      "source_rows": [
+        "Non Technical Courses!88",
+        "Available on Request!26"
+      ],
+      "schedules": []
+    },
+    {
+      "shortname": "CIVIL-CONT",
+      "fullname": "Civil Engineering Contracts",
+      "duration_days": 5,
+      "price": "325.00",
+      "category": "Technical Training",
+      "section": "Civil Engineering Courses",
+      "level": "INTERMEDIATE",
+      "summary": "FIDIC contract forms, NEC contracts, procurement procedures, contract administration, claims, disputes, and contractor management for civil engineering and construction projects.",
+      "source_rows": [
+        "Technical Courses!40"
+      ],
+      "schedules": [
+        {
+          "start_date": "2026-03-09",
+          "end_date": "2026-03-13",
+          "source": "Technical Courses!Mar40"
+        },
+        {
+          "start_date": "2026-08-24",
+          "end_date": "2026-08-28",
+          "source": "Technical Courses!Aug40"
+        },
+        {
+          "start_date": "2026-12-30",
+          "end_date": "2027-01-04",
+          "source": "Technical Courses!Dec40"
+        }
+      ]
+    },
+    {
+      "shortname": "CIVIL-NCE",
+      "fullname": "Civil Engineering for Non-Civil Engineers",
+      "duration_days": 10,
+      "price": "481.00",
+      "category": "Technical Training",
+      "section": "Civil Engineering Courses",
+      "level": "BEGINNER",
+      "summary": "Introduction to soil mechanics, foundations, concrete, structural elements, and site supervision for electrical and mechanical engineers who work alongside civil teams. Two-week course.",
+      "source_rows": [
+        "Technical Courses!37"
+      ],
+      "schedules": [
+        {
+          "start_date": "2026-02-02",
+          "end_date": "2026-02-13",
+          "source": "Technical Courses!Feb37"
+        },
+        {
+          "start_date": "2026-05-04",
+          "end_date": "2026-05-15",
+          "source": "Technical Courses!May37"
+        },
+        {
+          "start_date": "2026-07-06",
+          "end_date": "2026-07-17",
+          "source": "Technical Courses!Jul37"
+        },
+        {
+          "start_date": "2026-09-07",
+          "end_date": "2026-09-18",
+          "source": "Technical Courses!Sep37"
+        }
+      ]
+    },
+    {
+      "shortname": "CIVIL-TX",
+      "fullname": "Civil Works in Transmission Line & Substation Construction",
+      "duration_days": 5,
+      "price": "325.00",
+      "category": "Technical Training",
+      "section": "Civil Engineering Courses",
+      "level": "INTERMEDIATE",
+      "summary": "Foundation design and construction for lattice towers and poles, substation civil works, cable trenching, road access, and site drainage for power infrastructure projects.",
+      "source_rows": [
+        "Technical Courses!39"
+      ],
+      "schedules": [
+        {
+          "start_date": "2026-04-13",
+          "end_date": "2026-04-17",
+          "source": "Technical Courses!Apr39"
+        },
+        {
+          "start_date": "2026-07-20",
+          "end_date": "2026-07-24",
+          "source": "Technical Courses!Jul39"
+        },
+        {
+          "start_date": "2026-10-05",
+          "end_date": "2026-10-09",
+          "source": "Technical Courses!Oct39"
+        }
+      ]
+    },
+    {
+      "shortname": "CLIENT-CARE",
+      "fullname": "Client Care",
+      "duration_days": 2,
+      "price": "240.00",
+      "category": "Non-Technical Training",
+      "section": "Safety, Health And Environmental",
+      "level": "ALL_LEVELS",
+      "summary": "Customer service principles, handling complaints, communication skills, telephone etiquette, and service recovery for customer-facing and frontline staff.",
+      "source_rows": [
+        "Non Technical Courses!43"
+      ],
+      "schedules": [
+        {
+          "start_date": "2026-01-12",
+          "end_date": "2026-01-16",
+          "source": "Non Technical Courses!Jan43"
+        },
+        {
+          "start_date": "2026-05-11",
+          "end_date": "2026-05-15",
+          "source": "Non Technical Courses!May43"
+        },
+        {
+          "start_date": "2026-06-29",
+          "end_date": "2026-07-03",
+          "source": "Non Technical Courses!Jun43"
+        },
+        {
+          "start_date": "2026-07-06",
+          "end_date": "2026-07-10",
+          "source": "Non Technical Courses!Jul43"
+        },
+        {
+          "start_date": "2026-11-09",
+          "end_date": "2026-11-13",
+          "source": "Non Technical Courses!Nov43"
+        }
+      ]
+    },
+    {
+      "shortname": "CONCRETE",
+      "fullname": "Concrete Technology",
+      "duration_days": 5,
+      "price": "325.00",
+      "category": "Technical Training",
+      "section": "Civil Engineering Courses",
+      "level": "INTERMEDIATE",
+      "summary": "Mix design, water-cement ratio, admixtures, curing, testing methods (slump, cube strength), and quality control for concrete used in substation bases, poles, and civil structures.",
+      "source_rows": [
+        "Technical Courses!38",
+        "Technical Courses!94"
+      ],
+      "schedules": [
+        {
+          "start_date": "2026-03-02",
+          "end_date": "2026-03-06",
+          "source": "Technical Courses!Mar38"
+        },
+        {
+          "start_date": "2026-05-04",
+          "end_date": "2026-05-08",
+          "source": "Technical Courses!May38"
+        },
+        {
+          "start_date": "2026-06-15",
+          "end_date": "2026-06-19",
+          "source": "Technical Courses!Jun38"
+        }
+      ]
+    },
+    {
+      "shortname": "CAL26-CONFLICT-RESOLUTION-IN-COMPETITI-C5C02A",
+      "fullname": "Conflict Resolution in competitive work environments",
+      "duration_days": 5,
+      "price": null,
+      "category": "Non-Technical Training",
+      "section": "National University Of Science & Technology Certificate Courses",
+      "level": null,
+      "summary": "Conflict Resolution in competitive work environments, listed in the ZESA National Training Centre 2026 calendar under National University Of Science & Technology Certificate Courses.",
+      "source_rows": [
+        "Non Technical Courses!91"
+      ],
+      "schedules": []
+    },
+    {
+      "shortname": "CORP-GOV-ETH",
+      "fullname": "Corporate Governance and Work Ethics",
+      "duration_days": 2,
+      "price": "240.00",
+      "category": "Non-Technical Training",
+      "section": "Non-Technical Training",
+      "level": "ALL_LEVELS",
+      "summary": "Principles of ethical conduct, conflict of interest, anti-corruption, professional accountability, and the code of conduct applicable to all ZESA employees.",
+      "source_rows": [
+        "Non Technical Courses!7"
+      ],
+      "schedules": [
+        {
+          "start_date": "2026-02-17",
+          "end_date": "2026-02-18",
+          "source": "Non Technical Courses!Feb7"
+        },
+        {
+          "start_date": "2026-08-25",
+          "end_date": "2026-08-26",
+          "source": "Non Technical Courses!Aug7"
+        }
+      ]
+    },
+    {
+      "shortname": "CORP-GOV-MGR",
+      "fullname": "Corporate Governance Legislation Appreciation for Managers",
+      "duration_days": 5,
+      "price": "325.00",
+      "category": "Non-Technical Training",
+      "section": "Non-Technical Training",
+      "level": "INTERMEDIATE",
+      "summary": "Zimbabwe Companies Act, Public Entities Corporate Governance Act, board responsibilities, risk oversight, compliance frameworks, and governance best practice for middle and senior managers.",
+      "source_rows": [
+        "Non Technical Courses!5"
+      ],
+      "schedules": [
+        {
+          "start_date": "2026-02-09",
+          "end_date": "2026-02-13",
+          "source": "Non Technical Courses!Feb5"
+        },
+        {
+          "start_date": "2026-04-27",
+          "end_date": "2026-05-01",
+          "source": "Non Technical Courses!Apr5"
+        },
+        {
+          "start_date": "2026-06-22",
+          "end_date": "2026-06-26",
+          "source": "Non Technical Courses!Jun5"
+        },
+        {
+          "start_date": "2026-08-10",
+          "end_date": "2026-08-14",
+          "source": "Non Technical Courses!Aug5"
+        },
+        {
+          "start_date": "2026-10-26",
+          "end_date": "2026-10-30",
+          "source": "Non Technical Courses!Oct5"
+        }
+      ]
+    },
+    {
+      "shortname": "CAL26-DATA-ANALYSIS-FOR-INDUSTRY-RESEA-D860F2",
+      "fullname": "Data Analysis For Industry Research Projects",
+      "duration_days": 5,
+      "price": "325.00",
+      "category": "Non-Technical Training",
+      "section": "Icdl",
+      "level": null,
+      "summary": "Data Analysis For Industry Research Projects, listed in the ZESA National Training Centre 2026 calendar under Icdl.",
+      "source_rows": [
+        "Non Technical Courses!76"
+      ],
+      "schedules": [
+        {
+          "start_date": "2026-06-08",
+          "end_date": "2026-06-12",
+          "source": "Non Technical Courses!Jun76"
+        },
+        {
+          "start_date": "2026-12-07",
+          "end_date": "2026-12-11",
+          "source": "Non Technical Courses!Dec76"
+        }
+      ]
+    },
+    {
+      "shortname": "CAL26-DATA-ANALYTICS-876284",
+      "fullname": "Data Analytics",
+      "duration_days": 5,
+      "price": "325.00",
+      "category": "Non-Technical Training",
+      "section": "Safety, Health And Environmental",
+      "level": null,
+      "summary": "Data Analytics, listed in the ZESA National Training Centre 2026 calendar under Safety, Health And Environmental.",
+      "source_rows": [
+        "Non Technical Courses!51"
+      ],
+      "schedules": [
+        {
+          "start_date": "2026-06-01",
+          "end_date": "2026-06-05",
+          "source": "Non Technical Courses!Jun51"
+        }
+      ]
+    },
+    {
+      "shortname": "CAL26-DATA-COMMUNICATIONS-NETWORKING-3C4074",
+      "fullname": "Data Communications & Networking",
+      "duration_days": 5,
+      "price": "325.00",
+      "category": "Available on Request",
+      "section": "Technical Short Courses",
+      "level": null,
+      "summary": "Data Communications & Networking, listed in the ZESA National Training Centre 2026 calendar under Technical Short Courses.",
+      "source_rows": [
+        "Available on Request!18"
+      ],
+      "schedules": []
+    },
+    {
+      "shortname": "CAL26-DATA-PROTECTION-ACT-EB615B",
+      "fullname": "Data Protection Act",
+      "duration_days": 3,
+      "price": "270.00",
+      "category": "Non-Technical Training",
+      "section": "Non-Technical Training",
+      "level": null,
+      "summary": "Data Protection Act, listed in the ZESA National Training Centre 2026 calendar under Non-Technical Training.",
+      "source_rows": [
+        "Non Technical Courses!8"
+      ],
+      "schedules": []
+    },
+    {
+      "shortname": "CAL26-DATAFICATION-F0586D",
+      "fullname": "Datafication",
+      "duration_days": 5,
+      "price": "325.00",
+      "category": "Technical Training",
+      "section": "Renewable Energy Courses",
+      "level": null,
+      "summary": "Datafication, listed in the ZESA National Training Centre 2026 calendar under Renewable Energy Courses.",
+      "source_rows": [
+        "Technical Courses!54",
+        "Non Technical Courses!94"
+      ],
+      "schedules": []
+    },
+    {
+      "shortname": "CAL26-DEFENSIVE-DRIVING-TRAINING-6D9DA7",
+      "fullname": "Defensive Driving Training",
+      "duration_days": 5,
+      "price": "325.00",
+      "category": "Non-Technical Training",
+      "section": "Icdl",
+      "level": null,
+      "summary": "Defensive Driving Training, listed in the ZESA National Training Centre 2026 calendar under Icdl.",
+      "source_rows": [
+        "Non Technical Courses!73"
+      ],
+      "schedules": [
+        {
+          "start_date": "2026-05-25",
+          "end_date": "2026-05-29",
+          "source": "Non Technical Courses!May73"
+        },
+        {
+          "start_date": "2026-11-16",
+          "end_date": "2026-11-20",
+          "source": "Non Technical Courses!Nov73"
+        }
+      ]
+    },
+    {
+      "shortname": "CAL26-DIGITAL-SOLUTIONS-SOFTWARE-PRODU-7B015E",
+      "fullname": "Digital Solutions & Software Products in Energy Business Systems",
+      "duration_days": 3,
+      "price": "329.00",
+      "category": "Non-Technical Training",
+      "section": "Icdl",
+      "level": null,
+      "summary": "Digital Solutions & Software Products in Energy Business Systems, listed in the ZESA National Training Centre 2026 calendar under Icdl.",
+      "source_rows": [
+        "Non Technical Courses!82",
+        "Consultancy Services!6"
+      ],
+      "schedules": []
+    },
+    {
+      "shortname": "DIG-PWR",
+      "fullname": "Digital Transformation in Power Sector",
+      "duration_days": 5,
+      "price": "325.00",
+      "category": "Technical Training",
+      "section": "Other Technical Courses Offered",
+      "level": "ALL_LEVELS",
+      "summary": "Overview of smart grid technologies, IoT in utilities, digital SCADA, AMI, predictive analytics, and the strategic roadmap for digital transformation in power utilities.",
+      "source_rows": [
+        "Technical Courses!61"
+      ],
+      "schedules": [
+        {
+          "start_date": "2026-05-25",
+          "end_date": "2026-05-29",
+          "source": "Technical Courses!May61"
+        }
+      ]
+    },
+    {
+      "shortname": "CAL26-DISCIPLINARY-HEARING-FOR-MANAGER-D6AD5E",
+      "fullname": "Disciplinary Hearing for Managers",
+      "duration_days": 3,
+      "price": "270.00",
+      "category": "Non-Technical Training",
+      "section": "Non-Technical Training",
+      "level": null,
+      "summary": "Disciplinary Hearing for Managers, listed in the ZESA National Training Centre 2026 calendar under Non-Technical Training.",
+      "source_rows": [
+        "Non Technical Courses!10"
+      ],
+      "schedules": []
+    },
+    {
+      "shortname": "CAL26-DISCIPLINARY-HEARING-PROCEDURES--CF2830",
+      "fullname": "Disciplinary Hearing Procedures Appreciation",
+      "duration_days": 5,
+      "price": "325.00",
+      "category": "Non-Technical Training",
+      "section": "Non-Technical Training",
+      "level": null,
+      "summary": "Disciplinary Hearing Procedures Appreciation, listed in the ZESA National Training Centre 2026 calendar under Non-Technical Training.",
+      "source_rows": [
+        "Non Technical Courses!14"
+      ],
+      "schedules": [
+        {
+          "start_date": "2026-05-25",
+          "end_date": "2026-05-29",
+          "source": "Non Technical Courses!May14"
+        },
+        {
+          "start_date": "2026-11-23",
+          "end_date": "2026-11-27",
+          "source": "Non Technical Courses!Nov14"
+        }
+      ]
+    },
+    {
+      "shortname": "DIST-PLAN",
+      "fullname": "Distribution Network Planning",
+      "duration_days": 3,
+      "price": "270.00",
+      "category": "Technical Training",
+      "section": "Electrical Engineering",
+      "level": "INTERMEDIATE",
+      "summary": "Load flow analysis, network design, capacity planning, and loss reduction strategies for 33KV and 11KV distribution networks.",
+      "source_rows": [
+        "Technical Courses!15"
+      ],
+      "schedules": [
+        {
+          "start_date": "2026-03-03",
+          "end_date": "2026-03-05",
+          "source": "Technical Courses!Mar15"
+        }
+      ]
+    },
+    {
+      "shortname": "DOM-INST",
+      "fullname": "Domestic Installation",
+      "duration_days": 10,
+      "price": "481.00",
+      "category": "Technical Training",
+      "section": "Electrical Engineering",
+      "level": "BEGINNER",
+      "summary": "Practical installation of domestic wiring systems including single and three-phase circuits, distribution boards, earthing systems, and compliance with Zimbabwe wiring regulations. Two-week course.",
+      "source_rows": [
+        "Technical Courses!10"
+      ],
+      "schedules": [
+        {
+          "start_date": "2026-01-10",
+          "end_date": "2026-01-21",
+          "source": "Technical Courses!Jan10"
+        },
+        {
+          "start_date": "2026-02-09",
+          "end_date": "2026-02-20",
+          "source": "Technical Courses!Feb10"
+        },
+        {
+          "start_date": "2026-04-30",
+          "end_date": "2026-05-12",
+          "source": "Technical Courses!Apr10"
+        },
+        {
+          "start_date": "2026-05-11",
+          "end_date": "2026-05-22",
+          "source": "Technical Courses!May10"
+        },
+        {
+          "start_date": "2026-06-22",
+          "end_date": "2026-07-03",
+          "source": "Technical Courses!Jun10"
+        },
+        {
+          "start_date": "2026-08-17",
+          "end_date": "2026-08-28",
+          "source": "Technical Courses!Aug10"
+        },
+        {
+          "start_date": "2026-10-26",
+          "end_date": "2026-11-06",
+          "source": "Technical Courses!Oct10"
+        },
+        {
+          "start_date": "2026-11-16",
+          "end_date": "2026-11-27",
+          "source": "Technical Courses!Nov10"
+        }
+      ]
+    },
+    {
+      "shortname": "CAL26-DRONE-TRAINING-REMOTE-PILOT-LICE-FAFA55",
+      "fullname": "Drone Training - Remote Pilot Licence",
+      "duration_days": 14,
+      "price": "1260.00",
+      "category": "Technical Training",
+      "section": "Renewable Energy Courses",
+      "level": null,
+      "summary": "Drone Training - Remote Pilot Licence, listed in the ZESA National Training Centre 2026 calendar under Renewable Energy Courses.",
+      "source_rows": [
+        "Technical Courses!56"
+      ],
+      "schedules": []
+    },
+    {
+      "shortname": "CAL26-EMERGENCY-RESPONSE-PLANNING-3712CB",
+      "fullname": "Emergency Response Planning",
+      "duration_days": 5,
+      "price": "325.00",
+      "category": "Non-Technical Training",
+      "section": "Safety, Health And Environmental",
+      "level": null,
+      "summary": "Emergency Response Planning, listed in the ZESA National Training Centre 2026 calendar under Safety, Health And Environmental.",
+      "source_rows": [
+        "Non Technical Courses!23"
+      ],
+      "schedules": []
+    },
+    {
+      "shortname": "CAL26-EMERGING-TECHNOLOGIES-EDB1B1",
+      "fullname": "Emerging Technologies",
+      "duration_days": null,
+      "price": null,
+      "category": "Consultancy Services",
+      "section": "Consultancy Services",
+      "level": null,
+      "summary": "Emerging Technologies, listed in the ZESA National Training Centre 2026 calendar under Consultancy Services.",
+      "source_rows": [
+        "Consultancy Services!3"
+      ],
+      "schedules": []
+    },
+    {
+      "shortname": "CAL26-EMERGING-TECHNOLOGIES-IN-ENERGY--8DDA78",
+      "fullname": "Emerging Technologies in Energy and Electricity Business",
+      "duration_days": 3,
+      "price": "326.00",
+      "category": "Non-Technical Training",
+      "section": "Icdl",
+      "level": null,
+      "summary": "Emerging Technologies in Energy and Electricity Business, listed in the ZESA National Training Centre 2026 calendar under Icdl.",
+      "source_rows": [
+        "Non Technical Courses!80"
+      ],
+      "schedules": []
+    },
+    {
+      "shortname": "CAL26-EMOTIONAL-INTELLIGENCE-544984",
+      "fullname": "Emotional Intelligence",
+      "duration_days": 5,
+      "price": "325.00",
+      "category": "Available on Request",
+      "section": "Non-Technical Courses Available On Request",
+      "level": null,
+      "summary": "Emotional Intelligence, listed in the ZESA National Training Centre 2026 calendar under Non-Technical Courses Available On Request.",
+      "source_rows": [
+        "Available on Request!32"
+      ],
+      "schedules": []
+    },
+    {
+      "shortname": "CAL26-EMOTIONAL-INTELLIGENCE-AND-PSYCH-4777FB",
+      "fullname": "Emotional Intelligence and Psychological Safety",
+      "duration_days": 5,
+      "price": null,
+      "category": "Non-Technical Training",
+      "section": "National University Of Science & Technology Certificate Courses",
+      "level": null,
+      "summary": "Emotional Intelligence and Psychological Safety, listed in the ZESA National Training Centre 2026 calendar under National University Of Science & Technology Certificate Courses.",
+      "source_rows": [
+        "Non Technical Courses!87"
+      ],
+      "schedules": []
+    },
+    {
+      "shortname": "EMP-REL",
+      "fullname": "Employee Relations And Code Of Conduct",
+      "duration_days": 5,
+      "price": "325.00",
+      "category": "Non-Technical Training",
+      "section": "Non-Technical Training",
+      "level": "ALL_LEVELS",
+      "summary": "Managing the employment relationship, disciplinary procedures, grievance handling, misconduct categories, and applying the ZESA code of conduct consistently and fairly.",
+      "source_rows": [
+        "Non Technical Courses!11"
+      ],
+      "schedules": [
+        {
+          "start_date": "2026-03-16",
+          "end_date": "2026-03-20",
+          "source": "Non Technical Courses!Mar11"
+        },
+        {
+          "start_date": "2026-06-08",
+          "end_date": "2026-06-12",
+          "source": "Non Technical Courses!Jun11"
+        },
+        {
+          "start_date": "2026-12-07",
+          "end_date": "2026-12-11",
+          "source": "Non Technical Courses!Dec11"
+        }
+      ]
+    },
+    {
+      "shortname": "EE-AUDIT",
+      "fullname": "Energy Efficiency & Audit",
+      "duration_days": 5,
+      "price": "325.00",
+      "category": "Technical Training",
+      "section": "Other Technical Courses Offered",
+      "level": "INTERMEDIATE",
+      "summary": "Conducting energy audits to ISO 50002 guidelines, data gathering, baseline analysis, identifying savings opportunities, investment payback calculations, and audit reporting.",
+      "source_rows": [
+        "Technical Courses!66"
+      ],
+      "schedules": [
+        {
+          "start_date": "2026-03-16",
+          "end_date": "2026-03-20",
+          "source": "Technical Courses!Mar66"
+        },
+        {
+          "start_date": "2026-09-21",
+          "end_date": "2026-09-25",
+          "source": "Technical Courses!Sep66"
+        }
+      ]
+    },
+    {
+      "shortname": "ENERGY-EFF",
+      "fullname": "Energy Efficiency in Buildings",
+      "duration_days": 5,
+      "price": "325.00",
+      "category": "Technical Training",
+      "section": "Renewable Energy Courses",
+      "level": "ALL_LEVELS",
+      "summary": "Building energy performance assessment, HVAC efficiency, lighting upgrades, insulation, energy monitoring, and practical measures to reduce consumption in commercial and residential buildings.",
+      "source_rows": [
+        "Technical Courses!44"
+      ],
+      "schedules": [
+        {
+          "start_date": "2026-07-30",
+          "end_date": "2026-08-05",
+          "source": "Technical Courses!Jul44"
+        }
+      ]
+    },
+    {
+      "shortname": "CAL26-ENERGY-SOLUTIONS-TO-CLIMATE-CHAN-A1EEFC",
+      "fullname": "Energy Solutions to Climate Change",
+      "duration_days": 5,
+      "price": "333.00",
+      "category": "Technical Training",
+      "section": "Renewable Energy Courses",
+      "level": null,
+      "summary": "Energy Solutions to Climate Change, listed in the ZESA National Training Centre 2026 calendar under Renewable Energy Courses.",
+      "source_rows": [
+        "Technical Courses!50",
+        "Consultancy Services!10"
+      ],
+      "schedules": []
+    },
+    {
+      "shortname": "CAL26-ENERGY-TRADING-AND-ENERGY-AUDITS-575561",
+      "fullname": "Energy Trading and Energy Audits",
+      "duration_days": 5,
+      "price": "330.00",
+      "category": "Technical Training",
+      "section": "Other Technical Courses Offered",
+      "level": null,
+      "summary": "Energy Trading and Energy Audits, listed in the ZESA National Training Centre 2026 calendar under Other Technical Courses Offered.",
+      "source_rows": [
+        "Technical Courses!62",
+        "Consultancy Services!7"
+      ],
+      "schedules": []
+    },
+    {
+      "shortname": "CAL26-ENERGY-TRANSITIONS-SOLUTIONS-3A6F9C",
+      "fullname": "Energy Transitions Solutions",
+      "duration_days": 5,
+      "price": "325.00",
+      "category": "Technical Training",
+      "section": "Renewable Energy Courses",
+      "level": null,
+      "summary": "Energy Transitions Solutions, listed in the ZESA National Training Centre 2026 calendar under Renewable Energy Courses.",
+      "source_rows": [
+        "Technical Courses!52",
+        "Consultancy Services!9"
+      ],
+      "schedules": []
+    },
+    {
+      "shortname": "CAL26-ENGINEERING-FOR-NON-ENGINEERS-A0F9C6",
+      "fullname": "Engineering for Non-Engineers",
+      "duration_days": 5,
+      "price": "325.00",
+      "category": "Technical Training",
+      "section": "Other Technical Courses Offered",
+      "level": null,
+      "summary": "Engineering for Non-Engineers, listed in the ZESA National Training Centre 2026 calendar under Other Technical Courses Offered.",
+      "source_rows": [
+        "Technical Courses!65"
+      ],
+      "schedules": []
+    },
+    {
+      "shortname": "ENG-PM",
+      "fullname": "Engineering Project Management",
+      "duration_days": 5,
+      "price": "325.00",
+      "category": "Technical Training",
+      "section": "Other Technical Courses Offered",
+      "level": "INTERMEDIATE",
+      "summary": "Project lifecycle management for engineering projects including scope definition, scheduling (CPM/PERT), resource planning, cost control, risk management, and project reporting.",
+      "source_rows": [
+        "Technical Courses!64",
+        "Available on Request!11"
+      ],
+      "schedules": [
+        {
+          "start_date": "2026-06-29",
+          "end_date": "2026-07-03",
+          "source": "Technical Courses!Jun64"
+        }
+      ]
+    },
+    {
+      "shortname": "CAL26-ENVIRONMENTAL-SOCIAL-AND-GOVERNA-6E0CAD",
+      "fullname": "Environmental, Social and Governance",
+      "duration_days": 5,
+      "price": "325.00",
+      "category": "Non-Technical Training",
+      "section": "Non-Technical Training",
+      "level": null,
+      "summary": "Environmental, Social and Governance, listed in the ZESA National Training Centre 2026 calendar under Non-Technical Training.",
+      "source_rows": [
+        "Non Technical Courses!12"
+      ],
+      "schedules": [
+        {
+          "start_date": "2026-03-23",
+          "end_date": "2026-03-27",
+          "source": "Non Technical Courses!Mar12"
+        },
+        {
+          "start_date": "2026-09-21",
+          "end_date": "2026-09-25",
+          "source": "Non Technical Courses!Sep12"
+        }
+      ]
+    },
+    {
+      "shortname": "CAL26-FAILURE-ROOT-CAUSE-ANALYSIS-5DFA86",
+      "fullname": "Failure Root Cause Analysis",
+      "duration_days": 2,
+      "price": "240.00",
+      "category": "Available on Request",
+      "section": "Technical Short Courses",
+      "level": null,
+      "summary": "Failure Root Cause Analysis, listed in the ZESA National Training Centre 2026 calendar under Technical Short Courses.",
+      "source_rows": [
+        "Available on Request!10"
+      ],
+      "schedules": []
+    },
+    {
+      "shortname": "CAL26-FINANCE-FOR-NON-FINANCE-MANAGERS-49D1E2",
+      "fullname": "Finance For Non Finance Managers",
+      "duration_days": 5,
+      "price": "325.00",
+      "category": "Non-Technical Training",
+      "section": "Non-Technical Training",
+      "level": null,
+      "summary": "Finance For Non Finance Managers, listed in the ZESA National Training Centre 2026 calendar under Non-Technical Training.",
+      "source_rows": [
+        "Non Technical Courses!13"
+      ],
+      "schedules": [
+        {
+          "start_date": "2026-05-25",
+          "end_date": "2026-05-29",
+          "source": "Non Technical Courses!May13"
+        },
+        {
+          "start_date": "2026-11-16",
+          "end_date": "2026-11-20",
+          "source": "Non Technical Courses!Nov13"
+        }
+      ]
+    },
+    {
+      "shortname": "CAL26-FINANCIAL-MANAGEMENT-C73370",
+      "fullname": "Financial Management",
+      "duration_days": 5,
+      "price": null,
+      "category": "Non-Technical Training",
+      "section": "National University Of Science & Technology Certificate Courses",
+      "level": null,
+      "summary": "Financial Management, listed in the ZESA National Training Centre 2026 calendar under National University Of Science & Technology Certificate Courses.",
+      "source_rows": [
+        "Non Technical Courses!90"
+      ],
+      "schedules": []
+    },
+    {
+      "shortname": "FIN-REP",
+      "fullname": "Financial Reporting",
+      "duration_days": 5,
+      "price": "325.00",
+      "category": "Non-Technical Training",
+      "section": "Safety, Health And Environmental",
+      "level": "INTERMEDIATE",
+      "summary": "Preparation and interpretation of financial statements (income statement, balance sheet, cash flow), IFRS principles, ratio analysis, and financial reporting for non-finance managers.",
+      "source_rows": [
+        "Non Technical Courses!44"
+      ],
+      "schedules": [
+        {
+          "start_date": "2026-02-02",
+          "end_date": "2026-02-06",
+          "source": "Non Technical Courses!Feb44"
+        },
+        {
+          "start_date": "2026-08-03",
+          "end_date": "2026-08-07",
+          "source": "Non Technical Courses!Aug44"
+        }
+      ]
+    },
+    {
+      "shortname": "CAL26-FIRE-FIGHTING-5B7E86",
+      "fullname": "Fire Fighting",
+      "duration_days": 5,
+      "price": "325.00",
+      "category": "Non-Technical Training",
+      "section": "Safety, Health And Environmental",
+      "level": null,
+      "summary": "Fire Fighting, listed in the ZESA National Training Centre 2026 calendar under Safety, Health And Environmental.",
+      "source_rows": [
+        "Non Technical Courses!25"
+      ],
+      "schedules": [
+        {
+          "start_date": "2026-02-16",
+          "end_date": "2026-02-20",
+          "source": "Non Technical Courses!Feb25"
+        },
+        {
+          "start_date": "2026-04-27",
+          "end_date": "2026-05-01",
+          "source": "Non Technical Courses!Apr25"
+        },
+        {
+          "start_date": "2026-08-17",
+          "end_date": "2026-08-21",
+          "source": "Non Technical Courses!Aug25"
+        },
+        {
+          "start_date": "2026-10-19",
+          "end_date": "2026-10-23",
+          "source": "Non Technical Courses!Oct25"
+        }
+      ]
+    },
+    {
+      "shortname": "CAL26-FIRST-AID-C0A5E3",
+      "fullname": "First Aid",
+      "duration_days": 5,
+      "price": "325.00",
+      "category": "Non-Technical Training",
+      "section": "Safety, Health And Environmental",
+      "level": null,
+      "summary": "First Aid, listed in the ZESA National Training Centre 2026 calendar under Safety, Health And Environmental.",
+      "source_rows": [
+        "Non Technical Courses!26"
+      ],
+      "schedules": [
+        {
+          "start_date": "2026-05-04",
+          "end_date": "2026-05-08",
+          "source": "Non Technical Courses!May26"
+        },
+        {
+          "start_date": "2026-11-02",
+          "end_date": "2026-11-06",
+          "source": "Non Technical Courses!Nov26"
+        }
+      ]
+    },
+    {
+      "shortname": "CAL26-GENDER-MAINSTREAMING-AND-HARASSM-831380",
+      "fullname": "Gender Mainstreaming and Harassment",
+      "duration_days": 5,
+      "price": "325.00",
+      "category": "Available on Request",
+      "section": "Non-Technical Courses Available On Request",
+      "level": null,
+      "summary": "Gender Mainstreaming and Harassment, listed in the ZESA National Training Centre 2026 calendar under Non-Technical Courses Available On Request.",
+      "source_rows": [
+        "Available on Request!29"
+      ],
+      "schedules": []
+    },
+    {
+      "shortname": "CAL26-GEO-TECHNICAL-SURVEYS-7151B1",
+      "fullname": "Geo - Technical Surveys",
+      "duration_days": 3,
+      "price": "331.00",
+      "category": "Non-Technical Training",
+      "section": "Icdl",
+      "level": null,
+      "summary": "Geo - Technical Surveys, listed in the ZESA National Training Centre 2026 calendar under Icdl.",
+      "source_rows": [
+        "Non Technical Courses!83",
+        "Consultancy Services!8"
+      ],
+      "schedules": []
+    },
+    {
+      "shortname": "CAL26-GIS-SYSTEMS-AND-PRODUCTS-046A9B",
+      "fullname": "GIS Systems and products",
+      "duration_days": 5,
+      "price": "327.00",
+      "category": "Non-Technical Training",
+      "section": "Icdl",
+      "level": null,
+      "summary": "GIS Systems and products, listed in the ZESA National Training Centre 2026 calendar under Icdl.",
+      "source_rows": [
+        "Non Technical Courses!81",
+        "Consultancy Services!4"
+      ],
+      "schedules": []
+    },
+    {
+      "shortname": "CAL26-GRADUATE-TRAINEES-8362C1",
+      "fullname": "Graduate Trainees",
+      "duration_days": 60,
+      "price": "3240.00",
+      "category": "Available on Request",
+      "section": "Induction Programs",
+      "level": null,
+      "summary": "Graduate Trainees, listed in the ZESA National Training Centre 2026 calendar under Induction Programs.",
+      "source_rows": [
+        "Available on Request!4"
+      ],
+      "schedules": []
+    },
+    {
+      "shortname": "CAL26-GRAPHIC-DESIGN-C79475",
+      "fullname": "Graphic Design",
+      "duration_days": 5,
+      "price": "325.00",
+      "category": "Non-Technical Training",
+      "section": "Icdl",
+      "level": null,
+      "summary": "Graphic Design, listed in the ZESA National Training Centre 2026 calendar under Icdl.",
+      "source_rows": [
+        "Non Technical Courses!69"
+      ],
+      "schedules": [
+        {
+          "start_date": "2026-04-27",
+          "end_date": "2026-05-01",
+          "source": "Non Technical Courses!Apr69"
+        },
+        {
+          "start_date": "2026-10-26",
+          "end_date": "2026-10-30",
+          "source": "Non Technical Courses!Oct69"
+        }
+      ]
+    },
+    {
+      "shortname": "CAL26-GRID-INTEGRATION-OF-RENEWABLE-EN-52BED5",
+      "fullname": "Grid Integration Of Renewable Energy Sources",
+      "duration_days": 5,
+      "price": "325.00",
+      "category": "Technical Training",
+      "section": "Renewable Energy Courses",
+      "level": null,
+      "summary": "Grid Integration Of Renewable Energy Sources, listed in the ZESA National Training Centre 2026 calendar under Renewable Energy Courses.",
+      "source_rows": [
+        "Technical Courses!48"
+      ],
+      "schedules": []
+    },
+    {
+      "shortname": "GRIEVANCE",
+      "fullname": "Grievance Handling Procedures",
+      "duration_days": 5,
+      "price": "325.00",
+      "category": "Non-Technical Training",
+      "section": "Non-Technical Training",
+      "level": "ALL_LEVELS",
+      "summary": "Step-by-step grievance procedures, investigation techniques, resolution approaches, documentation, and preventing grievances from escalating to Labour Court.",
+      "source_rows": [
+        "Non Technical Courses!16"
+      ],
+      "schedules": [
+        {
+          "start_date": "2026-04-20",
+          "end_date": "2026-04-24",
+          "source": "Non Technical Courses!Apr16"
+        },
+        {
+          "start_date": "2026-10-19",
+          "end_date": "2026-10-23",
+          "source": "Non Technical Courses!Oct16"
+        }
+      ]
+    },
+    {
+      "shortname": "CAL26-GROOMING-AND-ETIQUETTE-C288A2",
+      "fullname": "Grooming and Etiquette",
+      "duration_days": 10,
+      "price": "481.00",
+      "category": "Available on Request",
+      "section": "Non-Technical Courses Available On Request",
+      "level": null,
+      "summary": "Grooming and Etiquette, listed in the ZESA National Training Centre 2026 calendar under Non-Technical Courses Available On Request.",
+      "source_rows": [
+        "Available on Request!28"
+      ],
+      "schedules": []
+    },
+    {
+      "shortname": "CAL26-GROOMING-AND-ETTIQUE-AEDF28",
+      "fullname": "Grooming And Ettique",
+      "duration_days": 5,
+      "price": "325.00",
+      "category": "Non-Technical Training",
+      "section": "Safety, Health And Environmental",
+      "level": null,
+      "summary": "Grooming And Ettique, listed in the ZESA National Training Centre 2026 calendar under Safety, Health And Environmental.",
+      "source_rows": [
+        "Non Technical Courses!40"
+      ],
+      "schedules": [
+        {
+          "start_date": "2026-04-27",
+          "end_date": "2026-05-01",
+          "source": "Non Technical Courses!Apr40"
+        },
+        {
+          "start_date": "2026-06-15",
+          "end_date": "2026-06-19",
+          "source": "Non Technical Courses!Jun40"
+        },
+        {
+          "start_date": "2026-10-26",
+          "end_date": "2026-10-30",
+          "source": "Non Technical Courses!Oct40"
+        },
+        {
+          "start_date": "2026-12-07",
+          "end_date": "2026-12-11",
+          "source": "Non Technical Courses!Dec40"
+        }
+      ]
+    },
+    {
+      "shortname": "CAL26-HEXCO-NC-ELECTRICAL-POWER-ENGINE-84EF25",
+      "fullname": "HEXCO : NC Electrical Power Engineering",
+      "duration_days": 730,
+      "price": null,
+      "category": "Technical Training",
+      "section": "Hexco Certifications",
+      "level": null,
+      "summary": "HEXCO : NC Electrical Power Engineering, listed in the ZESA National Training Centre 2026 calendar under Hexco Certifications.",
+      "source_rows": [
+        "Technical Courses!74"
+      ],
+      "schedules": []
+    },
+    {
+      "shortname": "CAL26-HEXCO-NC-MACHINE-SHOP-ENGINEERIN-37369D",
+      "fullname": "HEXCO : NC Machine shop Engineering",
+      "duration_days": 730,
+      "price": null,
+      "category": "Technical Training",
+      "section": "Hexco Certifications",
+      "level": null,
+      "summary": "HEXCO : NC Machine shop Engineering, listed in the ZESA National Training Centre 2026 calendar under Hexco Certifications.",
+      "source_rows": [
+        "Technical Courses!78"
+      ],
+      "schedules": []
+    },
+    {
+      "shortname": "CAL26-HEXCO-NC-POWER-PLANT-OPERATIONS-535E6D",
+      "fullname": "HEXCO : NC Power Plant Operations",
+      "duration_days": 730,
+      "price": null,
+      "category": "Technical Training",
+      "section": "Hexco Certifications",
+      "level": null,
+      "summary": "HEXCO : NC Power Plant Operations, listed in the ZESA National Training Centre 2026 calendar under Hexco Certifications.",
+      "source_rows": [
+        "Technical Courses!75"
+      ],
+      "schedules": []
+    },
+    {
+      "shortname": "CAL26-HEXCO-NC-ELECTRONIC-COMMUNICATIO-A07DF1",
+      "fullname": "HEXCO: NC Electronic Communication Systems",
+      "duration_days": 730,
+      "price": null,
+      "category": "Technical Training",
+      "section": "Hexco Certifications",
+      "level": null,
+      "summary": "HEXCO: NC Electronic Communication Systems, listed in the ZESA National Training Centre 2026 calendar under Hexco Certifications.",
+      "source_rows": [
+        "Technical Courses!76"
+      ],
+      "schedules": []
+    },
+    {
+      "shortname": "CAL26-HEXCO-NC-INSTRUMENTATION-AND-CON-3F2063",
+      "fullname": "HEXCO: NC Instrumentation and Control",
+      "duration_days": 730,
+      "price": null,
+      "category": "Technical Training",
+      "section": "Hexco Certifications",
+      "level": null,
+      "summary": "HEXCO: NC Instrumentation and Control, listed in the ZESA National Training Centre 2026 calendar under Hexco Certifications.",
+      "source_rows": [
+        "Technical Courses!77"
+      ],
+      "schedules": []
+    },
+    {
+      "shortname": "CAL26-HEXCO-ND-COMMUNICATION-SYSTEMS-18AAEF",
+      "fullname": "HEXCO: ND Communication Systems",
+      "duration_days": 547,
+      "price": null,
+      "category": "Technical Training",
+      "section": "Hexco Certifications",
+      "level": null,
+      "summary": "HEXCO: ND Communication Systems, listed in the ZESA National Training Centre 2026 calendar under Hexco Certifications.",
+      "source_rows": [
+        "Technical Courses!81"
+      ],
+      "schedules": []
+    },
+    {
+      "shortname": "CAL26-HEXCO-ND-ELECTRICAL-POWER-ENGINE-7197E3",
+      "fullname": "HEXCO: ND Electrical Power Engineering",
+      "duration_days": 547,
+      "price": null,
+      "category": "Technical Training",
+      "section": "Hexco Certifications",
+      "level": null,
+      "summary": "HEXCO: ND Electrical Power Engineering, listed in the ZESA National Training Centre 2026 calendar under Hexco Certifications.",
+      "source_rows": [
+        "Technical Courses!79"
+      ],
+      "schedules": []
+    },
+    {
+      "shortname": "CAL26-HEXCO-ND-POWER-PLANT-ENGINEERING-D697F3",
+      "fullname": "HEXCO: ND Power Plant Engineering",
+      "duration_days": 547,
+      "price": null,
+      "category": "Technical Training",
+      "section": "Hexco Certifications",
+      "level": null,
+      "summary": "HEXCO: ND Power Plant Engineering, listed in the ZESA National Training Centre 2026 calendar under Hexco Certifications.",
+      "source_rows": [
+        "Technical Courses!80"
+      ],
+      "schedules": []
+    },
+    {
+      "shortname": "CAL26-HUMAN-RESOURCES-MANAGEMENT-369A30",
+      "fullname": "Human Resources Management",
+      "duration_days": 5,
+      "price": null,
+      "category": "Non-Technical Training",
+      "section": "National University Of Science & Technology Certificate Courses",
+      "level": null,
+      "summary": "Human Resources Management, listed in the ZESA National Training Centre 2026 calendar under National University Of Science & Technology Certificate Courses.",
+      "source_rows": [
+        "Non Technical Courses!89"
+      ],
+      "schedules": []
+    },
+    {
+      "shortname": "CAL26-IMS-APPRECIATION-1507BF",
+      "fullname": "IMS Appreciation",
+      "duration_days": 5,
+      "price": "325.00",
+      "category": "Non-Technical Training",
+      "section": "Icdl",
+      "level": null,
+      "summary": "IMS Appreciation, listed in the ZESA National Training Centre 2026 calendar under Icdl.",
+      "source_rows": [
+        "Non Technical Courses!77"
+      ],
+      "schedules": [
+        {
+          "start_date": "2026-06-15",
+          "end_date": "2026-06-19",
+          "source": "Non Technical Courses!Jun77"
+        },
+        {
+          "start_date": "2026-12-14",
+          "end_date": "2026-12-18",
+          "source": "Non Technical Courses!Dec77"
+        }
+      ]
+    },
+    {
+      "shortname": "INT-CTRL",
+      "fullname": "Internal Controls: Prevention and Detection of Fraud",
+      "duration_days": 5,
+      "price": "325.00",
+      "category": "Non-Technical Training",
+      "section": "Safety, Health And Environmental",
+      "level": "INTERMEDIATE",
+      "summary": "Fraud risk assessment, internal control frameworks (COSO), red flags and detection techniques, whistleblower mechanisms, and forensic investigation basics.",
+      "source_rows": [
+        "Non Technical Courses!45"
+      ],
+      "schedules": [
+        {
+          "start_date": "2026-01-19",
+          "end_date": "2026-01-23",
+          "source": "Non Technical Courses!Jan45"
+        },
+        {
+          "start_date": "2026-07-20",
+          "end_date": "2026-07-24",
+          "source": "Non Technical Courses!Jul45"
+        }
+      ]
+    },
+    {
+      "shortname": "CAL26-INTERNATIONAL-COMPUTER-DRIVER-S--4A67E7",
+      "fullname": "International Computer Driver\u2019s License",
+      "duration_days": 5,
+      "price": "325.00",
+      "category": "Available on Request",
+      "section": "Non-Technical Courses Available On Request",
+      "level": null,
+      "summary": "International Computer Driver\u2019s License, listed in the ZESA National Training Centre 2026 calendar under Non-Technical Courses Available On Request.",
+      "source_rows": [
+        "Available on Request!34"
+      ],
+      "schedules": []
+    },
+    {
+      "shortname": "CAL26-INTRODUCTION-OF-CONDITION-MONITO-FDDA33",
+      "fullname": "Introduction of Condition Monitoring in Industrial Machinery",
+      "duration_days": 5,
+      "price": "325.00",
+      "category": "Technical Training",
+      "section": "Mechanical Engineering",
+      "level": null,
+      "summary": "Introduction of Condition Monitoring in Industrial Machinery, listed in the ZESA National Training Centre 2026 calendar under Mechanical Engineering.",
+      "source_rows": [
+        "Technical Courses!29"
+      ],
+      "schedules": []
+    },
+    {
+      "shortname": "INVENTORY",
+      "fullname": "Inventory Management",
+      "duration_days": 5,
+      "price": "325.00",
+      "category": "Non-Technical Training",
+      "section": "Safety, Health And Environmental",
+      "level": "INTERMEDIATE",
+      "summary": "Stock control systems, reorder points, ABC analysis, cycle counting, warehouse layout, materials handling, and integration with SAP inventory modules.",
+      "source_rows": [
+        "Non Technical Courses!41"
+      ],
+      "schedules": [
+        {
+          "start_date": "2026-01-19",
+          "end_date": "2026-01-23",
+          "source": "Non Technical Courses!Jan41"
+        },
+        {
+          "start_date": "2026-04-06",
+          "end_date": "2026-04-10",
+          "source": "Non Technical Courses!Apr41"
+        },
+        {
+          "start_date": "2026-07-13",
+          "end_date": "2026-07-17",
+          "source": "Non Technical Courses!Jul41"
+        },
+        {
+          "start_date": "2026-10-12",
+          "end_date": "2026-10-16",
+          "source": "Non Technical Courses!Oct41"
+        }
+      ]
+    },
+    {
+      "shortname": "CAL26-INVESTIGATIONS-OF-ALLEGED-CASES--D195CE",
+      "fullname": "Investigations of Alleged cases of misconduct",
+      "duration_days": 5,
+      "price": "325.00",
+      "category": "Available on Request",
+      "section": "Non-Technical Courses Available On Request",
+      "level": null,
+      "summary": "Investigations of Alleged cases of misconduct, listed in the ZESA National Training Centre 2026 calendar under Non-Technical Courses Available On Request.",
+      "source_rows": [
+        "Available on Request!33"
+      ],
+      "schedules": []
+    },
+    {
+      "shortname": "CAL26-IRBM-TRAINING-B49144",
+      "fullname": "IRBM Training",
+      "duration_days": 5,
+      "price": "325.00",
+      "category": "Non-Technical Training",
+      "section": "Safety, Health And Environmental",
+      "level": null,
+      "summary": "IRBM Training, listed in the ZESA National Training Centre 2026 calendar under Safety, Health And Environmental.",
+      "source_rows": [
+        "Non Technical Courses!33"
+      ],
+      "schedules": [
+        {
+          "start_date": "2026-02-09",
+          "end_date": "2026-02-13",
+          "source": "Non Technical Courses!Feb33"
+        },
+        {
+          "start_date": "2026-08-10",
+          "end_date": "2026-08-14",
+          "source": "Non Technical Courses!Aug33"
+        }
+      ]
+    },
+    {
+      "shortname": "ISO-31000",
+      "fullname": "ISO 31000 Risk Management Appreciation",
+      "duration_days": 5,
+      "price": "325.00",
+      "category": "Non-Technical Training",
+      "section": "Safety, Health And Environmental",
+      "level": "INTERMEDIATE",
+      "summary": "Risk management principles and guidelines per ISO 31000:2018, risk identification, assessment, treatment, monitoring, and integration into organisational governance.",
+      "source_rows": [
+        "Non Technical Courses!30"
+      ],
+      "schedules": [
+        {
+          "start_date": "2026-02-23",
+          "end_date": "2026-02-27",
+          "source": "Non Technical Courses!Feb30"
+        },
+        {
+          "start_date": "2026-06-01",
+          "end_date": "2026-06-05",
+          "source": "Non Technical Courses!Jun30"
+        },
+        {
+          "start_date": "2026-08-24",
+          "end_date": "2026-08-28",
+          "source": "Non Technical Courses!Aug30"
+        },
+        {
+          "start_date": "2026-12-01",
+          "end_date": "2026-12-05",
+          "source": "Non Technical Courses!Dec30"
+        }
+      ]
+    },
+    {
+      "shortname": "CAL26-ISO-45001-APPRECIATION-E7A2C8",
+      "fullname": "ISO 45001 Appreciation",
+      "duration_days": 5,
+      "price": "325.00",
+      "category": "Non-Technical Training",
+      "section": "Safety, Health And Environmental",
+      "level": null,
+      "summary": "ISO 45001 Appreciation, listed in the ZESA National Training Centre 2026 calendar under Safety, Health And Environmental.",
+      "source_rows": [
+        "Non Technical Courses!31"
+      ],
+      "schedules": [
+        {
+          "start_date": "2026-04-06",
+          "end_date": "2026-04-10",
+          "source": "Non Technical Courses!Apr31"
+        },
+        {
+          "start_date": "2026-10-12",
+          "end_date": "2026-10-16",
+          "source": "Non Technical Courses!Oct31"
+        }
+      ]
+    },
+    {
+      "shortname": "CAL26-ISO-5001-ENERGY-MANAGEMENT-A7E7C5",
+      "fullname": "ISO 5001-Energy Management",
+      "duration_days": 5,
+      "price": "325.00",
+      "category": "Non-Technical Training",
+      "section": "Safety, Health And Environmental",
+      "level": null,
+      "summary": "ISO 5001-Energy Management, listed in the ZESA National Training Centre 2026 calendar under Safety, Health And Environmental.",
+      "source_rows": [
+        "Non Technical Courses!32"
+      ],
+      "schedules": [
+        {
+          "start_date": "2026-01-19",
+          "end_date": "2026-01-23",
+          "source": "Non Technical Courses!Jan32"
+        },
+        {
+          "start_date": "2026-07-06",
+          "end_date": "2026-07-10",
+          "source": "Non Technical Courses!Jul32"
+        }
+      ]
+    },
+    {
+      "shortname": "CAL26-ISO-9000-APPRECIATION-461943",
+      "fullname": "ISO 9000 Appreciation",
+      "duration_days": 5,
+      "price": "325.00",
+      "category": "Non-Technical Training",
+      "section": "Safety, Health And Environmental",
+      "level": null,
+      "summary": "ISO 9000 Appreciation, listed in the ZESA National Training Centre 2026 calendar under Safety, Health And Environmental.",
+      "source_rows": [
+        "Non Technical Courses!29"
+      ],
+      "schedules": [
+        {
+          "start_date": "2026-05-11",
+          "end_date": "2026-05-15",
+          "source": "Non Technical Courses!May29"
+        },
+        {
+          "start_date": "2026-11-09",
+          "end_date": "2026-11-13",
+          "source": "Non Technical Courses!Nov29"
+        }
+      ]
+    },
+    {
+      "shortname": "LABOUR-LAW",
+      "fullname": "Labour Law Appreciation",
+      "duration_days": 5,
+      "price": "325.00",
+      "category": "Non-Technical Training",
+      "section": "Non-Technical Training",
+      "level": "ALL_LEVELS",
+      "summary": "Zimbabwe Labour Act provisions, employment contracts, disciplinary procedures, retrenchment, collective bargaining, and labour dispute resolution for line managers and HR practitioners.",
+      "source_rows": [
+        "Non Technical Courses!17"
+      ],
+      "schedules": [
+        {
+          "start_date": "2026-02-16",
+          "end_date": "2026-02-20",
+          "source": "Non Technical Courses!Feb17"
+        },
+        {
+          "start_date": "2026-08-17",
+          "end_date": "2026-08-21",
+          "source": "Non Technical Courses!Aug17"
+        }
+      ]
+    },
+    {
+      "shortname": "LL-MAINT",
+      "fullname": "Live Line Maintenance",
+      "duration_days": 10,
+      "price": "481.00",
+      "category": "Technical Training",
+      "section": "Electrical Engineering",
+      "level": "ADVANCED",
+      "summary": "Techniques and safety requirements for working on energised overhead lines. Covers bare-hand and hot-stick methods, personal protective equipment, and live-line tools. Two-week hands-on programme.",
+      "source_rows": [
+        "Technical Courses!13",
+        "Technical Courses!84"
+      ],
+      "schedules": [
+        {
+          "start_date": "2026-02-23",
+          "end_date": "2026-03-06",
+          "source": "Technical Courses!Feb13"
+        },
+        {
+          "start_date": "2026-05-04",
+          "end_date": "2026-05-15",
+          "source": "Technical Courses!May13"
+        }
+      ]
+    },
+    {
+      "shortname": "LOAD-FCST",
+      "fullname": "Load Forecasting & Energy Efficiency in Buildings",
+      "duration_days": 5,
+      "price": "325.00",
+      "category": "Technical Training",
+      "section": "Electrical Engineering",
+      "level": "INTERMEDIATE",
+      "summary": "Demand-side forecasting methodologies, load profiling, energy modelling tools, and integrated energy efficiency strategies for building portfolios and distribution planning.",
+      "source_rows": [
+        "Technical Courses!16",
+        "Technical Courses!45"
+      ],
+      "schedules": [
+        {
+          "start_date": "2026-03-09",
+          "end_date": "2026-03-13",
+          "source": "Technical Courses!Mar16"
+        },
+        {
+          "start_date": "2026-09-14",
+          "end_date": "2026-09-18",
+          "source": "Technical Courses!Sep16"
+        }
+      ]
+    },
+    {
+      "shortname": "CAL26-MACHINE-ALIGNMENT-TECHNOLOGY-1E6330",
+      "fullname": "Machine Alignment Technology",
+      "duration_days": 5,
+      "price": "325.00",
+      "category": "Technical Training",
+      "section": "Mechanical Engineering",
+      "level": null,
+      "summary": "Machine Alignment Technology, listed in the ZESA National Training Centre 2026 calendar under Mechanical Engineering.",
+      "source_rows": [
+        "Technical Courses!34"
+      ],
+      "schedules": []
+    },
+    {
+      "shortname": "VIB-ANLYS",
+      "fullname": "Machinery Vibration Monitoring and Analysis",
+      "duration_days": 5,
+      "price": "325.00",
+      "category": "Technical Training",
+      "section": "Mechanical Engineering",
+      "level": "INTERMEDIATE",
+      "summary": "Vibration theory, measurement techniques, data collection, spectrum analysis, and fault diagnosis for rotating machinery including motors, pumps, fans, and compressors.",
+      "source_rows": [
+        "Technical Courses!23"
+      ],
+      "schedules": [
+        {
+          "start_date": "2026-04-20",
+          "end_date": "2026-04-24",
+          "source": "Technical Courses!Apr23"
+        }
+      ]
+    },
+    {
+      "shortname": "CAL26-MAGNETIC-BALANCING-OF-MACHINERY-664D06",
+      "fullname": "Magnetic Balancing of Machinery",
+      "duration_days": 5,
+      "price": "325.00",
+      "category": "Technical Training",
+      "section": "Mechanical Engineering",
+      "level": null,
+      "summary": "Magnetic Balancing of Machinery, listed in the ZESA National Training Centre 2026 calendar under Mechanical Engineering.",
+      "source_rows": [
+        "Technical Courses!30"
+      ],
+      "schedules": []
+    },
+    {
+      "shortname": "CAL26-MANPOWER-MECHANICAL-TRADE-TEST-P-D6F18B",
+      "fullname": "Manpower : Mechanical Trade Test Preparations Class 1 - 4",
+      "duration_days": 15,
+      "price": "636.00",
+      "category": "Available on Request",
+      "section": "Certificate Programs",
+      "level": null,
+      "summary": "Manpower : Mechanical Trade Test Preparations Class 1 - 4, listed in the ZESA National Training Centre 2026 calendar under Certificate Programs.",
+      "source_rows": [
+        "Available on Request!8"
+      ],
+      "schedules": []
+    },
+    {
+      "shortname": "CAL26-MANPOWER-SKILLS-UPGRADE-ELECTRIC-BB850C",
+      "fullname": "Manpower : Skills Upgrade Electrical Class 1-4 (Practical)",
+      "duration_days": 15,
+      "price": "636.00",
+      "category": "Technical Training",
+      "section": "Manpower Development Certifications",
+      "level": null,
+      "summary": "Manpower : Skills Upgrade Electrical Class 1-4 (Practical), listed in the ZESA National Training Centre 2026 calendar under Manpower Development Certifications.",
+      "source_rows": [
+        "Technical Courses!71"
+      ],
+      "schedules": []
+    },
+    {
+      "shortname": "CAL26-MANPOWER-SKILLS-UPGRADE-ELECTRIC-ED9B63",
+      "fullname": "Manpower : Skills Upgrade Electrical Class 1-4 (Theory)",
+      "duration_days": 35,
+      "price": "760.00",
+      "category": "Technical Training",
+      "section": "Manpower Development Certifications",
+      "level": null,
+      "summary": "Manpower : Skills Upgrade Electrical Class 1-4 (Theory), listed in the ZESA National Training Centre 2026 calendar under Manpower Development Certifications.",
+      "source_rows": [
+        "Technical Courses!70"
+      ],
+      "schedules": []
+    },
+    {
+      "shortname": "CAL26-MANPOWER-SKILLS-UPGRADE-MECHANIC-32070B",
+      "fullname": "Manpower : Skills Upgrade Mechanical Class 1 - 4",
+      "duration_days": 35,
+      "price": "760.00",
+      "category": "Available on Request",
+      "section": "Certificate Programs",
+      "level": null,
+      "summary": "Manpower : Skills Upgrade Mechanical Class 1 - 4, listed in the ZESA National Training Centre 2026 calendar under Certificate Programs.",
+      "source_rows": [
+        "Available on Request!7"
+      ],
+      "schedules": []
+    },
+    {
+      "shortname": "CAL26-MARKETING-MANAGEMENT-FOR-POWER-U-A1EBE7",
+      "fullname": "Marketing Management for power utilities.",
+      "duration_days": 5,
+      "price": null,
+      "category": "Non-Technical Training",
+      "section": "National University Of Science & Technology Certificate Courses",
+      "level": null,
+      "summary": "Marketing Management for power utilities., listed in the ZESA National Training Centre 2026 calendar under National University Of Science & Technology Certificate Courses.",
+      "source_rows": [
+        "Non Technical Courses!92"
+      ],
+      "schedules": []
+    },
+    {
+      "shortname": "CAL26-MENTAL-HEALTH-AWARENESS-82FF07",
+      "fullname": "Mental Health Awareness",
+      "duration_days": 5,
+      "price": "325.00",
+      "category": "Available on Request",
+      "section": "Non-Technical Courses Available On Request",
+      "level": null,
+      "summary": "Mental Health Awareness, listed in the ZESA National Training Centre 2026 calendar under Non-Technical Courses Available On Request.",
+      "source_rows": [
+        "Available on Request!31"
+      ],
+      "schedules": []
+    },
+    {
+      "shortname": "METERING",
+      "fullname": "Metering",
+      "duration_days": 5,
+      "price": "325.00",
+      "category": "Technical Training",
+      "section": "Electrical Engineering",
+      "level": "BEGINNER",
+      "summary": "Energy metering principles, meter types, tariff structures, meter testing, and anti-tamper measures for residential, commercial, and industrial installations.",
+      "source_rows": [
+        "Technical Courses!18"
+      ],
+      "schedules": [
+        {
+          "start_date": "2026-06-22",
+          "end_date": "2026-06-26",
+          "source": "Technical Courses!Jun18"
+        },
+        {
+          "start_date": "2026-12-14",
+          "end_date": "2026-12-18",
+          "source": "Technical Courses!Dec18"
+        }
+      ]
+    },
+    {
+      "shortname": "CAL26-METERING-BASIC-COURSE-592322",
+      "fullname": "Metering Basic Course",
+      "duration_days": 5,
+      "price": "325.00",
+      "category": "Available on Request",
+      "section": "Technical Short Courses",
+      "level": null,
+      "summary": "Metering Basic Course, listed in the ZESA National Training Centre 2026 calendar under Technical Short Courses.",
+      "source_rows": [
+        "Available on Request!12"
+      ],
+      "schedules": []
+    },
+    {
+      "shortname": "MINIGRID",
+      "fullname": "Mini Grid Installation, Operations and Maintenance.",
+      "duration_days": 5,
+      "price": "325.00",
+      "category": "Technical Training",
+      "section": "Renewable Energy Courses",
+      "level": "INTERMEDIATE",
+      "summary": "Design, installation, commissioning, and O&M of rural mini-grids including hybrid solar-diesel systems, battery storage, and load management controllers.",
+      "source_rows": [
+        "Technical Courses!49"
+      ],
+      "schedules": [
+        {
+          "start_date": "2026-06-22",
+          "end_date": "2026-06-26",
+          "source": "Technical Courses!Jun49"
+        },
+        {
+          "start_date": "2026-12-14",
+          "end_date": "2026-12-18",
+          "source": "Technical Courses!Dec49"
+        }
+      ]
+    },
+    {
+      "shortname": "MIN-WRITE",
+      "fullname": "Minutes Writing Training",
+      "duration_days": 5,
+      "price": "325.00",
+      "category": "Non-Technical Training",
+      "section": "Safety, Health And Environmental",
+      "level": "BEGINNER",
+      "summary": "Structure and format of minutes, action items, resolutions, accuracy and objectivity in recording, and distribution of minutes for formal and informal meetings.",
+      "source_rows": [
+        "Non Technical Courses!48"
+      ],
+      "schedules": [
+        {
+          "start_date": "2026-02-09",
+          "end_date": "2026-02-13",
+          "source": "Non Technical Courses!Feb48"
+        },
+        {
+          "start_date": "2026-08-10",
+          "end_date": "2026-08-14",
+          "source": "Non Technical Courses!Aug48"
+        }
+      ]
+    },
+    {
+      "shortname": "CAL26-NON-DESTRUCTIVE-TESTING-COURSE-L-807670",
+      "fullname": "Non Destructive Testing Course Level 1 and 2",
+      "duration_days": 5,
+      "price": "325.00",
+      "category": "Technical Training",
+      "section": "Mechanical Engineering",
+      "level": null,
+      "summary": "Non Destructive Testing Course Level 1 and 2, listed in the ZESA National Training Centre 2026 calendar under Mechanical Engineering.",
+      "source_rows": [
+        "Technical Courses!33"
+      ],
+      "schedules": []
+    },
+    {
+      "shortname": "NSSA",
+      "fullname": "NSSA Processes Appreciation",
+      "duration_days": 5,
+      "price": "325.00",
+      "category": "Non-Technical Training",
+      "section": "Non-Technical Training",
+      "level": "ALL_LEVELS",
+      "summary": "NSSA registration, contribution rates, workplace injury claims, compensation processes, workplace hazard reporting, and NSSA inspection requirements for employers.",
+      "source_rows": [
+        "Non Technical Courses!19"
+      ],
+      "schedules": [
+        {
+          "start_date": "2026-03-16",
+          "end_date": "2026-03-20",
+          "source": "Non Technical Courses!Mar19"
+        },
+        {
+          "start_date": "2026-09-21",
+          "end_date": "2026-09-25",
+          "source": "Non Technical Courses!Sep19"
+        }
+      ]
+    },
+    {
+      "shortname": "OHS-PS",
+      "fullname": "Occupational Health and Safety in Power Systems",
+      "duration_days": 5,
+      "price": "325.00",
+      "category": "Non-Technical Training",
+      "section": "Safety, Health And Environmental",
+      "level": "ALL_LEVELS",
+      "summary": "Legal framework (NSSA Act, SI 31), hazard identification, risk assessment, electrical safety, permit-to-work, PPE, incident investigation, and safety management systems for power utilities.",
+      "source_rows": [
+        "Non Technical Courses!27"
+      ],
+      "schedules": [
+        {
+          "start_date": "2026-01-26",
+          "end_date": "2026-01-30",
+          "source": "Non Technical Courses!Jan27"
+        },
+        {
+          "start_date": "2026-07-20",
+          "end_date": "2026-07-24",
+          "source": "Non Technical Courses!Jul27"
+        },
+        {
+          "start_date": "2026-10-26",
+          "end_date": "2026-10-30",
+          "source": "Non Technical Courses!Oct27"
+        }
+      ]
+    },
+    {
+      "shortname": "CAL26-OIL-HANDLING-TECHNIQUES-246992",
+      "fullname": "Oil Handling Techniques",
+      "duration_days": 5,
+      "price": "325.00",
+      "category": "Technical Training",
+      "section": "Mechanical Engineering",
+      "level": null,
+      "summary": "Oil Handling Techniques, listed in the ZESA National Training Centre 2026 calendar under Mechanical Engineering.",
+      "source_rows": [
+        "Technical Courses!32"
+      ],
+      "schedules": []
+    },
+    {
+      "shortname": "CAL26-OPTIC-FIBRE-SYSTEMS-PLANNING-MAI-45D4B8",
+      "fullname": "Optic Fibre Systems Planning, Maintenance and Operations.",
+      "duration_days": 5,
+      "price": "325.00",
+      "category": "Available on Request",
+      "section": "Technical Short Courses",
+      "level": null,
+      "summary": "Optic Fibre Systems Planning, Maintenance and Operations., listed in the ZESA National Training Centre 2026 calendar under Technical Short Courses.",
+      "source_rows": [
+        "Available on Request!17"
+      ],
+      "schedules": []
+    },
+    {
+      "shortname": "CAL26-PERFORMANCE-MANAGEMENT-SOFTWARE--54FE0C",
+      "fullname": "Performance Management Software Products",
+      "duration_days": null,
+      "price": null,
+      "category": "Consultancy Services",
+      "section": "Consultancy Services",
+      "level": null,
+      "summary": "Performance Management Software Products, listed in the ZESA National Training Centre 2026 calendar under Consultancy Services.",
+      "source_rows": [
+        "Consultancy Services!13"
+      ],
+      "schedules": []
+    },
+    {
+      "shortname": "CAL26-POWER-ELECTRONICS-FUNDAMENTALS-AD8733",
+      "fullname": "Power Electronics Fundamentals",
+      "duration_days": 5,
+      "price": "325.00",
+      "category": "Available on Request",
+      "section": "Technical Short Courses",
+      "level": null,
+      "summary": "Power Electronics Fundamentals, listed in the ZESA National Training Centre 2026 calendar under Technical Short Courses.",
+      "source_rows": [
+        "Available on Request!21"
+      ],
+      "schedules": []
+    },
+    {
+      "shortname": "PS-COMM",
+      "fullname": "Power Systems Communication Protocols",
+      "duration_days": 5,
+      "price": "325.00",
+      "category": "Technical Training",
+      "section": "Electrical Engineering",
+      "level": "INTERMEDIATE",
+      "summary": "DNP3, IEC 61850, MODBUS, and SCADA communication protocols used in modern power system control and monitoring. Practical configuration exercises included.",
+      "source_rows": [
+        "Technical Courses!17"
+      ],
+      "schedules": [
+        {
+          "start_date": "2026-06-22",
+          "end_date": "2026-06-26",
+          "source": "Technical Courses!Jun17"
+        },
+        {
+          "start_date": "2026-12-14",
+          "end_date": "2026-12-18",
+          "source": "Technical Courses!Dec17"
+        }
+      ]
+    },
+    {
+      "shortname": "PSP1",
+      "fullname": "Power Systems Protection I",
+      "duration_days": 5,
+      "price": "325.00",
+      "category": "Technical Training",
+      "section": "Electrical Engineering",
+      "level": "INTERMEDIATE",
+      "summary": "Fundamentals of power system protection including relay types, settings, coordination principles, overcurrent and earth fault protection, and testing procedures.",
+      "source_rows": [
+        "Technical Courses!11",
+        "Technical Courses!87"
+      ],
+      "schedules": [
+        {
+          "start_date": "2026-01-19",
+          "end_date": "2026-01-23",
+          "source": "Technical Courses!Jan11"
+        },
+        {
+          "start_date": "2026-02-23",
+          "end_date": "2026-02-27",
+          "source": "Technical Courses!Feb11"
+        },
+        {
+          "start_date": "2026-03-09",
+          "end_date": "2026-03-20",
+          "source": "Technical Courses!Mar11"
+        },
+        {
+          "start_date": "2026-07-13",
+          "end_date": "2026-07-17",
+          "source": "Technical Courses!Jul11"
+        },
+        {
+          "start_date": "2026-09-07",
+          "end_date": "2026-09-11",
+          "source": "Technical Courses!Sep11"
+        }
+      ]
+    },
+    {
+      "shortname": "PSP2",
+      "fullname": "Power Systems Protection II",
+      "duration_days": 5,
+      "price": "325.00",
+      "category": "Technical Training",
+      "section": "Electrical Engineering",
+      "level": "ADVANCED",
+      "summary": "Advanced protection schemes including differential protection, distance relays, busbar protection, and modern numerical relay configuration. Prerequisite: Power Systems Protection I.",
+      "source_rows": [
+        "Technical Courses!12"
+      ],
+      "schedules": [
+        {
+          "start_date": "2026-08-24",
+          "end_date": "2026-08-28",
+          "source": "Technical Courses!Aug12"
+        }
+      ]
+    },
+    {
+      "shortname": "PRE-RET",
+      "fullname": "Pre-Retirement Training",
+      "duration_days": 5,
+      "price": "325.00",
+      "category": "Non-Technical Training",
+      "section": "Non-Technical Training",
+      "level": "ALL_LEVELS",
+      "summary": "Financial planning, health and wellness, post-retirement opportunities, legal matters, and psychological preparation for employees approaching retirement.",
+      "source_rows": [
+        "Non Technical Courses!20"
+      ],
+      "schedules": [
+        {
+          "start_date": "2026-02-24",
+          "end_date": "2026-02-26",
+          "source": "Non Technical Courses!Feb20"
+        },
+        {
+          "start_date": "2026-08-24",
+          "end_date": "2026-08-28",
+          "source": "Non Technical Courses!Aug20"
+        }
+      ]
+    },
+    {
+      "shortname": "PRINCE2",
+      "fullname": "PRINCE 2 Foundation",
+      "duration_days": 5,
+      "price": "325.00",
+      "category": "Non-Technical Training",
+      "section": "Safety, Health And Environmental",
+      "level": "INTERMEDIATE",
+      "summary": "PRINCE2 methodology covering the seven principles, themes, and processes for structured project management. Aligned to the PRINCE2 Foundation certification syllabus.",
+      "source_rows": [
+        "Non Technical Courses!34"
+      ],
+      "schedules": [
+        {
+          "start_date": "2026-01-19",
+          "end_date": "2026-01-23",
+          "source": "Non Technical Courses!Jan34"
+        }
+      ]
+    },
+    {
+      "shortname": "CAL26-PRINCE-2-PRACTITIONERS-3C2CC6",
+      "fullname": "PRINCE 2 Practitioners",
+      "duration_days": 5,
+      "price": "325.00",
+      "category": "Non-Technical Training",
+      "section": "Safety, Health And Environmental",
+      "level": null,
+      "summary": "PRINCE 2 Practitioners, listed in the ZESA National Training Centre 2026 calendar under Safety, Health And Environmental.",
+      "source_rows": [
+        "Non Technical Courses!35"
+      ],
+      "schedules": [
+        {
+          "start_date": "2026-03-02",
+          "end_date": "2026-03-06",
+          "source": "Non Technical Courses!Mar35"
+        }
+      ]
+    },
+    {
+      "shortname": "CAL26-PROCUREMENT-LEGISLATION-APPRECIA-7C2487",
+      "fullname": "Procurement Legislation Appreciation for Managers",
+      "duration_days": 5,
+      "price": "325.00",
+      "category": "Non-Technical Training",
+      "section": "Non-Technical Training",
+      "level": null,
+      "summary": "Procurement Legislation Appreciation for Managers, listed in the ZESA National Training Centre 2026 calendar under Non-Technical Training.",
+      "source_rows": [
+        "Non Technical Courses!6"
+      ],
+      "schedules": [
+        {
+          "start_date": "2026-08-24",
+          "end_date": "2026-08-28",
+          "source": "Non Technical Courses!Aug6"
+        }
+      ]
+    },
+    {
+      "shortname": "CAL26-PROFESSIONAL-HOUSEKEEPING-CLEANI-A005B7",
+      "fullname": "Professional Housekeeping Cleaning and Inspection",
+      "duration_days": 2,
+      "price": "240.00",
+      "category": "Non-Technical Training",
+      "section": "Safety, Health And Environmental",
+      "level": null,
+      "summary": "Professional Housekeeping Cleaning and Inspection, listed in the ZESA National Training Centre 2026 calendar under Safety, Health And Environmental.",
+      "source_rows": [
+        "Non Technical Courses!46"
+      ],
+      "schedules": []
+    },
+    {
+      "shortname": "PROJ-CM",
+      "fullname": "Project Contract Management",
+      "duration_days": 5,
+      "price": "325.00",
+      "category": "Non-Technical Training",
+      "section": "Safety, Health And Environmental",
+      "level": "INTERMEDIATE",
+      "summary": "Contract strategy, tendering, evaluation, award, contract monitoring, variation orders, claims management, and close-out for capital and service contracts.",
+      "source_rows": [
+        "Non Technical Courses!28"
+      ],
+      "schedules": [
+        {
+          "start_date": "2026-03-23",
+          "end_date": "2026-03-27",
+          "source": "Non Technical Courses!Mar28"
+        },
+        {
+          "start_date": "2026-09-07",
+          "end_date": "2026-09-11",
+          "source": "Non Technical Courses!Sep28"
+        }
+      ]
+    },
+    {
+      "shortname": "CAL26-PROJECT-DEVELOPMENT-08C1D3",
+      "fullname": "Project Development",
+      "duration_days": 5,
+      "price": "325.00",
+      "category": "Non-Technical Training",
+      "section": "Safety, Health And Environmental",
+      "level": null,
+      "summary": "Project Development, listed in the ZESA National Training Centre 2026 calendar under Safety, Health And Environmental.",
+      "source_rows": [
+        "Non Technical Courses!36"
+      ],
+      "schedules": [
+        {
+          "start_date": "2026-04-06",
+          "end_date": "2026-04-10",
+          "source": "Non Technical Courses!Apr36"
+        },
+        {
+          "start_date": "2026-10-05",
+          "end_date": "2026-10-09",
+          "source": "Non Technical Courses!Oct36"
+        }
+      ]
+    },
+    {
+      "shortname": "CAL26-PROJECT-MANAGEMENT-AEA164",
+      "fullname": "Project Management",
+      "duration_days": null,
+      "price": null,
+      "category": "Consultancy Services",
+      "section": "Consultancy Services",
+      "level": null,
+      "summary": "Project Management, listed in the ZESA National Training Centre 2026 calendar under Consultancy Services.",
+      "source_rows": [
+        "Consultancy Services!5"
+      ],
+      "schedules": []
+    },
+    {
+      "shortname": "CAL26-PROJECT-SCHEDULING-WITH-MS-PROJE-F7A52A",
+      "fullname": "Project Scheduling with MS Projects",
+      "duration_days": 5,
+      "price": "325.00",
+      "category": "Available on Request",
+      "section": "Technical Short Courses",
+      "level": null,
+      "summary": "Project Scheduling with MS Projects, listed in the ZESA National Training Centre 2026 calendar under Technical Short Courses.",
+      "source_rows": [
+        "Available on Request!15"
+      ],
+      "schedules": []
+    },
+    {
+      "shortname": "CAL26-PROJECT-SCHEDULING-WITH-PRIMAVER-A70ED3",
+      "fullname": "Project Scheduling with PRIMAVERA P6",
+      "duration_days": 5,
+      "price": "325.00",
+      "category": "Available on Request",
+      "section": "Technical Short Courses",
+      "level": null,
+      "summary": "Project Scheduling with PRIMAVERA P6, listed in the ZESA National Training Centre 2026 calendar under Technical Short Courses.",
+      "source_rows": [
+        "Available on Request!14"
+      ],
+      "schedules": []
+    },
+    {
+      "shortname": "CAL26-PUBLIC-FINANCE-ACT-912B02",
+      "fullname": "Public Finance Act",
+      "duration_days": 5,
+      "price": "325.00",
+      "category": "Non-Technical Training",
+      "section": "Icdl",
+      "level": null,
+      "summary": "Public Finance Act, listed in the ZESA National Training Centre 2026 calendar under Icdl.",
+      "source_rows": [
+        "Non Technical Courses!79"
+      ],
+      "schedules": [
+        {
+          "start_date": "2026-06-29",
+          "end_date": "2026-07-03",
+          "source": "Non Technical Courses!Jun79"
+        }
+      ]
+    },
+    {
+      "shortname": "CAL26-PUBLIC-FINANCE-MANAGEMENT-ACT-AP-AB2BF0",
+      "fullname": "Public Finance Management Act Appreciation for Managers",
+      "duration_days": 5,
+      "price": "325.00",
+      "category": "Non-Technical Training",
+      "section": "Non-Technical Training",
+      "level": null,
+      "summary": "Public Finance Management Act Appreciation for Managers, listed in the ZESA National Training Centre 2026 calendar under Non-Technical Training.",
+      "source_rows": [
+        "Non Technical Courses!4"
+      ],
+      "schedules": []
+    },
+    {
+      "shortname": "CAL26-PUBLIC-RELATIONS-AND-EXTERNAL-CO-B32F90",
+      "fullname": "Public Relations And External Communication",
+      "duration_days": 5,
+      "price": "325.00",
+      "category": "Non-Technical Training",
+      "section": "Icdl",
+      "level": null,
+      "summary": "Public Relations And External Communication, listed in the ZESA National Training Centre 2026 calendar under Icdl.",
+      "source_rows": [
+        "Non Technical Courses!78"
+      ],
+      "schedules": [
+        {
+          "start_date": "2026-06-15",
+          "end_date": "2026-06-19",
+          "source": "Non Technical Courses!Jun78"
+        },
+        {
+          "start_date": "2026-12-14",
+          "end_date": "2026-12-18",
+          "source": "Non Technical Courses!Dec78"
+        }
+      ]
+    },
+    {
+      "shortname": "PUMP-TECH",
+      "fullname": "Pump Technology",
+      "duration_days": 5,
+      "price": "325.00",
+      "category": "Technical Training",
+      "section": "Mechanical Engineering",
+      "level": "INTERMEDIATE",
+      "summary": "Types of pumps, performance curves, cavitation, impeller selection, alignment, mechanical seals, and maintenance of centrifugal and positive displacement pumps in water and power plant applications.",
+      "source_rows": [
+        "Technical Courses!22"
+      ],
+      "schedules": [
+        {
+          "start_date": "2026-02-16",
+          "end_date": "2026-02-20",
+          "source": "Technical Courses!Feb22"
+        },
+        {
+          "start_date": "2026-06-15",
+          "end_date": "2026-06-19",
+          "source": "Technical Courses!Jun22"
+        },
+        {
+          "start_date": "2026-08-17",
+          "end_date": "2026-08-21",
+          "source": "Technical Courses!Aug22"
+        }
+      ]
+    },
+    {
+      "shortname": "CAL26-REMOTE-CONTROLLED-AIRCRAFTS-AND--01F3A4",
+      "fullname": "Remote Controlled Aircrafts and Vehicles Design and Operation -Applications, Troubleshooting, surveillance and problem solving",
+      "duration_days": 5,
+      "price": "338.00",
+      "category": "Technical Training",
+      "section": "Renewable Energy Courses",
+      "level": null,
+      "summary": "Remote Controlled Aircrafts and Vehicles Design and Operation -Applications, Troubleshooting, surveillance and problem solving, listed in the ZESA National Training Centre 2026 calendar under Renewable Energy Courses.",
+      "source_rows": [
+        "Technical Courses!58",
+        "Consultancy Services!15"
+      ],
+      "schedules": []
+    },
+    {
+      "shortname": "CAL26-REMOTE-CONTROLLED-AIRCRAFTS-AND--A5D8DA",
+      "fullname": "Remote Controlled Aircrafts and Vehicles Design and Operation -Product Development",
+      "duration_days": 5,
+      "price": "337.00",
+      "category": "Technical Training",
+      "section": "Renewable Energy Courses",
+      "level": null,
+      "summary": "Remote Controlled Aircrafts and Vehicles Design and Operation -Product Development, listed in the ZESA National Training Centre 2026 calendar under Renewable Energy Courses.",
+      "source_rows": [
+        "Technical Courses!57",
+        "Consultancy Services!14"
+      ],
+      "schedules": []
+    },
+    {
+      "shortname": "CAL26-REVENUE-ASSURANCE-BASICS-9804D1",
+      "fullname": "Revenue Assurance basics",
+      "duration_days": 5,
+      "price": "325.00",
+      "category": "Available on Request",
+      "section": "Technical Short Courses",
+      "level": null,
+      "summary": "Revenue Assurance basics, listed in the ZESA National Training Centre 2026 calendar under Technical Short Courses.",
+      "source_rows": [
+        "Available on Request!13"
+      ],
+      "schedules": []
+    },
+    {
+      "shortname": "RIGGING",
+      "fullname": "Rigging and Safe Lifting Techniques",
+      "duration_days": 5,
+      "price": "325.00",
+      "category": "Technical Training",
+      "section": "Mechanical Engineering",
+      "level": "ALL_LEVELS",
+      "summary": "Safe rigging practices, sling types and capacities, crane signals, load calculations, inspection of lifting tackle, and legal requirements for lifting operations.",
+      "source_rows": [
+        "Technical Courses!27"
+      ],
+      "schedules": [
+        {
+          "start_date": "2026-04-30",
+          "end_date": "2026-05-05",
+          "source": "Technical Courses!Apr27"
+        },
+        {
+          "start_date": "2026-06-01",
+          "end_date": "2026-06-05",
+          "source": "Technical Courses!Jun27"
+        },
+        {
+          "start_date": "2026-10-05",
+          "end_date": "2026-10-09",
+          "source": "Technical Courses!Oct27"
+        }
+      ]
+    },
+    {
+      "shortname": "CAL26-RISK-MANAGEMENT-IN-HEAVY-INDUSTR-361A9C",
+      "fullname": "Risk Management in Heavy Industries and Complex Projects",
+      "duration_days": 5,
+      "price": "335.00",
+      "category": "Non-Technical Training",
+      "section": "Icdl",
+      "level": null,
+      "summary": "Risk Management in Heavy Industries and Complex Projects, listed in the ZESA National Training Centre 2026 calendar under Icdl.",
+      "source_rows": [
+        "Non Technical Courses!84",
+        "Consultancy Services!12"
+      ],
+      "schedules": []
+    },
+    {
+      "shortname": "CAL26-SAP-BASED-MAINTENANCE-PLANNING-FAAB96",
+      "fullname": "SAP - Based Maintenance Planning",
+      "duration_days": 5,
+      "price": "325.00",
+      "category": "Available on Request",
+      "section": "Technical Short Courses",
+      "level": null,
+      "summary": "SAP - Based Maintenance Planning, listed in the ZESA National Training Centre 2026 calendar under Technical Short Courses.",
+      "source_rows": [
+        "Available on Request!22"
+      ],
+      "schedules": []
+    },
+    {
+      "shortname": "CAL26-SOLAR-PV-DESIGN-AND-INSTALLATION-FDF3F7",
+      "fullname": "Solar PV Design and Installation",
+      "duration_days": null,
+      "price": null,
+      "category": "Technical Training",
+      "section": "Upcoming Hexco Certificate Courses",
+      "level": null,
+      "summary": "Solar PV Design and Installation, listed in the ZESA National Training Centre 2026 calendar under Upcoming Hexco Certificate Courses.",
+      "source_rows": [
+        "Technical Courses!92"
+      ],
+      "schedules": []
+    },
+    {
+      "shortname": "CAL26-SOLAR-PV-DESIGN-AND-MAINTENANCE-39B658",
+      "fullname": "Solar PV Design and Maintenance",
+      "duration_days": null,
+      "price": null,
+      "category": "Technical Training",
+      "section": "Upcoming Hexco Certificate Courses",
+      "level": null,
+      "summary": "Solar PV Design and Maintenance, listed in the ZESA National Training Centre 2026 calendar under Upcoming Hexco Certificate Courses.",
+      "source_rows": [
+        "Technical Courses!93"
+      ],
+      "schedules": []
+    },
+    {
+      "shortname": "CAL26-SOLAR-PV-SYSTEM-DESIGN-INSTALLAT-413676",
+      "fullname": "Solar PV System Design, Installation and Maintenance",
+      "duration_days": 10,
+      "price": "481.00",
+      "category": "Technical Training",
+      "section": "Renewable Energy Courses",
+      "level": null,
+      "summary": "Solar PV System Design, Installation and Maintenance, listed in the ZESA National Training Centre 2026 calendar under Renewable Energy Courses.",
+      "source_rows": [
+        "Technical Courses!46"
+      ],
+      "schedules": []
+    },
+    {
+      "shortname": "CAL26-SOLAR-PV-SYSTEM-DESIGN-INSTALLAT-CCB11C",
+      "fullname": "Solar PV System Design, Installation and Net Metering",
+      "duration_days": 10,
+      "price": "481.00",
+      "category": "Technical Training",
+      "section": "Renewable Energy Courses",
+      "level": null,
+      "summary": "Solar PV System Design, Installation and Net Metering, listed in the ZESA National Training Centre 2026 calendar under Renewable Energy Courses.",
+      "source_rows": [
+        "Technical Courses!47"
+      ],
+      "schedules": []
+    },
+    {
+      "shortname": "SOLAR-PV",
+      "fullname": "Solar PV Systems Design , Installation & Maintenance",
+      "duration_days": 5,
+      "price": "325.00",
+      "category": "Technical Training",
+      "section": "Renewable Energy Courses",
+      "level": "INTERMEDIATE",
+      "summary": "Site assessment, system sizing, component selection (panels, inverters, batteries, charge controllers), installation standards, commissioning, fault-finding, and O&M for solar PV systems.",
+      "source_rows": [
+        "Technical Courses!43"
+      ],
+      "schedules": [
+        {
+          "start_date": "2026-01-12",
+          "end_date": "2026-01-16",
+          "source": "Technical Courses!Jan43"
+        },
+        {
+          "start_date": "2026-03-09",
+          "end_date": "2026-03-13",
+          "source": "Technical Courses!Mar43"
+        },
+        {
+          "start_date": "2026-05-04",
+          "end_date": "2026-05-08",
+          "source": "Technical Courses!May43"
+        },
+        {
+          "start_date": "2026-07-30",
+          "end_date": "2026-08-05",
+          "source": "Technical Courses!Jul43"
+        },
+        {
+          "start_date": "2026-09-14",
+          "end_date": "2026-09-18",
+          "source": "Technical Courses!Sep43"
+        },
+        {
+          "start_date": "2026-11-02",
+          "end_date": "2026-11-06",
+          "source": "Technical Courses!Nov43"
+        }
+      ]
+    },
+    {
+      "shortname": "CAL26-STRATEGIC-BUSINESS-LEADERSHIP-DE-66606A",
+      "fullname": "Strategic Business Leadership Development",
+      "duration_days": 5,
+      "price": "325.00",
+      "category": "Non-Technical Training",
+      "section": "Non-Technical Training",
+      "level": null,
+      "summary": "Strategic Business Leadership Development, listed in the ZESA National Training Centre 2026 calendar under Non-Technical Training.",
+      "source_rows": [
+        "Non Technical Courses!15"
+      ],
+      "schedules": []
+    },
+    {
+      "shortname": "CAL26-STRATEGIC-PLANNING-AND-ORGANISAT-A0C58E",
+      "fullname": "Strategic planning and Organisational Goal Setting",
+      "duration_days": 5,
+      "price": null,
+      "category": "Non-Technical Training",
+      "section": "National University Of Science & Technology Certificate Courses",
+      "level": null,
+      "summary": "Strategic planning and Organisational Goal Setting, listed in the ZESA National Training Centre 2026 calendar under National University Of Science & Technology Certificate Courses.",
+      "source_rows": [
+        "Non Technical Courses!93"
+      ],
+      "schedules": []
+    },
+    {
+      "shortname": "SUB-MAINT",
+      "fullname": "Substation & Transformer Maintenance",
+      "duration_days": 5,
+      "price": "325.00",
+      "category": "Technical Training",
+      "section": "Electrical Engineering",
+      "level": "INTERMEDIATE",
+      "summary": "Maintenance practices for power transformers, switchgear, and substation equipment. Covers oil testing, insulation resistance, dissolved gas analysis, and planned maintenance scheduling.",
+      "source_rows": [
+        "Technical Courses!5",
+        "Technical Courses!88",
+        "Technical Courses!91"
+      ],
+      "schedules": [
+        {
+          "start_date": "2026-01-26",
+          "end_date": "2026-01-30",
+          "source": "Technical Courses!Jan5"
+        },
+        {
+          "start_date": "2026-02-02",
+          "end_date": "2026-02-06",
+          "source": "Technical Courses!Feb5"
+        },
+        {
+          "start_date": "2026-04-13",
+          "end_date": "2026-04-17",
+          "source": "Technical Courses!Apr5"
+        },
+        {
+          "start_date": "2026-07-20",
+          "end_date": "2026-07-24",
+          "source": "Technical Courses!Jul5"
+        },
+        {
+          "start_date": "2026-08-03",
+          "end_date": "2026-08-07",
+          "source": "Technical Courses!Aug5"
+        },
+        {
+          "start_date": "2026-10-12",
+          "end_date": "2026-10-23",
+          "source": "Technical Courses!Oct5"
+        },
+        {
+          "start_date": "2026-11-23",
+          "end_date": "2026-11-27",
+          "source": "Technical Courses!Nov5"
+        }
+      ]
+    },
+    {
+      "shortname": "CAL26-SUPPLY-CHAIN-MANAGEMENT-I-II-41EA77",
+      "fullname": "Supply Chain Management I & II",
+      "duration_days": 5,
+      "price": "325.00",
+      "category": "Available on Request",
+      "section": "Non-Technical Courses Available On Request",
+      "level": null,
+      "summary": "Supply Chain Management I & II, listed in the ZESA National Training Centre 2026 calendar under Non-Technical Courses Available On Request.",
+      "source_rows": [
+        "Available on Request!27"
+      ],
+      "schedules": []
+    },
+    {
+      "shortname": "SUST-ENG",
+      "fullname": "Sustainable Engineering Practices",
+      "duration_days": 5,
+      "price": "325.00",
+      "category": "Technical Training",
+      "section": "Other Technical Courses Offered",
+      "level": "ALL_LEVELS",
+      "summary": "Principles of sustainable design, life-cycle assessment, green procurement, carbon footprint reduction, and environmental impact management for engineering professionals.",
+      "source_rows": [
+        "Technical Courses!63"
+      ],
+      "schedules": [
+        {
+          "start_date": "2026-04-27",
+          "end_date": "2026-05-01",
+          "source": "Technical Courses!Apr63"
+        },
+        {
+          "start_date": "2026-10-26",
+          "end_date": "2026-10-30",
+          "source": "Technical Courses!Oct63"
+        }
+      ]
+    },
+    {
+      "shortname": "CAL26-SWITCH-GEAR-MAINTENANCE-C01FC9",
+      "fullname": "Switch Gear Maintenance",
+      "duration_days": 5,
+      "price": "325.00",
+      "category": "Technical Training",
+      "section": "Electrical Engineering",
+      "level": null,
+      "summary": "Switch Gear Maintenance, listed in the ZESA National Training Centre 2026 calendar under Electrical Engineering.",
+      "source_rows": [
+        "Technical Courses!14"
+      ],
+      "schedules": []
+    },
+    {
+      "shortname": "CAL26-TAXATION-E2D522",
+      "fullname": "Taxation",
+      "duration_days": 5,
+      "price": "325.00",
+      "category": "Available on Request",
+      "section": "Non-Technical Courses Available On Request",
+      "level": null,
+      "summary": "Taxation, listed in the ZESA National Training Centre 2026 calendar under Non-Technical Courses Available On Request.",
+      "source_rows": [
+        "Available on Request!25"
+      ],
+      "schedules": []
+    },
+    {
+      "shortname": "CAL26-TEAM-BUILDING-7FEBC4",
+      "fullname": "Team Building",
+      "duration_days": 5,
+      "price": "325.00",
+      "category": "Available on Request",
+      "section": "Non-Technical Courses Available On Request",
+      "level": null,
+      "summary": "Team Building, listed in the ZESA National Training Centre 2026 calendar under Non-Technical Courses Available On Request.",
+      "source_rows": [
+        "Available on Request!30"
+      ],
+      "schedules": []
+    },
+    {
+      "shortname": "CAL26-TELECOMMUNICATIONS-SYSTEMS-74E9B2",
+      "fullname": "Telecommunications Systems",
+      "duration_days": 5,
+      "price": "325.00",
+      "category": "Available on Request",
+      "section": "Technical Short Courses",
+      "level": null,
+      "summary": "Telecommunications Systems, listed in the ZESA National Training Centre 2026 calendar under Technical Short Courses.",
+      "source_rows": [
+        "Available on Request!20"
+      ],
+      "schedules": []
+    },
+    {
+      "shortname": "CAL26-TIME-MANAGEMENT-522F43",
+      "fullname": "Time Management",
+      "duration_days": 3,
+      "price": "270.00",
+      "category": "Non-Technical Training",
+      "section": "Safety, Health And Environmental",
+      "level": null,
+      "summary": "Time Management, listed in the ZESA National Training Centre 2026 calendar under Safety, Health And Environmental.",
+      "source_rows": [
+        "Non Technical Courses!42"
+      ],
+      "schedules": [
+        {
+          "start_date": "2026-04-22",
+          "end_date": "2026-04-24",
+          "source": "Non Technical Courses!Apr42"
+        },
+        {
+          "start_date": "2026-09-15",
+          "end_date": "2026-09-17",
+          "source": "Non Technical Courses!Sep42"
+        }
+      ]
+    },
+    {
+      "shortname": "CAL26-TRANSFORMER-DESIGN-AND-MANUFACTU-A4FBFB",
+      "fullname": "Transformer Design and Manufacturing",
+      "duration_days": null,
+      "price": null,
+      "category": "Technical Training",
+      "section": "Upcoming Hexco Certificate Courses",
+      "level": null,
+      "summary": "Transformer Design and Manufacturing, listed in the ZESA National Training Centre 2026 calendar under Upcoming Hexco Certificate Courses.",
+      "source_rows": [
+        "Technical Courses!97"
+      ],
+      "schedules": []
+    },
+    {
+      "shortname": "TRANSPORT",
+      "fullname": "Transport and Logistics Management",
+      "duration_days": 5,
+      "price": "325.00",
+      "category": "Non-Technical Training",
+      "section": "Safety, Health And Environmental",
+      "level": "INTERMEDIATE",
+      "summary": "Fleet management, route planning, vehicle maintenance scheduling, fuel management, driver safety, logistics costs, and compliance with transport regulations.",
+      "source_rows": [
+        "Non Technical Courses!39"
+      ],
+      "schedules": [
+        {
+          "start_date": "2026-01-26",
+          "end_date": "2026-01-30",
+          "source": "Non Technical Courses!Jan39"
+        },
+        {
+          "start_date": "2026-05-11",
+          "end_date": "2026-05-15",
+          "source": "Non Technical Courses!May39"
+        },
+        {
+          "start_date": "2026-07-29",
+          "end_date": "2026-08-03",
+          "source": "Non Technical Courses!Jul39"
+        },
+        {
+          "start_date": "2026-11-09",
+          "end_date": "2026-11-13",
+          "source": "Non Technical Courses!Nov39"
+        }
+      ]
+    },
+    {
+      "shortname": "TIG-MIG",
+      "fullname": "Tungsten & Metal Inert Gas Welding TIG & MIG",
+      "duration_days": 10,
+      "price": "481.00",
+      "category": "Technical Training",
+      "section": "Mechanical Engineering",
+      "level": "INTERMEDIATE",
+      "summary": "Advanced welding using TIG (GTAW) and MIG (GMAW) processes on steel, stainless steel, and aluminium. Covers shielding gases, filler selection, and weld quality inspection. Prerequisite: Arc welding.",
+      "source_rows": [
+        "Technical Courses!26"
+      ],
+      "schedules": [
+        {
+          "start_date": "2026-02-09",
+          "end_date": "2026-02-20",
+          "source": "Technical Courses!Feb26"
+        },
+        {
+          "start_date": "2026-06-15",
+          "end_date": "2026-06-26",
+          "source": "Technical Courses!Jun26"
+        },
+        {
+          "start_date": "2026-08-17",
+          "end_date": "2026-08-28",
+          "source": "Technical Courses!Aug26"
+        }
+      ]
+    },
+    {
+      "shortname": "CAL26-UZ-CERTIFICATE-IN-LINE-CONSTRUCT-60877D",
+      "fullname": "UZ : Certificate in Line Construction and Maintenance (Block Release)",
+      "duration_days": 365,
+      "price": null,
+      "category": "Technical Training",
+      "section": "University Of Zimbabwe (Uz) Certificates Courses",
+      "level": null,
+      "summary": "UZ : Certificate in Line Construction and Maintenance (Block Release), listed in the ZESA National Training Centre 2026 calendar under University Of Zimbabwe (Uz) Certificates Courses.",
+      "source_rows": [
+        "Technical Courses!100"
+      ],
+      "schedules": [
+        {
+          "start_date": "2026-02-02",
+          "end_date": "2026-02-27",
+          "source": "Technical Courses!Feb100"
+        },
+        {
+          "start_date": "2026-04-20",
+          "end_date": "2026-04-30",
+          "source": "Technical Courses!Apr100"
+        },
+        {
+          "start_date": "2026-05-01",
+          "end_date": "2026-05-15",
+          "source": "Technical Courses!May100"
+        },
+        {
+          "start_date": "2026-06-15",
+          "end_date": "2026-06-30",
+          "source": "Technical Courses!Jun100"
+        },
+        {
+          "start_date": "2026-07-01",
+          "end_date": "2026-07-10",
+          "source": "Technical Courses!Jul100"
+        },
+        {
+          "start_date": "2026-08-17",
+          "end_date": "2026-08-31",
+          "source": "Technical Courses!Aug100"
+        },
+        {
+          "start_date": "2026-09-01",
+          "end_date": "2026-09-11",
+          "source": "Technical Courses!Sep100"
+        },
+        {
+          "start_date": "2026-10-05",
+          "end_date": "2026-10-16",
+          "source": "Technical Courses!Oct100"
+        },
+        {
+          "start_date": "2026-11-16",
+          "end_date": "2026-11-27",
+          "source": "Technical Courses!Nov100"
+        },
+        {
+          "start_date": "2026-12-07",
+          "end_date": "2026-12-18",
+          "source": "Technical Courses!Dec100"
+        }
+      ]
+    },
+    {
+      "shortname": "VALVE-TECH",
+      "fullname": "Valve Technology",
+      "duration_days": 5,
+      "price": "325.00",
+      "category": "Technical Training",
+      "section": "Mechanical Engineering",
+      "level": "INTERMEDIATE",
+      "summary": "Gate, globe, butterfly, ball, and pressure relief valves \u2014 selection, installation, operation, and maintenance for industrial pipework and power station applications.",
+      "source_rows": [
+        "Technical Courses!21"
+      ],
+      "schedules": [
+        {
+          "start_date": "2026-05-04",
+          "end_date": "2026-05-08",
+          "source": "Technical Courses!May21"
+        }
+      ]
+    },
+    {
+      "shortname": "VFD-SS",
+      "fullname": "Variable Frequency Drives and Soft Starters",
+      "duration_days": 5,
+      "price": "325.00",
+      "category": "Technical Training",
+      "section": "Mechanical Engineering",
+      "level": "INTERMEDIATE",
+      "summary": "Installation, commissioning, programming, and troubleshooting of VFDs and soft starters used in pump stations, fans, and industrial motors across ZESA facilities.",
+      "source_rows": [
+        "Technical Courses!24"
+      ],
+      "schedules": [
+        {
+          "start_date": "2026-01-26",
+          "end_date": "2026-01-30",
+          "source": "Technical Courses!Jan24"
+        },
+        {
+          "start_date": "2026-04-20",
+          "end_date": "2026-04-24",
+          "source": "Technical Courses!Apr24"
+        },
+        {
+          "start_date": "2026-07-27",
+          "end_date": "2026-07-31",
+          "source": "Technical Courses!Jul24"
+        },
+        {
+          "start_date": "2026-10-19",
+          "end_date": "2026-10-23",
+          "source": "Technical Courses!Oct24"
+        }
+      ]
+    },
+    {
+      "shortname": "VAT-TRAIN",
+      "fullname": "VAT Training",
+      "duration_days": 5,
+      "price": "325.00",
+      "category": "Non-Technical Training",
+      "section": "Safety, Health And Environmental",
+      "level": "ALL_LEVELS",
+      "summary": "Zimbabwe VAT Act requirements, registration, input and output tax, VAT returns, record-keeping, and common compliance errors for finance and procurement staff.",
+      "source_rows": [
+        "Non Technical Courses!47"
+      ],
+      "schedules": [
+        {
+          "start_date": "2026-03-23",
+          "end_date": "2026-03-27",
+          "source": "Non Technical Courses!Mar47"
+        },
+        {
+          "start_date": "2026-09-21",
+          "end_date": "2026-09-25",
+          "source": "Non Technical Courses!Sep47"
+        }
+      ]
+    },
+    {
+      "shortname": "VFL",
+      "fullname": "Visual Felt Leadership",
+      "duration_days": 5,
+      "price": "325.00",
+      "category": "Non-Technical Training",
+      "section": "Non-Technical Training",
+      "level": "INTERMEDIATE",
+      "summary": "Leadership through visible presence, safety leadership walks, coaching conversations, and building a high-performance culture through frontline engagement.",
+      "source_rows": [
+        "Non Technical Courses!18"
+      ],
+      "schedules": [
+        {
+          "start_date": "2026-02-16",
+          "end_date": "2026-02-20",
+          "source": "Non Technical Courses!Feb18"
+        },
+        {
+          "start_date": "2026-08-17",
+          "end_date": "2026-08-21",
+          "source": "Non Technical Courses!Aug18"
+        }
+      ]
+    },
+    {
+      "shortname": "WORKERS-COM",
+      "fullname": "Workers Committee Course",
+      "duration_days": 3,
+      "price": "270.00",
+      "category": "Non-Technical Training",
+      "section": "Non-Technical Training",
+      "level": "ALL_LEVELS",
+      "summary": "Role and functions of workers committees under the Zimbabwe Labour Act, collective bargaining, representing employee interests, and conducting effective meetings.",
+      "source_rows": [
+        "Non Technical Courses!21"
+      ],
+      "schedules": [
+        {
+          "start_date": "2026-01-27",
+          "end_date": "2026-01-29",
+          "source": "Non Technical Courses!Jan21"
+        },
+        {
+          "start_date": "2026-03-10",
+          "end_date": "2026-03-12",
+          "source": "Non Technical Courses!Mar21"
+        },
+        {
+          "start_date": "2026-06-01",
+          "end_date": "2026-06-03",
+          "source": "Non Technical Courses!Jun21"
+        },
+        {
+          "start_date": "2026-07-21",
+          "end_date": "2026-07-23",
+          "source": "Non Technical Courses!Jul21"
+        },
+        {
+          "start_date": "2026-08-04",
+          "end_date": "2026-08-06",
+          "source": "Non Technical Courses!Aug21"
+        },
+        {
+          "start_date": "2026-09-08",
+          "end_date": "2026-09-10",
+          "source": "Non Technical Courses!Sep21"
+        },
+        {
+          "start_date": "2026-12-01",
+          "end_date": "2026-12-03",
+          "source": "Non Technical Courses!Dec21"
+        }
+      ]
+    }
+  ],
+  "warnings": [
+    "Skipped invalid schedule Non Technical Courses!Apr27: '28-31' (day 31 must be in range 1..30 for month 4 in year 2026)",
+    "Skipped invalid schedule Non Technical Courses!Sep35: '31-04' (day 31 must be in range 1..30 for month 9 in year 2026)",
+    "Skipped invalid schedule Non Technical Courses!Sep52: '31-04' (day 31 must be in range 1..30 for month 9 in year 2026)"
+  ]
+}
