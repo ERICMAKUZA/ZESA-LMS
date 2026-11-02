@@ -25,12 +25,13 @@ class AttendanceResponseTests(APITestCase):
             moodle_course_id=501, shortname="SAFE-101",
             fullname="Safety Training", duration_days=5,
         )
+        self.schedule_year = timezone.localdate().year + 1
         self.current = CourseSchedule.objects.create(
-            course=self.course, year=2026, month=9, week_in_month=1,
+            course=self.course, year=self.schedule_year, month=9, week_in_month=1,
             max_capacity=2, enrolled_count=1,
         )
         self.next_schedule = CourseSchedule.objects.create(
-            course=self.course, year=2026, month=10, week_in_month=1,
+            course=self.course, year=self.schedule_year, month=10, week_in_month=1,
             max_capacity=1, enrolled_count=0,
         )
         self.application = Application.objects.create(
@@ -131,10 +132,10 @@ class AttendanceResponseTests(APITestCase):
             moodle_course_id=502, shortname="OTHER", fullname="Other Course",
         )
         CourseSchedule.objects.create(
-            course=other_course, year=2026, month=11, week_in_month=1,
+            course=other_course, year=self.schedule_year, month=11, week_in_month=1,
         )
         CourseSchedule.objects.create(
-            course=self.course, year=2026, month=8, week_in_month=1,
+            course=self.course, year=self.schedule_year, month=8, week_in_month=1,
         )
 
         response = self.client.post(self.url, {"response": "DEFER"}, format="json")
@@ -226,7 +227,7 @@ class AttendanceResponseTests(APITestCase):
         self.next_schedule.enrolled_count = 1
         self.next_schedule.save(update_fields=["enrolled_count"])
         later = CourseSchedule.objects.create(
-            course=self.course, year=2026, month=11, week_in_month=1,
+            course=self.course, year=self.schedule_year, month=11, week_in_month=1,
             max_capacity=2, enrolled_count=0,
         )
 
